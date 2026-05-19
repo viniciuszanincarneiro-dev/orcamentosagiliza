@@ -306,53 +306,105 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
   return (
     <div className="space-y-6">
-      <Card className="border-primary/40">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Leitura automática da matrícula</CardTitle>
-          <CardDescription>
-            Envie o PDF/foto da matrícula (scanner, celular ou WhatsApp) <b>ou</b> cole o texto. A IA preenche cliente, área, município e valor automaticamente.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={ACCEPT_TYPES}
-              onChange={onPickFile}
-              className="hidden"
-            />
-            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-              <Upload className="h-4 w-4 mr-2" /> Enviar PDF ou imagem
-            </Button>
-            {arquivo ? (
-              <div className="flex items-center gap-2 text-sm bg-muted px-3 py-1.5 rounded-md">
-                <FileTextIcon className="h-4 w-4 text-primary" />
-                <span className="font-medium">{arquivo.nome}</span>
-                <span className="text-muted-foreground">({(arquivo.size / 1024).toFixed(0)} KB)</span>
-                <button type="button" onClick={() => setArquivo(null)} className="hover:text-destructive" aria-label="Remover">
-                  <X className="h-4 w-4" />
-                </button>
+      <Tabs value={modo} onValueChange={(v) => setModo(v as "auto" | "manual")} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="auto"><Sparkles className="h-4 w-4 mr-2" /> Automático (OCR + IA)</TabsTrigger>
+          <TabsTrigger value="manual"><PencilLine className="h-4 w-4 mr-2" /> Manual</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="auto" className="mt-3">
+          <Card className="border-primary/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Leitura automática da matrícula</CardTitle>
+              <CardDescription>
+                Envie PDF, foto, print ou scanner — mesmo de baixa qualidade. A IA tenta preencher os campos; tudo permanece editável.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <input ref={fileInputRef} type="file" accept={ACCEPT_TYPES} onChange={onPickFile} className="hidden" />
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="h-4 w-4 mr-2" /> Enviar PDF ou imagem
+                </Button>
+                {arquivo ? (
+                  <div className="flex items-center gap-2 text-sm bg-muted px-3 py-1.5 rounded-md">
+                    <FileTextIcon className="h-4 w-4 text-primary" />
+                    <span className="font-medium truncate max-w-[180px]">{arquivo.nome}</span>
+                    <span className="text-muted-foreground">({(arquivo.size / 1024).toFixed(0)} KB)</span>
+                    <button type="button" onClick={() => setArquivo(null)} className="hover:text-destructive" aria-label="Remover">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">PDF, JPG, PNG, HEIC, WEBP (até 12MB)</span>
+                )}
               </div>
-            ) : (
-              <span className="text-xs text-muted-foreground">PDF, JPG, PNG, HEIC (até 12MB)</span>
-            )}
-          </div>
-          <Textarea
-            rows={6}
-            placeholder="Ou cole aqui o texto completo da matrícula..."
-            value={matriculaTexto}
-            onChange={(e) => setMatriculaTexto(e.target.value)}
-            className="font-mono text-sm"
-          />
-          <div className="flex justify-end">
-            <Button onClick={interpretarMatricula} disabled={parsing || (!arquivo && !matriculaTexto.trim())}>
-              {parsing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              Interpretar matrícula
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <Textarea
+                rows={5}
+                placeholder="Ou cole aqui o texto completo da matrícula..."
+                value={matriculaTexto}
+                onChange={(e) => setMatriculaTexto(e.target.value)}
+                className="font-mono text-sm"
+              />
+
+              {ultimaLeitura ? (
+                <div className={
+                  "flex items-center gap-2 rounded-md border px-3 py-2 text-sm " +
+                  (ultimaLeitura.qualidade.nivel === "alta"
+                    ? "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400"
+                    : ultimaLeitura.qualidade.nivel === "parcial"
+                    ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                    : "border-destructive/40 bg-destructive/10 text-destructive")
+                }>
+                  {ultimaLeitura.qualidade.nivel === "alta" ? <CheckCircle2 className="h-4 w-4" />
+                    : ultimaLeitura.qualidade.nivel === "parcial" ? <AlertCircle className="h-4 w-4" />
+                    : <AlertTriangle className="h-4 w-4" />}
+                  <span className="font-medium">
+                    {ultimaLeitura.qualidade.nivel === "alta" && "Leitura confiável"}
+                    {ultimaLeitura.qualidade.nivel === "parcial" && "Leitura parcial"}
+                    {ultimaLeitura.qualidade.nivel === "baixa" && "Leitura ruim — revise manualmente"}
+                  </span>
+                  <span className="text-xs opacity-80">
+                    ({ultimaLeitura.qualidade.preenchidos}/{ultimaLeitura.qualidade.total} campos extraídos)
+                  </span>
+                </div>
+              ) : null}
+
+              {erroLeitura ? (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Não conseguimos ler a matrícula</AlertTitle>
+                  <AlertDescription>
+                    Tente uma foto mais nítida, outro arquivo, ou troque para o modo <b>Manual</b> e preencha os campos.
+                    <span className="block text-xs opacity-70 mt-1">Detalhe técnico: {erroLeitura}</span>
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
+              <div className="flex flex-wrap gap-2 justify-end">
+                <Button type="button" variant="ghost" onClick={limparExtraidos} disabled={parsing}>
+                  <Eraser className="h-4 w-4 mr-2" /> Limpar dados extraídos
+                </Button>
+                <Button onClick={interpretarMatricula} disabled={parsing || (!arquivo && !matriculaTexto.trim())}>
+                  {parsing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                  Preencher automaticamente
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="manual" className="mt-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><PencilLine className="h-5 w-5 text-primary" /> Preenchimento manual</CardTitle>
+              <CardDescription>
+                Sem upload e sem IA. Preencha os campos do orçamento abaixo normalmente — útil quando você já tem os dados em mãos.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Card>
         <CardHeader><CardTitle>Tipo de serviço e status</CardTitle></CardHeader>

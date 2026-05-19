@@ -15,6 +15,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppValoresRouteImport } from './routes/_app.valores'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppOrcamentosIndexRouteImport } from './routes/_app.orcamentos.index'
+import { Route as AppOrcamentosNovoRouteImport } from './routes/_app.orcamentos.novo'
+import { Route as AppOrcamentosIdRouteImport } from './routes/_app.orcamentos.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -45,12 +47,24 @@ const AppOrcamentosIndexRoute = AppOrcamentosIndexRouteImport.update({
   path: '/orcamentos/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOrcamentosNovoRoute = AppOrcamentosNovoRouteImport.update({
+  id: '/orcamentos/novo',
+  path: '/orcamentos/novo',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrcamentosIdRoute = AppOrcamentosIdRouteImport.update({
+  id: '/orcamentos/$id',
+  path: '/orcamentos/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
   '/valores': typeof AppValoresRoute
+  '/orcamentos/$id': typeof AppOrcamentosIdRoute
+  '/orcamentos/novo': typeof AppOrcamentosNovoRoute
   '/orcamentos/': typeof AppOrcamentosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -58,6 +72,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
   '/valores': typeof AppValoresRoute
+  '/orcamentos/$id': typeof AppOrcamentosIdRoute
+  '/orcamentos/novo': typeof AppOrcamentosNovoRoute
   '/orcamentos': typeof AppOrcamentosIndexRoute
 }
 export interface FileRoutesById {
@@ -67,13 +83,29 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/valores': typeof AppValoresRoute
+  '/_app/orcamentos/$id': typeof AppOrcamentosIdRoute
+  '/_app/orcamentos/novo': typeof AppOrcamentosNovoRoute
   '/_app/orcamentos/': typeof AppOrcamentosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/dashboard' | '/valores' | '/orcamentos/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/dashboard'
+    | '/valores'
+    | '/orcamentos/$id'
+    | '/orcamentos/novo'
+    | '/orcamentos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/dashboard' | '/valores' | '/orcamentos'
+  to:
+    | '/'
+    | '/login'
+    | '/dashboard'
+    | '/valores'
+    | '/orcamentos/$id'
+    | '/orcamentos/novo'
+    | '/orcamentos'
   id:
     | '__root__'
     | '/'
@@ -81,6 +113,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/dashboard'
     | '/_app/valores'
+    | '/_app/orcamentos/$id'
+    | '/_app/orcamentos/novo'
     | '/_app/orcamentos/'
   fileRoutesById: FileRoutesById
 }
@@ -134,18 +168,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrcamentosIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/orcamentos/novo': {
+      id: '/_app/orcamentos/novo'
+      path: '/orcamentos/novo'
+      fullPath: '/orcamentos/novo'
+      preLoaderRoute: typeof AppOrcamentosNovoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/orcamentos/$id': {
+      id: '/_app/orcamentos/$id'
+      path: '/orcamentos/$id'
+      fullPath: '/orcamentos/$id'
+      preLoaderRoute: typeof AppOrcamentosIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppValoresRoute: typeof AppValoresRoute
+  AppOrcamentosIdRoute: typeof AppOrcamentosIdRoute
+  AppOrcamentosNovoRoute: typeof AppOrcamentosNovoRoute
   AppOrcamentosIndexRoute: typeof AppOrcamentosIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppValoresRoute: AppValoresRoute,
+  AppOrcamentosIdRoute: AppOrcamentosIdRoute,
+  AppOrcamentosNovoRoute: AppOrcamentosNovoRoute,
   AppOrcamentosIndexRoute: AppOrcamentosIndexRoute,
 }
 
@@ -159,3 +211,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

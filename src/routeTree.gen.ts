@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppValoresRouteImport } from './routes/_app.valores'
+import { Route as AppFollowUpRouteImport } from './routes/_app.follow-up'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppOrcamentosIndexRouteImport } from './routes/_app.orcamentos.index'
 import { Route as AppOrcamentosNovoRouteImport } from './routes/_app.orcamentos.novo'
@@ -35,6 +36,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppValoresRoute = AppValoresRouteImport.update({
   id: '/valores',
   path: '/valores',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFollowUpRoute = AppFollowUpRouteImport.update({
+  id: '/follow-up',
+  path: '/follow-up',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -62,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
+  '/follow-up': typeof AppFollowUpRoute
   '/valores': typeof AppValoresRoute
   '/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/orcamentos/novo': typeof AppOrcamentosNovoRoute
@@ -71,6 +78,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
+  '/follow-up': typeof AppFollowUpRoute
   '/valores': typeof AppValoresRoute
   '/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/orcamentos/novo': typeof AppOrcamentosNovoRoute
@@ -82,6 +90,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/follow-up': typeof AppFollowUpRoute
   '/_app/valores': typeof AppValoresRoute
   '/_app/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/_app/orcamentos/novo': typeof AppOrcamentosNovoRoute
@@ -93,6 +102,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/dashboard'
+    | '/follow-up'
     | '/valores'
     | '/orcamentos/$id'
     | '/orcamentos/novo'
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/dashboard'
+    | '/follow-up'
     | '/valores'
     | '/orcamentos/$id'
     | '/orcamentos/novo'
@@ -112,6 +123,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/_app/dashboard'
+    | '/_app/follow-up'
     | '/_app/valores'
     | '/_app/orcamentos/$id'
     | '/_app/orcamentos/novo'
@@ -154,6 +166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppValoresRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/follow-up': {
+      id: '/_app/follow-up'
+      path: '/follow-up'
+      fullPath: '/follow-up'
+      preLoaderRoute: typeof AppFollowUpRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -187,6 +206,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppFollowUpRoute: typeof AppFollowUpRoute
   AppValoresRoute: typeof AppValoresRoute
   AppOrcamentosIdRoute: typeof AppOrcamentosIdRoute
   AppOrcamentosNovoRoute: typeof AppOrcamentosNovoRoute
@@ -195,6 +215,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppFollowUpRoute: AppFollowUpRoute,
   AppValoresRoute: AppValoresRoute,
   AppOrcamentosIdRoute: AppOrcamentosIdRoute,
   AppOrcamentosNovoRoute: AppOrcamentosNovoRoute,
@@ -211,3 +232,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

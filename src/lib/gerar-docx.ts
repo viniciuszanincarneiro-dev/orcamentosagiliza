@@ -48,14 +48,10 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
   const logo = await logoBytes();
 
   const partes: string[] = [];
-  if (orc.imovel_descricao) partes.push(orc.imovel_descricao);
   if (orc.imovel_area_m2) partes.push(`com área de ${formatNumberBR(orc.imovel_area_m2)} m² (${formatNumberBR(orc.imovel_area_m2 / 10000, 4)} ha)`);
-  if (orc.imovel_localizacao) partes.push(`localizado em ${orc.imovel_localizacao}`);
   if (orc.imovel_municipio) partes.push(`município de ${orc.imovel_municipio}`);
   if (orc.imovel_matricula) partes.push(`matrícula nº ${orc.imovel_matricula}`);
   if (orc.imovel_valor_avaliado) partes.push(`imóvel avaliado em ${formatBRL(orc.imovel_valor_avaliado)}`);
-  if (orc.imovel_ccir) partes.push(`CCIR: ${orc.imovel_ccir}`);
-  if (orc.imovel_car) partes.push(`CAR: ${orc.imovel_car}`);
 
   const itensTable = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -82,11 +78,6 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
   const proprietariosBlock = orc.proprietarios?.length ? [
     P({ text: "PROPRIETÁRIOS", bold: true, color: VERDE, size: 24 }),
     ...orc.proprietarios.map((p) => P({ text: `• ${p.nome}${p.cpf_cnpj ? ` — ${p.cpf_cnpj}` : ""}` })),
-  ] : [];
-
-  const confrontantesBlock = orc.confrontantes?.length ? [
-    P({ text: "CONFRONTANTES", bold: true, color: VERDE, size: 24 }),
-    ...orc.confrontantes.map((c) => P({ text: `• ${c.nome}${c.lado ? ` (${c.lado})` : ""}` })),
   ] : [];
 
   const doc = new Document({
@@ -118,7 +109,6 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
         P({ text: `O presente orçamento refere-se à prestação de serviço de ${titulo.toLowerCase()}, referente ao imóvel: ${partes.join(", ")}.`, spacing: 200 }),
 
         ...proprietariosBlock,
-        ...confrontantesBlock,
 
         P({ text: "DESCRIÇÃO DOS SERVIÇOS", bold: true, color: VERDE, size: 24 }),
         P({ text: DESCRICAO_PADRAO[orc.tipo_servico] ?? "", spacing: 240 }),

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { saveAs } from "file-saver";
 
@@ -17,7 +18,8 @@ import { TIPOS_SERVICO } from "@/lib/empresa";
 import { calcularGeoPorHectare, calcularRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
 import { gerarOrcamentoPDF } from "@/lib/gerar-pdf";
 import { gerarOrcamentoDOCX } from "@/lib/gerar-docx";
-import type { OrcamentoData, ItemOrcamento, Proprietario, Confrontante } from "@/lib/orcamento-types";
+import { parseMatricula } from "@/lib/parse-matricula.functions";
+import type { OrcamentoData, ItemOrcamento } from "@/lib/orcamento-types";
 
 type Props = {
   initial?: OrcamentoData;
@@ -34,8 +36,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     valor_total: 0,
     status: "rascunho",
   });
+  const [matriculaTexto, setMatriculaTexto] = useState("");
+  const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState<"pdf" | "docx" | null>(null);
+
+  const parseFn = useServerFn(parseMatricula);
 
   const { data: tabelaValores } = useQuery({
     queryKey: ["tabela-valores-form"],
@@ -48,74 +54,69 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
   const set = <K extends keyof OrcamentoData>(k: K, v: OrcamentoData[K]) => setData((d) => ({ ...d, [k]: v }));
 
-  // Recalcula total quando itens mudam
   useEffect(() => {
     const total = data.itens.reduce((s, i) => s + (Number(i.valor) || 0), 0);
     if (total !== data.valor_total) setData((d) => ({ ...d, valor_total: total }));
   }, [data.itens]); // eslint-disable-line
 
-  // Cálculo automático
-  function calcularAutomaticamente() {
-    if (!tabelaValores) return toast.error("Tabela de valores ainda não carregou");
+  function calcularAutomaticamente(area_m2 = data.imovel_area_m2, valor = data.imovel_valor_avaliado) {
+    if (!tabelaValores) return;
     const valByChave = Object.fromEntries(tabelaValores.map((v) => [v.chave, Number(v.valor)]));
-
     const itens: ItemOrcamento[] = [];
-
-    // 1) Levantamento topográfico (por hectare)
-    const hectares = data.imovel_area_m2 ? m2ParaHectares(data.imovel_area_m2) : 0;
-    if (hectares > 0) {
-      const v = calcularGeoPorHectare(hectares, {
-        ate_5ha: valByChave.ate_5ha ?? 3600,
-        ate_10ha: valByChave.ate_10ha ?? 5300,
-        ate_25ha: valByChave.ate_25ha ?? 8300,
-      });
-      itens.push({ descricao: "LEVANTAMENTO TOPOGRÁFICO E LOCAÇÃO", valor: v });
-    } else {
-      itens.push({ descricao: "LEVANTAMENTO TOPOGRÁFICO E LOCAÇÃO", valor: valByChave.ate_5ha ?? 3600 });
-    }
-
-    // 2) Registro de Imóveis (faixa pelo valor do imóvel)
-    const valorImovel = data.imovel_valor_avaliado ?? 0;
-    itens.push({ descricao: "REGISTRO DE IMÓVEIS", valor: calcularRegistroImoveis(valorImovel) });
-
-    // 3) Certidões
+    const hectares = area_m2 ? m2ParaHectares(area_m2) : 0;
+    const vTopo = hectares > 0
+      ? calcularGeoPorHectare(hectares, {
+          ate_5ha: valByChave.ate_5ha ?? 3600,
+          ate_10ha: valByChave.ate_10ha ?? 5300,
+          ate_25ha: valByChave.ate_25ha ?? 8300,
+        })
+      : valByChave.ate_5ha ?? 3600;
+    itens.push({ descricao: "LEVANTAMENTO TOPOGRÁFICO E LOCAÇÃO", valor: vTopo });
+    itens.push({ descricao: "REGISTRO DE IMÓVEIS", valor: calcularRegistroImoveis(valor ?? 0) });
     itens.push({ descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", valor: valByChave.certidoes_assinaturas ?? 450 });
-
-    // 4) CCIR / ITR / CAR
     itens.push({ descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", valor: valByChave.atualizacao_ccir ?? 250 });
-
     setData((d) => ({ ...d, itens }));
-    toast.success("Valores calculados automaticamente. Você pode ajustá-los individualmente.");
   }
 
-  function addItem() {
-    setData((d) => ({ ...d, itens: [...d.itens, { descricao: "", valor: 0 }] }));
+  async function interpretarMatricula() {
+    const texto = matriculaTexto.trim();
+    if (texto.length < 30) {
+      toast.error("Cole o texto completo da matrícula");
+      return;
+    }
+    setParsing(true);
+    try {
+      const parsed = await parseFn({ data: { texto } });
+      setData((d) => ({
+        ...d,
+        imovel_matricula: parsed.numero_matricula ?? d.imovel_matricula,
+        imovel_municipio: parsed.municipio ?? d.imovel_municipio,
+        imovel_area_m2: parsed.area_m2 ?? d.imovel_area_m2,
+        imovel_valor_avaliado: parsed.valor_avaliado ?? d.imovel_valor_avaliado,
+        imovel_descricao: parsed.descricao_imovel ?? d.imovel_descricao,
+        proprietarios: parsed.proprietarios.length ? parsed.proprietarios : d.proprietarios,
+        requerente_nome: d.requerente_nome || (parsed.proprietarios[0]?.nome ?? ""),
+        requerente_cpf_cnpj: d.requerente_cpf_cnpj || parsed.proprietarios[0]?.cpf_cnpj,
+      }));
+      // Recalcula com os novos valores
+      setTimeout(() => calcularAutomaticamente(parsed.area_m2, parsed.valor_avaliado), 0);
+      toast.success("Matrícula interpretada. Revise os campos antes de gerar o orçamento.");
+    } catch (e) {
+      toast.error("Erro ao interpretar matrícula", { description: (e as Error).message });
+    } finally {
+      setParsing(false);
+    }
   }
-  function removeItem(idx: number) {
-    setData((d) => ({ ...d, itens: d.itens.filter((_, i) => i !== idx) }));
-  }
+
+  function addItem() { setData((d) => ({ ...d, itens: [...d.itens, { descricao: "", valor: 0 }] })); }
+  function removeItem(idx: number) { setData((d) => ({ ...d, itens: d.itens.filter((_, i) => i !== idx) })); }
   function updateItem(idx: number, patch: Partial<ItemOrcamento>) {
     setData((d) => ({ ...d, itens: d.itens.map((it, i) => i === idx ? { ...it, ...patch } : it) }));
   }
 
-  function addProprietario() { setData((d) => ({ ...d, proprietarios: [...d.proprietarios, { nome: "" }] })); }
-  function updateProprietario(idx: number, patch: Partial<Proprietario>) {
-    setData((d) => ({ ...d, proprietarios: d.proprietarios.map((p, i) => i === idx ? { ...p, ...patch } : p) }));
-  }
-  function removeProprietario(idx: number) {
-    setData((d) => ({ ...d, proprietarios: d.proprietarios.filter((_, i) => i !== idx) }));
-  }
-  function addConfrontante() { setData((d) => ({ ...d, confrontantes: [...d.confrontantes, { nome: "" }] })); }
-  function updateConfrontante(idx: number, patch: Partial<Confrontante>) {
-    setData((d) => ({ ...d, confrontantes: d.confrontantes.map((p, i) => i === idx ? { ...p, ...patch } : p) }));
-  }
-  function removeConfrontante(idx: number) {
-    setData((d) => ({ ...d, confrontantes: d.confrontantes.filter((_, i) => i !== idx) }));
-  }
-
   async function save(status: "rascunho" | "finalizado" = data.status ?? "rascunho"): Promise<OrcamentoData | null> {
     if (!data.requerente_nome.trim()) {
-      toast.error("Informe o nome do requerente");
+      toast.error("Informe o nome do cliente");
       return null;
     }
     setSaving(true);
@@ -125,15 +126,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         requerente_nome: data.requerente_nome,
         requerente_cpf_cnpj: data.requerente_cpf_cnpj || null,
         imovel_descricao: data.imovel_descricao || null,
-        imovel_localizacao: data.imovel_localizacao || null,
         imovel_municipio: data.imovel_municipio || null,
         imovel_area_m2: data.imovel_area_m2 ?? null,
         imovel_matricula: data.imovel_matricula || null,
         imovel_valor_avaliado: data.imovel_valor_avaliado ?? null,
-        imovel_ccir: data.imovel_ccir || null,
-        imovel_car: data.imovel_car || null,
         proprietarios: data.proprietarios,
-        confrontantes: data.confrontantes,
+        confrontantes: [],
         itens: data.itens,
         valor_total: data.valor_total,
         observacoes: data.observacoes || null,
@@ -193,11 +191,31 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="border-primary/40">
         <CardHeader>
-          <CardTitle>Tipo de serviço</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Matrícula</CardTitle>
+          <CardDescription>Cole o texto completo da matrícula. A IA preenche cliente, área, município e valor automaticamente.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
+          <Textarea
+            rows={10}
+            placeholder="Cole aqui o texto completo da matrícula do imóvel..."
+            value={matriculaTexto}
+            onChange={(e) => setMatriculaTexto(e.target.value)}
+            className="font-mono text-sm"
+          />
+          <div className="flex justify-end">
+            <Button onClick={interpretarMatricula} disabled={parsing || !matriculaTexto.trim()}>
+              {parsing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+              Interpretar matrícula
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Tipo de serviço</CardTitle></CardHeader>
+        <CardContent>
           <Select value={data.tipo_servico} onValueChange={(v) => set("tipo_servico", v)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -208,40 +226,24 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Requerente</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Dados do orçamento</CardTitle></CardHeader>
         <CardContent className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <Label>Nome / Razão Social *</Label>
-            <Input value={data.requerente_nome} onChange={(e) => set("requerente_nome", e.target.value)} />
+          <div className="sm:col-span-2">
+            <Label>Cliente *</Label>
+            <Input value={data.requerente_nome} onChange={(e) => set("requerente_nome", e.target.value)} placeholder="Nome do cliente / proprietário" />
           </div>
           <div>
-            <Label>CPF / CNPJ</Label>
+            <Label>CPF / CNPJ do cliente</Label>
             <Input value={data.requerente_cpf_cnpj ?? ""} onChange={(e) => set("requerente_cpf_cnpj", e.target.value)} />
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Imóvel</CardTitle></CardHeader>
-        <CardContent className="grid sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2">
-            <Label>Descrição do imóvel</Label>
-            <Input placeholder='Ex.: Imóvel rural, Lote nº...'
-              value={data.imovel_descricao ?? ""} onChange={(e) => set("imovel_descricao", e.target.value)} />
-          </div>
-          <div className="sm:col-span-2">
-            <Label>Localização</Label>
-            <Input placeholder="Ex.: Linha Castelo Branco"
-              value={data.imovel_localizacao ?? ""} onChange={(e) => set("imovel_localizacao", e.target.value)} />
+          <div>
+            <Label>Matrícula nº</Label>
+            <Input value={data.imovel_matricula ?? ""} onChange={(e) => set("imovel_matricula", e.target.value)} />
           </div>
           <div>
             <Label>Município / UF</Label>
             <Input placeholder="São Miguel do Oeste/SC"
               value={data.imovel_municipio ?? ""} onChange={(e) => set("imovel_municipio", e.target.value)} />
-          </div>
-          <div>
-            <Label>Matrícula</Label>
-            <Input value={data.imovel_matricula ?? ""} onChange={(e) => set("imovel_matricula", e.target.value)} />
           </div>
           <div>
             <Label>Área (m²)</Label>
@@ -252,64 +254,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
               <p className="text-xs text-muted-foreground mt-1">{(data.imovel_area_m2 / 10000).toLocaleString("pt-BR", { maximumFractionDigits: 4 })} ha</p>
             ) : null}
           </div>
-          <div>
-            <Label>Valor avaliado (R$)</Label>
+          <div className="sm:col-span-2">
+            <Label>Valor do imóvel (R$)</Label>
             <Input type="number" step="0.01"
               value={data.imovel_valor_avaliado ?? ""}
               onChange={(e) => set("imovel_valor_avaliado", e.target.value === "" ? undefined : Number(e.target.value))} />
           </div>
-          <div>
-            <Label>CCIR</Label>
-            <Input value={data.imovel_ccir ?? ""} onChange={(e) => set("imovel_ccir", e.target.value)} />
-          </div>
-          <div>
-            <Label>CAR</Label>
-            <Input value={data.imovel_car ?? ""} onChange={(e) => set("imovel_car", e.target.value)} />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center gap-3 flex-wrap">
-            <div>
-              <CardTitle>Proprietários</CardTitle>
-              <CardDescription>Adicione todos os proprietários do imóvel.</CardDescription>
-            </div>
-            <Button size="sm" variant="outline" onClick={addProprietario}><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {data.proprietarios.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum proprietário.</p> : null}
-          {data.proprietarios.map((p, i) => (
-            <div key={i} className="grid sm:grid-cols-[1fr_220px_40px] gap-2">
-              <Input placeholder="Nome" value={p.nome} onChange={(e) => updateProprietario(i, { nome: e.target.value })} />
-              <Input placeholder="CPF/CNPJ" value={p.cpf_cnpj ?? ""} onChange={(e) => updateProprietario(i, { cpf_cnpj: e.target.value })} />
-              <Button size="icon" variant="ghost" onClick={() => removeProprietario(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center gap-3 flex-wrap">
-            <div>
-              <CardTitle>Confrontantes</CardTitle>
-              <CardDescription>Vizinhos confrontantes do imóvel.</CardDescription>
-            </div>
-            <Button size="sm" variant="outline" onClick={addConfrontante}><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {data.confrontantes.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum confrontante.</p> : null}
-          {data.confrontantes.map((c, i) => (
-            <div key={i} className="grid sm:grid-cols-[1fr_220px_40px] gap-2">
-              <Input placeholder="Nome" value={c.nome} onChange={(e) => updateConfrontante(i, { nome: e.target.value })} />
-              <Input placeholder="Lado (Norte, Leste...)" value={c.lado ?? ""} onChange={(e) => updateConfrontante(i, { lado: e.target.value })} />
-              <Button size="icon" variant="ghost" onClick={() => removeConfrontante(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-            </div>
-          ))}
         </CardContent>
       </Card>
 
@@ -317,14 +267,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         <CardHeader>
           <div className="flex justify-between items-start gap-3 flex-wrap">
             <div>
-              <CardTitle>Itens do Orçamento</CardTitle>
-              <CardDescription>
-                Use o cálculo automático para preencher conforme a tabela padrão — depois edite cada valor para aplicar descontos negociados.
-              </CardDescription>
+              <CardTitle>Itens do orçamento</CardTitle>
+              <CardDescription>Calcule conforme tabela padrão e ajuste qualquer valor manualmente para aplicar descontos.</CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="secondary" onClick={calcularAutomaticamente}>
-                <Calculator className="h-4 w-4 mr-1" /> Calcular automaticamente
+              <Button size="sm" variant="secondary" onClick={() => calcularAutomaticamente()}>
+                <Calculator className="h-4 w-4 mr-1" /> Calcular
               </Button>
               <Button size="sm" variant="outline" onClick={addItem}><Plus className="h-4 w-4 mr-1" />Item</Button>
             </div>
@@ -332,7 +280,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         </CardHeader>
         <CardContent className="space-y-2">
           {data.itens.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum item adicionado. Clique em <b>Calcular automaticamente</b> para preencher os valores padrão.</p>
+            <p className="text-sm text-muted-foreground">Nenhum item. Clique em <b>Calcular</b> para preencher com a tabela padrão.</p>
           ) : null}
           {data.itens.map((it, i) => (
             <div key={i} className="grid grid-cols-[1fr_160px_40px] gap-2 items-center">

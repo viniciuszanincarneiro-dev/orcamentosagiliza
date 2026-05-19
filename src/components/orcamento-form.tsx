@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles } from "lucide-react";
+import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { saveAs } from "file-saver";
 
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
-import { TIPOS_SERVICO } from "@/lib/empresa";
+import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO, type TemplateItem } from "@/lib/empresa";
 import { calcularGeoPorHectare, calcularRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
 import { gerarOrcamentoPDF } from "@/lib/gerar-pdf";
 import { gerarOrcamentoDOCX } from "@/lib/gerar-docx";
@@ -25,6 +25,8 @@ type Props = {
   initial?: OrcamentoData;
   onSaved?: (id: string, numero: string) => void;
 };
+
+const ACCEPT_TYPES = "application/pdf,image/png,image/jpeg,image/jpg,image/webp,image/heic";
 
 export function OrcamentoForm({ initial, onSaved }: Props) {
   const [data, setData] = useState<OrcamentoData>(() => initial ?? {
@@ -37,9 +39,11 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     status: "rascunho",
   });
   const [matriculaTexto, setMatriculaTexto] = useState("");
+  const [arquivo, setArquivo] = useState<{ nome: string; mime: string; size: number; base64: string } | null>(null);
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState<"pdf" | "docx" | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parseFn = useServerFn(parseMatricula);
 
@@ -59,34 +63,81 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     if (total !== data.valor_total) setData((d) => ({ ...d, valor_total: total }));
   }, [data.itens]); // eslint-disable-line
 
-  function calcularAutomaticamente(area_m2 = data.imovel_area_m2, valor = data.imovel_valor_avaliado) {
-    if (!tabelaValores) return;
-    const valByChave = Object.fromEntries(tabelaValores.map((v) => [v.chave, Number(v.valor)]));
-    const itens: ItemOrcamento[] = [];
-    const hectares = area_m2 ? m2ParaHectares(area_m2) : 0;
-    const vTopo = hectares > 0
-      ? calcularGeoPorHectare(hectares, {
-          ate_5ha: valByChave.ate_5ha ?? 3600,
-          ate_10ha: valByChave.ate_10ha ?? 5300,
-          ate_25ha: valByChave.ate_25ha ?? 8300,
-        })
-      : valByChave.ate_5ha ?? 3600;
-    itens.push({ descricao: "LEVANTAMENTO TOPOGRÁFICO E LOCAÇÃO", valor: vTopo });
-    itens.push({ descricao: "REGISTRO DE IMÓVEIS", valor: calcularRegistroImoveis(valor ?? 0) });
-    itens.push({ descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", valor: valByChave.certidoes_assinaturas ?? 450 });
-    itens.push({ descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", valor: valByChave.atualizacao_ccir ?? 250 });
+  function calcValorAuto(kind: TemplateItem extends { auto: infer A } ? A : never, area_m2?: number, valor?: number): number {
+    if (!tabelaValores) return 0;
+    const v = Object.fromEntries(tabelaValores.map((x) => [x.chave, Number(x.valor)]));
+    switch (kind) {
+      case "topografia": {
+        const ha = area_m2 ? m2ParaHectares(area_m2) : 0;
+        return ha > 0
+          ? calcularGeoPorHectare(ha, {
+              ate_5ha: v.ate_5ha ?? 3600,
+              ate_10ha: v.ate_10ha ?? 5300,
+              ate_25ha: v.ate_25ha ?? 8300,
+            })
+          : v.ate_5ha ?? 3600;
+      }
+      case "registro": return calcularRegistroImoveis(valor ?? 0);
+      case "certidoes": return v.certidoes_assinaturas ?? 450;
+      case "ccir": return v.atualizacao_ccir ?? 250;
+    }
+  }
+
+  function aplicarTemplate(tipo: string, area_m2 = data.imovel_area_m2, valor = data.imovel_valor_avaliado) {
+    const template = TEMPLATES_ITENS[tipo] ?? [];
+    const itens: ItemOrcamento[] = template.map((t) =>
+      "auto" in t
+        ? { descricao: t.descricao, valor: calcValorAuto(t.auto, area_m2, valor) }
+        : { descricao: t.descricao, valor: t.valor_base }
+    );
     setData((d) => ({ ...d, itens }));
+  }
+
+  async function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const s = String(r.result);
+        const i = s.indexOf(",");
+        resolve(i >= 0 ? s.slice(i + 1) : s);
+      };
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 12 * 1024 * 1024) {
+      toast.error("Arquivo muito grande (máx 12MB)");
+      return;
+    }
+    try {
+      const base64 = await fileToBase64(f);
+      setArquivo({ nome: f.name, mime: f.type || "application/octet-stream", size: f.size, base64 });
+      toast.success(`Arquivo carregado: ${f.name}`);
+    } catch (err) {
+      toast.error("Erro ao ler arquivo", { description: (err as Error).message });
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   }
 
   async function interpretarMatricula() {
     const texto = matriculaTexto.trim();
-    if (texto.length < 30) {
-      toast.error("Cole o texto completo da matrícula");
+    if (!arquivo && texto.length < 30) {
+      toast.error("Cole o texto ou envie um arquivo (PDF/imagem) da matrícula");
       return;
     }
     setParsing(true);
     try {
-      const parsed = await parseFn({ data: { texto } });
+      const parsed = await parseFn({
+        data: {
+          texto: texto || undefined,
+          arquivo: arquivo ? { data_base64: arquivo.base64, mime_type: arquivo.mime, nome: arquivo.nome } : undefined,
+        },
+      });
       setData((d) => ({
         ...d,
         imovel_matricula: parsed.numero_matricula ?? d.imovel_matricula,
@@ -98,8 +149,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         requerente_nome: d.requerente_nome || (parsed.proprietarios[0]?.nome ?? ""),
         requerente_cpf_cnpj: d.requerente_cpf_cnpj || parsed.proprietarios[0]?.cpf_cnpj,
       }));
-      // Recalcula com os novos valores
-      setTimeout(() => calcularAutomaticamente(parsed.area_m2, parsed.valor_avaliado), 0);
+      setTimeout(() => aplicarTemplate(data.tipo_servico, parsed.area_m2, parsed.valor_avaliado), 0);
       toast.success("Matrícula interpretada. Revise os campos antes de gerar o orçamento.");
     } catch (e) {
       toast.error("Erro ao interpretar matrícula", { description: (e as Error).message });
@@ -108,13 +158,19 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     }
   }
 
+  function onTipoServicoChange(tipo: string) {
+    set("tipo_servico", tipo);
+    // Se ainda não há itens (ou estavam vazios), aplica o template do novo tipo
+    if (data.itens.length === 0) aplicarTemplate(tipo);
+  }
+
   function addItem() { setData((d) => ({ ...d, itens: [...d.itens, { descricao: "", valor: 0 }] })); }
   function removeItem(idx: number) { setData((d) => ({ ...d, itens: d.itens.filter((_, i) => i !== idx) })); }
   function updateItem(idx: number, patch: Partial<ItemOrcamento>) {
     setData((d) => ({ ...d, itens: d.itens.map((it, i) => i === idx ? { ...it, ...patch } : it) }));
   }
 
-  async function save(status: "rascunho" | "finalizado" = data.status ?? "rascunho"): Promise<OrcamentoData | null> {
+  async function save(status: string = data.status ?? "rascunho"): Promise<OrcamentoData | null> {
     if (!data.requerente_nome.trim()) {
       toast.error("Informe o nome do cliente");
       return null;
@@ -155,7 +211,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         saved = row as unknown as OrcamentoData;
       }
       setData(saved);
-      toast.success(status === "finalizado" ? "Orçamento finalizado" : "Orçamento salvo");
+      toast.success("Orçamento salvo");
       onSaved?.(saved.id!, saved.numero!);
       return saved;
     } catch (e) {
@@ -193,19 +249,45 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     <div className="space-y-6">
       <Card className="border-primary/40">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Matrícula</CardTitle>
-          <CardDescription>Cole o texto completo da matrícula. A IA preenche cliente, área, município e valor automaticamente.</CardDescription>
+          <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Leitura automática da matrícula</CardTitle>
+          <CardDescription>
+            Envie o PDF/foto da matrícula (scanner, celular ou WhatsApp) <b>ou</b> cole o texto. A IA preenche cliente, área, município e valor automaticamente.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={ACCEPT_TYPES}
+              onChange={onPickFile}
+              className="hidden"
+            />
+            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+              <Upload className="h-4 w-4 mr-2" /> Enviar PDF ou imagem
+            </Button>
+            {arquivo ? (
+              <div className="flex items-center gap-2 text-sm bg-muted px-3 py-1.5 rounded-md">
+                <FileTextIcon className="h-4 w-4 text-primary" />
+                <span className="font-medium">{arquivo.nome}</span>
+                <span className="text-muted-foreground">({(arquivo.size / 1024).toFixed(0)} KB)</span>
+                <button type="button" onClick={() => setArquivo(null)} className="hover:text-destructive" aria-label="Remover">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground">PDF, JPG, PNG, HEIC (até 12MB)</span>
+            )}
+          </div>
           <Textarea
-            rows={10}
-            placeholder="Cole aqui o texto completo da matrícula do imóvel..."
+            rows={6}
+            placeholder="Ou cole aqui o texto completo da matrícula..."
             value={matriculaTexto}
             onChange={(e) => setMatriculaTexto(e.target.value)}
             className="font-mono text-sm"
           />
           <div className="flex justify-end">
-            <Button onClick={interpretarMatricula} disabled={parsing || !matriculaTexto.trim()}>
+            <Button onClick={interpretarMatricula} disabled={parsing || (!arquivo && !matriculaTexto.trim())}>
               {parsing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
               Interpretar matrícula
             </Button>
@@ -214,14 +296,26 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Tipo de serviço</CardTitle></CardHeader>
-        <CardContent>
-          <Select value={data.tipo_servico} onValueChange={(v) => set("tipo_servico", v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {TIPOS_SERVICO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+        <CardHeader><CardTitle>Tipo de serviço e status</CardTitle></CardHeader>
+        <CardContent className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <Label>Tipo de serviço</Label>
+            <Select value={data.tipo_servico} onValueChange={onTipoServicoChange}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {TIPOS_SERVICO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Status</Label>
+            <Select value={data.status ?? "rascunho"} onValueChange={(v) => set("status", v as OrcamentoData["status"])}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {STATUS_ORCAMENTO.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
@@ -268,11 +362,11 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           <div className="flex justify-between items-start gap-3 flex-wrap">
             <div>
               <CardTitle>Itens do orçamento</CardTitle>
-              <CardDescription>Calcule conforme tabela padrão e ajuste qualquer valor manualmente para aplicar descontos.</CardDescription>
+              <CardDescription>Aplique o template do tipo de serviço e ajuste qualquer valor manualmente.</CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="secondary" onClick={() => calcularAutomaticamente()}>
-                <Calculator className="h-4 w-4 mr-1" /> Calcular
+              <Button size="sm" variant="secondary" onClick={() => aplicarTemplate(data.tipo_servico)}>
+                <Calculator className="h-4 w-4 mr-1" /> Aplicar template
               </Button>
               <Button size="sm" variant="outline" onClick={addItem}><Plus className="h-4 w-4 mr-1" />Item</Button>
             </div>
@@ -280,7 +374,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         </CardHeader>
         <CardContent className="space-y-2">
           {data.itens.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum item. Clique em <b>Calcular</b> para preencher com a tabela padrão.</p>
+            <p className="text-sm text-muted-foreground">Nenhum item. Clique em <b>Aplicar template</b> para usar o padrão do tipo de serviço selecionado.</p>
           ) : null}
           {data.itens.map((it, i) => (
             <div key={i} className="grid grid-cols-[1fr_160px_40px] gap-2 items-center">
@@ -308,11 +402,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       </Card>
 
       <div className="flex flex-wrap gap-2 justify-end sticky bottom-0 bg-background/95 backdrop-blur py-3 -mx-4 px-4 border-t">
-        <Button variant="outline" onClick={() => save("rascunho")} disabled={saving}>
-          {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />} Salvar rascunho
-        </Button>
-        <Button variant="secondary" onClick={() => save("finalizado")} disabled={saving}>
-          {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />} Finalizar
+        <Button variant="outline" onClick={() => save()} disabled={saving}>
+          {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />} Salvar
         </Button>
         <Button onClick={downloadPDF} disabled={generating !== null || saving}>
           {generating === "pdf" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <FileDown className="h-4 w-4 mr-1" />} Baixar PDF

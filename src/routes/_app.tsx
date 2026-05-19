@@ -22,6 +22,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/orcamentos/novo", label: "Novo Orçamento", icon: FilePlus2 },
   { to: "/orcamentos", label: "Histórico", icon: History },
+  { to: "/follow-up", label: "Follow-up", icon: AlertTriangle },
   { to: "/valores", label: "Tabela de Valores", icon: Settings },
 ] as const;
 

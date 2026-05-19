@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X } from "lucide-react";
+import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X, AlertTriangle, CheckCircle2, AlertCircle, Eraser, PencilLine } from "lucide-react";
 import { toast } from "sonner";
 import { saveAs } from "file-saver";
 
@@ -12,14 +12,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
 import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO } from "@/lib/empresa";
 import { calcularGeoPorHectare, calcularRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
 import { gerarOrcamentoPDF } from "@/lib/gerar-pdf";
 import { gerarOrcamentoDOCX } from "@/lib/gerar-docx";
-import { parseMatricula } from "@/lib/parse-matricula.functions";
+import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento } from "@/lib/orcamento-types";
+
+type Qualidade = "alta" | "parcial" | "baixa";
+function avaliarQualidade(p: MatriculaParsed): { nivel: Qualidade; preenchidos: number; total: number } {
+  const campos = [
+    !!p.numero_matricula,
+    !!p.municipio,
+    typeof p.area_m2 === "number" && p.area_m2 > 0,
+    typeof p.valor_avaliado === "number" && p.valor_avaliado > 0,
+    p.proprietarios.length > 0,
+  ];
+  const preenchidos = campos.filter(Boolean).length;
+  const nivel: Qualidade = preenchidos >= 4 ? "alta" : preenchidos >= 2 ? "parcial" : "baixa";
+  return { nivel, preenchidos, total: campos.length };
+}
 
 type Props = {
   initial?: OrcamentoData;

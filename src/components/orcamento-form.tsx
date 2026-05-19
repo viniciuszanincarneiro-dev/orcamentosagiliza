@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X } from "lucide-react";
+import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X, AlertTriangle, CheckCircle2, AlertCircle, Eraser, PencilLine } from "lucide-react";
 import { toast } from "sonner";
 import { saveAs } from "file-saver";
 
@@ -12,14 +12,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
 import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO } from "@/lib/empresa";
 import { calcularGeoPorHectare, calcularRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
 import { gerarOrcamentoPDF } from "@/lib/gerar-pdf";
 import { gerarOrcamentoDOCX } from "@/lib/gerar-docx";
-import { parseMatricula } from "@/lib/parse-matricula.functions";
+import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento } from "@/lib/orcamento-types";
+
+type Qualidade = "alta" | "parcial" | "baixa";
+function avaliarQualidade(p: MatriculaParsed): { nivel: Qualidade; preenchidos: number; total: number } {
+  const campos = [
+    !!p.numero_matricula,
+    !!p.municipio,
+    typeof p.area_m2 === "number" && p.area_m2 > 0,
+    typeof p.valor_avaliado === "number" && p.valor_avaliado > 0,
+    p.proprietarios.length > 0,
+  ];
+  const preenchidos = campos.filter(Boolean).length;
+  const nivel: Qualidade = preenchidos >= 4 ? "alta" : preenchidos >= 2 ? "parcial" : "baixa";
+  return { nivel, preenchidos, total: campos.length };
+}
 
 type Props = {
   initial?: OrcamentoData;
@@ -43,6 +59,9 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState<"pdf" | "docx" | null>(null);
+  const [modo, setModo] = useState<"auto" | "manual">("auto");
+  const [ultimaLeitura, setUltimaLeitura] = useState<{ parsed: MatriculaParsed; qualidade: ReturnType<typeof avaliarQualidade> } | null>(null);
+  const [erroLeitura, setErroLeitura] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parseFn = useServerFn(parseMatricula);
@@ -133,6 +152,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       return;
     }
     setParsing(true);
+    setErroLeitura(null);
     try {
       const parsed = await parseFn({
         data: {
@@ -140,6 +160,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           arquivo: arquivo ? { data_base64: arquivo.base64, mime_type: arquivo.mime, nome: arquivo.nome } : undefined,
         },
       });
+      const qualidade = avaliarQualidade(parsed);
+      setUltimaLeitura({ parsed, qualidade });
       setData((d) => ({
         ...d,
         imovel_matricula: parsed.numero_matricula ?? d.imovel_matricula,
@@ -152,12 +174,33 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         requerente_cpf_cnpj: d.requerente_cpf_cnpj || parsed.proprietarios[0]?.cpf_cnpj,
       }));
       setTimeout(() => aplicarTemplate(data.tipo_servico, parsed.area_m2, parsed.valor_avaliado), 0);
-      toast.success("Matrícula interpretada. Revise os campos antes de gerar o orçamento.");
+      if (qualidade.nivel === "alta") toast.success("Leitura confiável. Revise os campos antes de gerar o orçamento.");
+      else if (qualidade.nivel === "parcial") toast.warning("Leitura parcial. Complete os campos faltantes manualmente.");
+      else toast.warning("Leitura ruim. Recomendamos preencher manualmente.");
     } catch (e) {
-      toast.error("Erro ao interpretar matrícula", { description: (e as Error).message });
+      const msg = (e as Error).message ?? "Falha desconhecida";
+      setErroLeitura(msg);
+      toast.error("Não foi possível ler a matrícula automaticamente", {
+        description: "Tente outra foto/arquivo ou use o modo manual.",
+      });
     } finally {
       setParsing(false);
     }
+  }
+
+  function limparExtraidos() {
+    setData((d) => ({
+      ...d,
+      imovel_matricula: undefined,
+      imovel_municipio: undefined,
+      imovel_area_m2: undefined,
+      imovel_valor_avaliado: undefined,
+      imovel_descricao: undefined,
+      proprietarios: [],
+    }));
+    setUltimaLeitura(null);
+    setErroLeitura(null);
+    toast.success("Campos extraídos limpos. Preencha manualmente.");
   }
 
   function onTipoServicoChange(tipo: string) {
@@ -263,53 +306,105 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
   return (
     <div className="space-y-6">
-      <Card className="border-primary/40">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Leitura automática da matrícula</CardTitle>
-          <CardDescription>
-            Envie o PDF/foto da matrícula (scanner, celular ou WhatsApp) <b>ou</b> cole o texto. A IA preenche cliente, área, município e valor automaticamente.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={ACCEPT_TYPES}
-              onChange={onPickFile}
-              className="hidden"
-            />
-            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-              <Upload className="h-4 w-4 mr-2" /> Enviar PDF ou imagem
-            </Button>
-            {arquivo ? (
-              <div className="flex items-center gap-2 text-sm bg-muted px-3 py-1.5 rounded-md">
-                <FileTextIcon className="h-4 w-4 text-primary" />
-                <span className="font-medium">{arquivo.nome}</span>
-                <span className="text-muted-foreground">({(arquivo.size / 1024).toFixed(0)} KB)</span>
-                <button type="button" onClick={() => setArquivo(null)} className="hover:text-destructive" aria-label="Remover">
-                  <X className="h-4 w-4" />
-                </button>
+      <Tabs value={modo} onValueChange={(v) => setModo(v as "auto" | "manual")} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="auto"><Sparkles className="h-4 w-4 mr-2" /> Automático (OCR + IA)</TabsTrigger>
+          <TabsTrigger value="manual"><PencilLine className="h-4 w-4 mr-2" /> Manual</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="auto" className="mt-3">
+          <Card className="border-primary/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Leitura automática da matrícula</CardTitle>
+              <CardDescription>
+                Envie PDF, foto, print ou scanner — mesmo de baixa qualidade. A IA tenta preencher os campos; tudo permanece editável.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <input ref={fileInputRef} type="file" accept={ACCEPT_TYPES} onChange={onPickFile} className="hidden" />
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="h-4 w-4 mr-2" /> Enviar PDF ou imagem
+                </Button>
+                {arquivo ? (
+                  <div className="flex items-center gap-2 text-sm bg-muted px-3 py-1.5 rounded-md">
+                    <FileTextIcon className="h-4 w-4 text-primary" />
+                    <span className="font-medium truncate max-w-[180px]">{arquivo.nome}</span>
+                    <span className="text-muted-foreground">({(arquivo.size / 1024).toFixed(0)} KB)</span>
+                    <button type="button" onClick={() => setArquivo(null)} className="hover:text-destructive" aria-label="Remover">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">PDF, JPG, PNG, HEIC, WEBP (até 12MB)</span>
+                )}
               </div>
-            ) : (
-              <span className="text-xs text-muted-foreground">PDF, JPG, PNG, HEIC (até 12MB)</span>
-            )}
-          </div>
-          <Textarea
-            rows={6}
-            placeholder="Ou cole aqui o texto completo da matrícula..."
-            value={matriculaTexto}
-            onChange={(e) => setMatriculaTexto(e.target.value)}
-            className="font-mono text-sm"
-          />
-          <div className="flex justify-end">
-            <Button onClick={interpretarMatricula} disabled={parsing || (!arquivo && !matriculaTexto.trim())}>
-              {parsing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              Interpretar matrícula
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <Textarea
+                rows={5}
+                placeholder="Ou cole aqui o texto completo da matrícula..."
+                value={matriculaTexto}
+                onChange={(e) => setMatriculaTexto(e.target.value)}
+                className="font-mono text-sm"
+              />
+
+              {ultimaLeitura ? (
+                <div className={
+                  "flex items-center gap-2 rounded-md border px-3 py-2 text-sm " +
+                  (ultimaLeitura.qualidade.nivel === "alta"
+                    ? "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400"
+                    : ultimaLeitura.qualidade.nivel === "parcial"
+                    ? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                    : "border-destructive/40 bg-destructive/10 text-destructive")
+                }>
+                  {ultimaLeitura.qualidade.nivel === "alta" ? <CheckCircle2 className="h-4 w-4" />
+                    : ultimaLeitura.qualidade.nivel === "parcial" ? <AlertCircle className="h-4 w-4" />
+                    : <AlertTriangle className="h-4 w-4" />}
+                  <span className="font-medium">
+                    {ultimaLeitura.qualidade.nivel === "alta" && "Leitura confiável"}
+                    {ultimaLeitura.qualidade.nivel === "parcial" && "Leitura parcial"}
+                    {ultimaLeitura.qualidade.nivel === "baixa" && "Leitura ruim — revise manualmente"}
+                  </span>
+                  <span className="text-xs opacity-80">
+                    ({ultimaLeitura.qualidade.preenchidos}/{ultimaLeitura.qualidade.total} campos extraídos)
+                  </span>
+                </div>
+              ) : null}
+
+              {erroLeitura ? (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Não conseguimos ler a matrícula</AlertTitle>
+                  <AlertDescription>
+                    Tente uma foto mais nítida, outro arquivo, ou troque para o modo <b>Manual</b> e preencha os campos.
+                    <span className="block text-xs opacity-70 mt-1">Detalhe técnico: {erroLeitura}</span>
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
+              <div className="flex flex-wrap gap-2 justify-end">
+                <Button type="button" variant="ghost" onClick={limparExtraidos} disabled={parsing}>
+                  <Eraser className="h-4 w-4 mr-2" /> Limpar dados extraídos
+                </Button>
+                <Button onClick={interpretarMatricula} disabled={parsing || (!arquivo && !matriculaTexto.trim())}>
+                  {parsing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                  Preencher automaticamente
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="manual" className="mt-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><PencilLine className="h-5 w-5 text-primary" /> Preenchimento manual</CardTitle>
+              <CardDescription>
+                Sem upload e sem IA. Preencha os campos do orçamento abaixo normalmente — útil quando você já tem os dados em mãos.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Card>
         <CardHeader><CardTitle>Tipo de serviço e status</CardTitle></CardHeader>

@@ -1,6 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft, Copy, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/_app/orcamentos/$id")({
 
 function EditarPage() {
   const { id } = Route.useParams();
+  const navigate = useNavigate();
   const { data, isLoading, error } = useQuery({
     queryKey: ["orcamento", id],
     queryFn: async () => {
@@ -21,6 +23,23 @@ function EditarPage() {
       return data as unknown as OrcamentoData;
     },
   });
+
+  async function duplicar() {
+    if (!data) return;
+    try {
+      const { data: numero, error: numErr } = await supabase.rpc("gen_orcamento_numero");
+      if (numErr) throw numErr;
+      const { id: _id, numero: _n, created_at: _c, updated_at: _u, created_by: _b, ...rest } =
+        data as unknown as Record<string, unknown>;
+      const insertPayload = { ...rest, numero: numero as string, status: "rascunho" } as never;
+      const { data: novo, error } = await supabase.from("orcamentos").insert(insertPayload).select().single();
+      if (error) throw error;
+      toast.success(`Duplicado: ${(novo as { numero: string }).numero}`);
+      navigate({ to: "/orcamentos/$id", params: { id: (novo as { id: string }).id } });
+    } catch (e) {
+      toast.error("Erro ao duplicar", { description: (e as Error).message });
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -34,6 +53,11 @@ function EditarPage() {
           </h1>
           <p className="text-muted-foreground mt-1">Edite os dados ou gere os documentos novamente.</p>
         </div>
+        {data ? (
+          <Button variant="outline" onClick={duplicar}>
+            <Copy className="h-4 w-4 mr-2" /> Duplicar
+          </Button>
+        ) : null}
       </div>
 
       {isLoading ? (

@@ -51,3 +51,74 @@ export const DESCRICAO_PADRAO: Record<string, string> = {
     "Inclui assessoria documental, elaboração de minuta, coleta de certidões e encaminhamento ao tabelionato.",
   outros: "Serviços conforme descrição abaixo.",
 };
+
+/**
+ * Templates de itens padrão por tipo de serviço.
+ * Itens com `auto: true` são calculados dinamicamente (topografia / registro).
+ * Itens sem `auto` usam um valor base sugerido (editável).
+ */
+export type TemplateItem =
+  | { descricao: string; auto: "topografia" | "registro" | "certidoes" | "ccir" }
+  | { descricao: string; valor_base: number };
+
+export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
+  retificacao_geo: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO E LOCAÇÃO", auto: "topografia" },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", auto: "certidoes" },
+    { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", auto: "ccir" },
+  ],
+  georreferenciamento: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO GEORREFERENCIADO", auto: "topografia" },
+    { descricao: "LOCAÇÃO DE MARCOS E CERTIFICAÇÃO INCRA", valor_base: 1800 },
+    { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", auto: "ccir" },
+  ],
+  levantamento_topografico: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO PLANIALTIMÉTRICO", auto: "topografia" },
+    { descricao: "ELABORAÇÃO DE PLANTA E MEMORIAL DESCRITIVO", valor_base: 800 },
+  ],
+  desmembramento: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },
+    { descricao: "REGISTRO DE IMÓVEIS (DESMEMBRAMENTO)", auto: "registro" },
+    { descricao: "ASSESSORIA DOCUMENTAL E PROTOCOLO MUNICIPAL", valor_base: 1200 },
+  ],
+  remembramento: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO E UNIFICAÇÃO", auto: "topografia" },
+    { descricao: "REGISTRO DE IMÓVEIS (REMEMBRAMENTO)", auto: "registro" },
+    { descricao: "ASSESSORIA DOCUMENTAL", valor_base: 900 },
+  ],
+  usucapiao_extrajudicial: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO E MEMORIAL DESCRITIVO", auto: "topografia" },
+    { descricao: "COLETA DE ASSINATURAS E CERTIDÕES", auto: "certidoes" },
+    { descricao: "ASSESSORIA DOCUMENTAL E ENCAMINHAMENTO AO TABELIONATO", valor_base: 2500 },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+  ],
+  inventario_extrajudicial: [
+    { descricao: "ASSESSORIA DOCUMENTAL E ELABORAÇÃO DA MINUTA", valor_base: 2000 },
+    { descricao: "COLETA DE CERTIDÕES E NEGATIVAS", auto: "certidoes" },
+    { descricao: "ENCAMINHAMENTO AO TABELIONATO", valor_base: 600 },
+  ],
+  outros: [],
+};
+
+export const STATUS_ORCAMENTO = [
+  { value: "rascunho", label: "Rascunho" },
+  { value: "aguardando", label: "Aguardando" },
+  { value: "enviado", label: "Enviado" },
+  { value: "em_andamento", label: "Em andamento" },
+  { value: "aprovado", label: "Aprovado" },
+  { value: "recusado", label: "Recusado" },
+  { value: "finalizado", label: "Finalizado" },
+] as const;
+
+export type StatusOrcamento = (typeof STATUS_ORCAMENTO)[number]["value"];
+
+export const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  rascunho: "secondary",
+  aguardando: "outline",
+  enviado: "outline",
+  em_andamento: "secondary",
+  aprovado: "default",
+  recusado: "destructive",
+  finalizado: "default",
+};

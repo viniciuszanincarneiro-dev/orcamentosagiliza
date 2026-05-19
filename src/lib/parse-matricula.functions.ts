@@ -9,7 +9,8 @@ export type MatriculaParsed = {
   descricao_imovel?: string;
 };
 
-const SYSTEM = `Você é um assistente especialista em interpretar textos de matrículas de registro de imóveis brasileiras.
+const SYSTEM = `Você é um assistente especialista em interpretar matrículas de registro de imóveis brasileiras.
+Você pode receber TEXTO ou IMAGENS/PDF escaneados de matrículas (inclusive fotos tiradas no celular ou via WhatsApp). Faça OCR mental quando necessário.
 Extraia as informações estruturadas e retorne EXCLUSIVAMENTE um JSON válido com este formato:
 {
   "numero_matricula": string | null,
@@ -26,27 +27,50 @@ Regras:
 - Nunca invente dados. Use null quando não encontrar.
 - Responda APENAS o JSON, sem comentários, sem markdown.`;
 
+type Input = {
+  texto?: string;
+  arquivo?: { data_base64: string; mime_type: string; nome?: string };
+};
+
 export const parseMatricula = createServerFn({ method: "POST" })
-  .inputValidator((input: { texto: string }) => {
-    if (!input?.texto || typeof input.texto !== "string") throw new Error("texto obrigatório");
-    if (input.texto.length > 30000) throw new Error("texto muito longo");
+  .inputValidator((input: Input) => {
+    if (!input || (!input.texto && !input.arquivo)) throw new Error("Informe texto ou arquivo");
+    if (input.texto && input.texto.length > 30000) throw new Error("Texto muito longo");
+    if (input.arquivo && input.arquivo.data_base64.length > 18_000_000) throw new Error("Arquivo muito grande (máx ~13MB)");
     return input;
   })
   .handler(async ({ data }): Promise<MatriculaParsed> => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("LOVABLE_API_KEY não configurada");
 
+    const userContent: Array<Record<string, unknown>> = [];
+    if (data.arquivo) {
+      userContent.push({
+        type: "image_url",
+        image_url: { url: `data:${data.arquivo.mime_type};base64,${data.arquivo.data_base64}` },
+      });
+      userContent.push({
+        type: "text",
+        text: data.texto?.trim() || "Extraia os dados da matrícula deste documento.",
+      });
+    } else {
+      userContent.push({ type: "text", text: data.texto! });
+    }
+
+    // Para OCR de imagem/PDF, usar modelo com visão melhor
+    const model = data.arquivo ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
+
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Lovable-API-Key": key,
+        Authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model,
         messages: [
           { role: "system", content: SYSTEM },
-          { role: "user", content: data.texto },
+          { role: "user", content: userContent },
         ],
         response_format: { type: "json_object" },
       }),
@@ -56,7 +80,7 @@ export const parseMatricula = createServerFn({ method: "POST" })
     if (res.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos no workspace.");
     if (!res.ok) {
       const txt = await res.text();
-      throw new Error(`Erro IA (${res.status}): ${txt.slice(0, 200)}`);
+      throw new Error(`Erro IA (${res.status}): ${txt.slice(0, 300)}`);
     }
 
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
@@ -70,10 +94,12 @@ export const parseMatricula = createServerFn({ method: "POST" })
     }
 
     const proprietarios = Array.isArray(parsed.proprietarios)
-      ? (parsed.proprietarios as Array<Record<string, unknown>>).map((p) => ({
-          nome: String(p.nome ?? "").trim(),
-          cpf_cnpj: p.cpf_cnpj ? String(p.cpf_cnpj) : undefined,
-        })).filter((p) => p.nome)
+      ? (parsed.proprietarios as Array<Record<string, unknown>>)
+          .map((p) => ({
+            nome: String(p.nome ?? "").trim(),
+            cpf_cnpj: p.cpf_cnpj ? String(p.cpf_cnpj) : undefined,
+          }))
+          .filter((p) => p.nome)
       : [];
 
     return {

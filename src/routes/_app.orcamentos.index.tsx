@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FilePlus2, FileText, Search, Trash2 } from "lucide-react";
+import { Copy, FilePlus2, FileText, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatBRL, formatDate } from "@/lib/format";
+import { STATUS_ORCAMENTO, STATUS_VARIANTS } from "@/lib/empresa";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/_app/orcamentos/")({
 
 function HistoricoPage() {
   const [busca, setBusca] = useState("");
+  const navigate = useNavigate();
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["orcamentos-lista"],
     queryFn: async () => {
@@ -49,6 +51,31 @@ function HistoricoPage() {
     if (error) return toast.error("Erro ao excluir", { description: error.message });
     toast.success("Orçamento excluído");
     refetch();
+  }
+
+  async function duplicar(id: string) {
+    try {
+      const { data: orig, error } = await supabase.from("orcamentos").select("*").eq("id", id).single();
+      if (error) throw error;
+      const { data: numero, error: numErr } = await supabase.rpc("gen_orcamento_numero");
+      if (numErr) throw numErr;
+      const { id: _id, numero: _n, created_at: _c, updated_at: _u, created_by: _b, ...rest } = orig as Record<string, unknown>;
+      const insertPayload = { ...rest, numero: numero as string, status: "rascunho" } as never;
+      const { data: novo, error: insErr } = await supabase
+        .from("orcamentos")
+        .insert(insertPayload)
+        .select()
+        .single();
+      if (insErr) throw insErr;
+      toast.success(`Orçamento duplicado: ${(novo as { numero: string }).numero}`);
+      navigate({ to: "/orcamentos/$id", params: { id: (novo as { id: string }).id } });
+    } catch (e) {
+      toast.error("Erro ao duplicar", { description: (e as Error).message });
+    }
+  }
+
+  function statusLabel(s: string) {
+    return STATUS_ORCAMENTO.find((x) => x.value === s)?.label ?? s;
   }
 
   return (
@@ -97,7 +124,7 @@ function HistoricoPage() {
                     <TableHead>Data</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
-                    <TableHead className="w-10"></TableHead>
+                    <TableHead className="w-24 text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -112,33 +139,38 @@ function HistoricoPage() {
                       <TableCell>{o.imovel_municipio ?? "—"}</TableCell>
                       <TableCell>{formatDate(o.created_at)}</TableCell>
                       <TableCell>
-                        <Badge variant={o.status === "finalizado" ? "default" : "secondary"}>
-                          {o.status}
+                        <Badge variant={STATUS_VARIANTS[o.status] ?? "secondary"}>
+                          {statusLabel(o.status)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right tabular-nums font-semibold">{formatBRL(o.valor_total)}</TableCell>
-                      <TableCell>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esta ação não pode ser desfeita. O orçamento <b>{o.numero}</b> será removido.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => excluir(o.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => duplicar(o.id)} title="Duplicar">
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" title="Excluir">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação não pode ser desfeita. O orçamento <b>{o.numero}</b> será removido.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => excluir(o.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  Excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

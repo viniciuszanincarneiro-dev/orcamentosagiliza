@@ -63,7 +63,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     if (total !== data.valor_total) setData((d) => ({ ...d, valor_total: total }));
   }, [data.itens]); // eslint-disable-line
 
-  function calcValorAuto(kind: TemplateItem extends { auto: infer A } ? A : never, area_m2?: number, valor?: number): number {
+  type AutoKind = "topografia" | "registro" | "certidoes" | "ccir";
+  function calcValorAuto(kind: AutoKind, area_m2?: number, valor?: number): number {
     if (!tabelaValores) return 0;
     const v = Object.fromEntries(tabelaValores.map((x) => [x.chave, Number(x.valor)]));
     switch (kind) {
@@ -80,6 +81,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       case "registro": return calcularRegistroImoveis(valor ?? 0);
       case "certidoes": return v.certidoes_assinaturas ?? 450;
       case "ccir": return v.atualizacao_ccir ?? 250;
+      default: return 0;
     }
   }
 

@@ -179,10 +179,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     }
     setSaving(true);
     try {
-      const payload = {
+      const agora = new Date().toISOString();
+      const statusMudou = status !== data.status;
+      const payload: Record<string, unknown> = {
         tipo_servico: data.tipo_servico,
         requerente_nome: data.requerente_nome,
         requerente_cpf_cnpj: data.requerente_cpf_cnpj || null,
+        cliente_telefone: data.cliente_telefone || null,
+        cliente_whatsapp: data.cliente_whatsapp || null,
         imovel_descricao: data.imovel_descricao || null,
         imovel_municipio: data.imovel_municipio || null,
         imovel_area_m2: data.imovel_area_m2 ?? null,
@@ -194,7 +198,17 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         valor_total: data.valor_total,
         observacoes: data.observacoes || null,
         status,
+        validade_dias: data.validade_dias ?? 30,
+        ultimo_contato: data.ultimo_contato ?? null,
       };
+      // Marca data de envio automaticamente na primeira vez que vai para "enviado"
+      if (status === "enviado" && !data.data_envio) {
+        payload.data_envio = agora;
+        payload.ultimo_contato = agora;
+      } else {
+        payload.data_envio = data.data_envio ?? null;
+      }
+      if (statusMudou) payload.ultimo_contato = agora;
 
       let saved: OrcamentoData;
       if (data.id) {

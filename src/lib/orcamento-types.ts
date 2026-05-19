@@ -12,6 +12,8 @@ export type OrcamentoData = {
   tipo_servico: string;
   requerente_nome: string;
   requerente_cpf_cnpj?: string;
+  cliente_telefone?: string;
+  cliente_whatsapp?: string;
   imovel_descricao?: string;
   imovel_localizacao?: string;
   imovel_municipio?: string;
@@ -26,5 +28,9 @@ export type OrcamentoData = {
   valor_total: number;
   observacoes?: string;
   status?: string;
+  data_envio?: string | null;
+  ultimo_contato?: string | null;
+  validade_dias?: number | null;
   created_at?: string;
+  updated_at?: string;
 };

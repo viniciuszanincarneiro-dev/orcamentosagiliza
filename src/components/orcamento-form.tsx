@@ -212,7 +212,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
       let saved: OrcamentoData;
       if (data.id) {
-        const { data: row, error } = await supabase.from("orcamentos").update(payload).eq("id", data.id).select().single();
+        const { data: row, error } = await supabase.from("orcamentos").update(payload as never).eq("id", data.id).select().single();
         if (error) throw error;
         saved = row as unknown as OrcamentoData;
       } else {
@@ -220,7 +220,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         if (numErr) throw numErr;
         const { data: row, error } = await supabase
           .from("orcamentos")
-          .insert({ ...payload, numero: numero as string })
+          .insert({ ...payload, numero: numero as string } as never)
           .select()
           .single();
         if (error) throw error;

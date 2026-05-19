@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, Copy, Loader2 } from "lucide-react";
+import { ChevronLeft, Copy, Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { OrcamentoForm } from "@/components/orcamento-form";
+import { whatsappLink } from "@/lib/format";
 import type { OrcamentoData } from "@/lib/orcamento-types";
 
 export const Route = createFileRoute("/_app/orcamentos/$id")({

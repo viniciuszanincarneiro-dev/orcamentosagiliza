@@ -111,15 +111,11 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   doc.setTextColor(...PRETO);
 
   const partes: string[] = [];
-  if (orc.imovel_descricao) partes.push(orc.imovel_descricao);
   if (orc.imovel_area_m2) partes.push(`com área de ${formatNumberBR(orc.imovel_area_m2)} m² (${formatNumberBR(orc.imovel_area_m2 / 10000, 4)} ha)`);
-  if (orc.imovel_localizacao) partes.push(`localizado em ${orc.imovel_localizacao}`);
   if (orc.imovel_municipio) partes.push(`município de ${orc.imovel_municipio}`);
   if (orc.imovel_matricula) partes.push(`matrícula nº ${orc.imovel_matricula}`);
   if (orc.imovel_valor_avaliado) partes.push(`imóvel avaliado em ${formatBRL(orc.imovel_valor_avaliado)}`);
-  if (orc.imovel_ccir) partes.push(`CCIR: ${orc.imovel_ccir}`);
-  if (orc.imovel_car) partes.push(`CAR: ${orc.imovel_car}`);
-  const objText = `O presente orçamento refere-se à prestação de serviço de ${titulo.toLowerCase()}, referente ao imóvel: ${partes.join(", ")}.`;
+  const objText = `O presente orçamento refere-se à prestação de serviço de ${titulo.toLowerCase()}, referente ao imóvel ${partes.join(", ")}.`;
   const objLines = doc.splitTextToSize(objText, W - 2 * M);
   doc.text(objLines, M, y);
   y += objLines.length * 12 + 14;
@@ -137,21 +133,6 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
       y += 12;
     });
     y += 4;
-  }
-
-  // Confrontantes
-  if (orc.confrontantes?.length) {
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...VERDE);
-    doc.text("CONFRONTANTES", M, y);
-    y += 12;
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...PRETO);
-    orc.confrontantes.forEach((c) => {
-      doc.text(`• ${c.nome}${c.lado ? ` (${c.lado})` : ""}`, M + 6, y);
-      y += 12;
-    });
-    y += 6;
   }
 
   // Descrição

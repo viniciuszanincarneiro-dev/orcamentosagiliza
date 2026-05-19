@@ -347,6 +347,22 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             <Input value={data.requerente_cpf_cnpj ?? ""} onChange={(e) => set("requerente_cpf_cnpj", e.target.value)} />
           </div>
           <div>
+            <Label>Telefone</Label>
+            <Input placeholder="(49) 9 9999-9999"
+              value={data.cliente_telefone ?? ""} onChange={(e) => set("cliente_telefone", e.target.value)} />
+          </div>
+          <div>
+            <Label>WhatsApp</Label>
+            <Input placeholder="(49) 9 9999-9999"
+              value={data.cliente_whatsapp ?? ""} onChange={(e) => set("cliente_whatsapp", e.target.value)} />
+          </div>
+          <div>
+            <Label>Validade do orçamento (dias)</Label>
+            <Input type="number" min={1} max={365}
+              value={data.validade_dias ?? 30}
+              onChange={(e) => set("validade_dias", e.target.value === "" ? undefined : Number(e.target.value))} />
+          </div>
+          <div>
             <Label>Matrícula nº</Label>
             <Input value={data.imovel_matricula ?? ""} onChange={(e) => set("imovel_matricula", e.target.value)} />
           </div>

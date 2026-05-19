@@ -25,6 +25,6 @@ export type OrcamentoData = {
   itens: ItemOrcamento[];
   valor_total: number;
   observacoes?: string;
-  status?: "rascunho" | "finalizado";
+  status?: string;
   created_at?: string;
 };

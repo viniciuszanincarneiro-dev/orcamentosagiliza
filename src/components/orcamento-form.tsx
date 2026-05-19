@@ -152,6 +152,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       return;
     }
     setParsing(true);
+    setErroLeitura(null);
     try {
       const parsed = await parseFn({
         data: {
@@ -159,6 +160,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           arquivo: arquivo ? { data_base64: arquivo.base64, mime_type: arquivo.mime, nome: arquivo.nome } : undefined,
         },
       });
+      const qualidade = avaliarQualidade(parsed);
+      setUltimaLeitura({ parsed, qualidade });
       setData((d) => ({
         ...d,
         imovel_matricula: parsed.numero_matricula ?? d.imovel_matricula,
@@ -171,12 +174,33 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         requerente_cpf_cnpj: d.requerente_cpf_cnpj || parsed.proprietarios[0]?.cpf_cnpj,
       }));
       setTimeout(() => aplicarTemplate(data.tipo_servico, parsed.area_m2, parsed.valor_avaliado), 0);
-      toast.success("Matrícula interpretada. Revise os campos antes de gerar o orçamento.");
+      if (qualidade.nivel === "alta") toast.success("Leitura confiável. Revise os campos antes de gerar o orçamento.");
+      else if (qualidade.nivel === "parcial") toast.warning("Leitura parcial. Complete os campos faltantes manualmente.");
+      else toast.warning("Leitura ruim. Recomendamos preencher manualmente.");
     } catch (e) {
-      toast.error("Erro ao interpretar matrícula", { description: (e as Error).message });
+      const msg = (e as Error).message ?? "Falha desconhecida";
+      setErroLeitura(msg);
+      toast.error("Não foi possível ler a matrícula automaticamente", {
+        description: "Tente outra foto/arquivo ou use o modo manual.",
+      });
     } finally {
       setParsing(false);
     }
+  }
+
+  function limparExtraidos() {
+    setData((d) => ({
+      ...d,
+      imovel_matricula: undefined,
+      imovel_municipio: undefined,
+      imovel_area_m2: undefined,
+      imovel_valor_avaliado: undefined,
+      imovel_descricao: undefined,
+      proprietarios: [],
+    }));
+    setUltimaLeitura(null);
+    setErroLeitura(null);
+    toast.success("Campos extraídos limpos. Preencha manualmente.");
   }
 
   function onTipoServicoChange(tipo: string) {

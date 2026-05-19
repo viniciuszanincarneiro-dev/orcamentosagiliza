@@ -60,9 +60,10 @@ function HistoricoPage() {
       const { data: numero, error: numErr } = await supabase.rpc("gen_orcamento_numero");
       if (numErr) throw numErr;
       const { id: _id, numero: _n, created_at: _c, updated_at: _u, created_by: _b, ...rest } = orig as Record<string, unknown>;
+      const insertPayload = { ...rest, numero: numero as string, status: "rascunho" } as never;
       const { data: novo, error: insErr } = await supabase
         .from("orcamentos")
-        .insert({ ...(rest as object), numero: numero as string, status: "rascunho" })
+        .insert(insertPayload)
         .select()
         .single();
       if (insErr) throw insErr;

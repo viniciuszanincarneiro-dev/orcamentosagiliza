@@ -109,7 +109,6 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
         P({ text: `O presente orçamento refere-se à prestação de serviço de ${titulo.toLowerCase()}, referente ao imóvel: ${partes.join(", ")}.`, spacing: 200 }),
 
         ...proprietariosBlock,
-        ...confrontantesBlock,
 
         P({ text: "DESCRIÇÃO DOS SERVIÇOS", bold: true, color: VERDE, size: 24 }),
         P({ text: DESCRICAO_PADRAO[orc.tipo_servico] ?? "", spacing: 240 }),

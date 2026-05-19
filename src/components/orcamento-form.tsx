@@ -59,6 +59,9 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState<"pdf" | "docx" | null>(null);
+  const [modo, setModo] = useState<"auto" | "manual">("auto");
+  const [ultimaLeitura, setUltimaLeitura] = useState<{ parsed: MatriculaParsed; qualidade: ReturnType<typeof avaliarQualidade> } | null>(null);
+  const [erroLeitura, setErroLeitura] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parseFn = useServerFn(parseMatricula);

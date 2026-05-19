@@ -16,9 +16,12 @@ export type Database = {
     Tables: {
       orcamentos: {
         Row: {
+          cliente_telefone: string | null
+          cliente_whatsapp: string | null
           confrontantes: Json | null
           created_at: string
           created_by: string | null
+          data_envio: string | null
           id: string
           imovel_area_m2: number | null
           imovel_car: string | null
@@ -36,13 +39,18 @@ export type Database = {
           requerente_nome: string
           status: string
           tipo_servico: string
+          ultimo_contato: string | null
           updated_at: string
+          validade_dias: number | null
           valor_total: number
         }
         Insert: {
+          cliente_telefone?: string | null
+          cliente_whatsapp?: string | null
           confrontantes?: Json | null
           created_at?: string
           created_by?: string | null
+          data_envio?: string | null
           id?: string
           imovel_area_m2?: number | null
           imovel_car?: string | null
@@ -60,13 +68,18 @@ export type Database = {
           requerente_nome: string
           status?: string
           tipo_servico?: string
+          ultimo_contato?: string | null
           updated_at?: string
+          validade_dias?: number | null
           valor_total?: number
         }
         Update: {
+          cliente_telefone?: string | null
+          cliente_whatsapp?: string | null
           confrontantes?: Json | null
           created_at?: string
           created_by?: string | null
+          data_envio?: string | null
           id?: string
           imovel_area_m2?: number | null
           imovel_car?: string | null
@@ -84,7 +97,9 @@ export type Database = {
           requerente_nome?: string
           status?: string
           tipo_servico?: string
+          ultimo_contato?: string | null
           updated_at?: string
+          validade_dias?: number | null
           valor_total?: number
         }
         Relationships: []

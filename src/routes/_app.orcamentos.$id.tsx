@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, Copy, Loader2 } from "lucide-react";
+import { ChevronLeft, Copy, Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { OrcamentoForm } from "@/components/orcamento-form";
+import { whatsappLink } from "@/lib/format";
 import type { OrcamentoData } from "@/lib/orcamento-types";
 
 export const Route = createFileRoute("/_app/orcamentos/$id")({
@@ -54,9 +55,26 @@ function EditarPage() {
           <p className="text-muted-foreground mt-1">Edite os dados ou gere os documentos novamente.</p>
         </div>
         {data ? (
-          <Button variant="outline" onClick={duplicar}>
-            <Copy className="h-4 w-4 mr-2" /> Duplicar
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="text-emerald-600 hover:text-emerald-700"
+              onClick={() => {
+                const link = whatsappLink(
+                  data.cliente_whatsapp || data.cliente_telefone,
+                  `Olá ${data.requerente_nome}, tudo bem? Aqui é da AGILIZA, sobre o orçamento ${data.numero}.`
+                );
+                if (!link) return toast.error("Cliente sem telefone/WhatsApp cadastrado");
+                supabase.from("orcamentos").update({ ultimo_contato: new Date().toISOString() } as never).eq("id", data.id!).then(() => {});
+                window.open(link, "_blank", "noopener");
+              }}
+            >
+              <MessageCircle className="h-4 w-4 mr-2" /> Chamar no WhatsApp
+            </Button>
+            <Button variant="outline" onClick={duplicar}>
+              <Copy className="h-4 w-4 mr-2" /> Duplicar
+            </Button>
+          </div>
         ) : null}
       </div>
 

@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect, Link, useRouter, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, FilePlus2, History, Settings, LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, FilePlus2, History, Settings, LogOut, Menu, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +22,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/orcamentos/novo", label: "Novo Orçamento", icon: FilePlus2 },
   { to: "/orcamentos", label: "Histórico", icon: History },
+  { to: "/follow-up", label: "Follow-up", icon: AlertTriangle },
   { to: "/valores", label: "Tabela de Valores", icon: Settings },
 ] as const;
 

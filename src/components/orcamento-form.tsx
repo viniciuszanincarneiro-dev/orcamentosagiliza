@@ -179,10 +179,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     }
     setSaving(true);
     try {
-      const payload = {
+      const agora = new Date().toISOString();
+      const statusMudou = status !== data.status;
+      const payload: Record<string, unknown> = {
         tipo_servico: data.tipo_servico,
         requerente_nome: data.requerente_nome,
         requerente_cpf_cnpj: data.requerente_cpf_cnpj || null,
+        cliente_telefone: data.cliente_telefone || null,
+        cliente_whatsapp: data.cliente_whatsapp || null,
         imovel_descricao: data.imovel_descricao || null,
         imovel_municipio: data.imovel_municipio || null,
         imovel_area_m2: data.imovel_area_m2 ?? null,
@@ -194,11 +198,21 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         valor_total: data.valor_total,
         observacoes: data.observacoes || null,
         status,
+        validade_dias: data.validade_dias ?? 30,
+        ultimo_contato: data.ultimo_contato ?? null,
       };
+      // Marca data de envio automaticamente na primeira vez que vai para "enviado"
+      if (status === "enviado" && !data.data_envio) {
+        payload.data_envio = agora;
+        payload.ultimo_contato = agora;
+      } else {
+        payload.data_envio = data.data_envio ?? null;
+      }
+      if (statusMudou) payload.ultimo_contato = agora;
 
       let saved: OrcamentoData;
       if (data.id) {
-        const { data: row, error } = await supabase.from("orcamentos").update(payload).eq("id", data.id).select().single();
+        const { data: row, error } = await supabase.from("orcamentos").update(payload as never).eq("id", data.id).select().single();
         if (error) throw error;
         saved = row as unknown as OrcamentoData;
       } else {
@@ -206,7 +220,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         if (numErr) throw numErr;
         const { data: row, error } = await supabase
           .from("orcamentos")
-          .insert({ ...payload, numero: numero as string })
+          .insert({ ...payload, numero: numero as string } as never)
           .select()
           .single();
         if (error) throw error;
@@ -331,6 +345,22 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           <div>
             <Label>CPF / CNPJ do cliente</Label>
             <Input value={data.requerente_cpf_cnpj ?? ""} onChange={(e) => set("requerente_cpf_cnpj", e.target.value)} />
+          </div>
+          <div>
+            <Label>Telefone</Label>
+            <Input placeholder="(49) 9 9999-9999"
+              value={data.cliente_telefone ?? ""} onChange={(e) => set("cliente_telefone", e.target.value)} />
+          </div>
+          <div>
+            <Label>WhatsApp</Label>
+            <Input placeholder="(49) 9 9999-9999"
+              value={data.cliente_whatsapp ?? ""} onChange={(e) => set("cliente_whatsapp", e.target.value)} />
+          </div>
+          <div>
+            <Label>Validade do orçamento (dias)</Label>
+            <Input type="number" min={1} max={365}
+              value={data.validade_dias ?? 30}
+              onChange={(e) => set("validade_dias", e.target.value === "" ? undefined : Number(e.target.value))} />
           </div>
           <div>
             <Label>Matrícula nº</Label>

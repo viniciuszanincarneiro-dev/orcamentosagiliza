@@ -144,7 +144,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       if (data.id) {
         const { data: row, error } = await supabase.from("orcamentos").update(payload).eq("id", data.id).select().single();
         if (error) throw error;
-        saved = row as OrcamentoData;
+        saved = row as unknown as OrcamentoData;
       } else {
         const { data: numero, error: numErr } = await supabase.rpc("gen_orcamento_numero");
         if (numErr) throw numErr;
@@ -154,7 +154,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           .select()
           .single();
         if (error) throw error;
-        saved = row as OrcamentoData;
+        saved = row as unknown as OrcamentoData;
       }
       setData(saved);
       toast.success(status === "finalizado" ? "Orçamento finalizado" : "Orçamento salvo");

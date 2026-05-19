@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
-import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO, type TemplateItem } from "@/lib/empresa";
+import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO } from "@/lib/empresa";
 import { calcularGeoPorHectare, calcularRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
 import { gerarOrcamentoPDF } from "@/lib/gerar-pdf";
 import { gerarOrcamentoDOCX } from "@/lib/gerar-docx";

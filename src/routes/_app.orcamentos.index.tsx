@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_app/orcamentos/")({
 
 function HistoricoPage() {
   const [busca, setBusca] = useState("");
+  const navigate = useNavigate();
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["orcamentos-lista"],
     queryFn: async () => {
@@ -50,6 +51,30 @@ function HistoricoPage() {
     if (error) return toast.error("Erro ao excluir", { description: error.message });
     toast.success("Orçamento excluído");
     refetch();
+  }
+
+  async function duplicar(id: string) {
+    try {
+      const { data: orig, error } = await supabase.from("orcamentos").select("*").eq("id", id).single();
+      if (error) throw error;
+      const { data: numero, error: numErr } = await supabase.rpc("gen_orcamento_numero");
+      if (numErr) throw numErr;
+      const { id: _id, numero: _n, created_at: _c, updated_at: _u, created_by: _b, ...rest } = orig as Record<string, unknown>;
+      const { data: novo, error: insErr } = await supabase
+        .from("orcamentos")
+        .insert({ ...(rest as object), numero: numero as string, status: "rascunho" })
+        .select()
+        .single();
+      if (insErr) throw insErr;
+      toast.success(`Orçamento duplicado: ${(novo as { numero: string }).numero}`);
+      navigate({ to: "/orcamentos/$id", params: { id: (novo as { id: string }).id } });
+    } catch (e) {
+      toast.error("Erro ao duplicar", { description: (e as Error).message });
+    }
+  }
+
+  function statusLabel(s: string) {
+    return STATUS_ORCAMENTO.find((x) => x.value === s)?.label ?? s;
   }
 
   return (

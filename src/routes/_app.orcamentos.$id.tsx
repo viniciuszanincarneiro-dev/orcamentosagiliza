@@ -18,7 +18,7 @@ function EditarPage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("orcamentos").select("*").eq("id", id).single();
       if (error) throw error;
-      return data as OrcamentoData;
+      return data as unknown as OrcamentoData;
     },
   });
 

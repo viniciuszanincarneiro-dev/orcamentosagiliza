@@ -14,13 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orcamentos: {
+        Row: {
+          confrontantes: Json | null
+          created_at: string
+          created_by: string | null
+          id: string
+          imovel_area_m2: number | null
+          imovel_car: string | null
+          imovel_ccir: string | null
+          imovel_descricao: string | null
+          imovel_localizacao: string | null
+          imovel_matricula: string | null
+          imovel_municipio: string | null
+          imovel_valor_avaliado: number | null
+          itens: Json
+          numero: string
+          observacoes: string | null
+          proprietarios: Json | null
+          requerente_cpf_cnpj: string | null
+          requerente_nome: string
+          status: string
+          tipo_servico: string
+          updated_at: string
+          valor_total: number
+        }
+        Insert: {
+          confrontantes?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          imovel_area_m2?: number | null
+          imovel_car?: string | null
+          imovel_ccir?: string | null
+          imovel_descricao?: string | null
+          imovel_localizacao?: string | null
+          imovel_matricula?: string | null
+          imovel_municipio?: string | null
+          imovel_valor_avaliado?: number | null
+          itens?: Json
+          numero: string
+          observacoes?: string | null
+          proprietarios?: Json | null
+          requerente_cpf_cnpj?: string | null
+          requerente_nome: string
+          status?: string
+          tipo_servico?: string
+          updated_at?: string
+          valor_total?: number
+        }
+        Update: {
+          confrontantes?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          imovel_area_m2?: number | null
+          imovel_car?: string | null
+          imovel_ccir?: string | null
+          imovel_descricao?: string | null
+          imovel_localizacao?: string | null
+          imovel_matricula?: string | null
+          imovel_municipio?: string | null
+          imovel_valor_avaliado?: number | null
+          itens?: Json
+          numero?: string
+          observacoes?: string | null
+          proprietarios?: Json | null
+          requerente_cpf_cnpj?: string | null
+          requerente_nome?: string
+          status?: string
+          tipo_servico?: string
+          updated_at?: string
+          valor_total?: number
+        }
+        Relationships: []
+      }
+      tabela_valores: {
+        Row: {
+          categoria: string
+          chave: string
+          created_at: string
+          descricao: string
+          id: string
+          ordem: number
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          categoria: string
+          chave: string
+          created_at?: string
+          descricao: string
+          id?: string
+          ordem?: number
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          chave?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          ordem?: number
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      gen_orcamento_numero: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

@@ -18,15 +18,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+      if (!active) return;
       setSession(s);
       setLoading(false);
     });
     supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
       setSession(data.session);
       setLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setSession(null);
+      setLoading(false);
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const value: AuthCtx = {
@@ -34,7 +45,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     loading,
     async signIn(email, password) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (data.session) setSession(data.session);
       return { error: error?.message ?? null };
     },
     async signUp(email, password) {
@@ -47,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     async signOut() {
       await supabase.auth.signOut();
+      setSession(null);
     },
   };
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X, AlertTriangle, CheckCircle2, AlertCircle, Eraser, PencilLine } from "lucide-react";
@@ -76,11 +76,6 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   });
 
   const set = <K extends keyof OrcamentoData>(k: K, v: OrcamentoData[K]) => setData((d) => ({ ...d, [k]: v }));
-
-  useEffect(() => {
-    const total = data.itens.reduce((s, i) => s + (Number(i.valor) || 0), 0);
-    if (total !== data.valor_total) setData((d) => ({ ...d, valor_total: total }));
-  }, [data.itens]); // eslint-disable-line
 
   type AutoKind = "topografia" | "registro" | "certidoes" | "ccir";
   function calcValorAuto(kind: AutoKind, area_m2?: number, valor?: number): number {
@@ -173,7 +168,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         requerente_nome: d.requerente_nome || (parsed.proprietarios[0]?.nome ?? ""),
         requerente_cpf_cnpj: d.requerente_cpf_cnpj || parsed.proprietarios[0]?.cpf_cnpj,
       }));
-      setTimeout(() => aplicarTemplate(data.tipo_servico, parsed.area_m2, parsed.valor_avaliado), 0);
+      aplicarTemplate(data.tipo_servico, parsed.area_m2, parsed.valor_avaliado);
       if (qualidade.nivel === "alta") toast.success("Leitura confiável. Revise os campos antes de gerar o orçamento.");
       else if (qualidade.nivel === "parcial") toast.warning("Leitura parcial. Complete os campos faltantes manualmente.");
       else toast.warning("Leitura ruim. Recomendamos preencher manualmente.");
@@ -224,6 +219,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     try {
       const agora = new Date().toISOString();
       const statusMudou = status !== data.status;
+      const totalAtual = data.itens.reduce((s, i) => s + (Number(i.valor) || 0), 0);
       const payload: Record<string, unknown> = {
         tipo_servico: data.tipo_servico,
         requerente_nome: data.requerente_nome,
@@ -238,7 +234,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         proprietarios: data.proprietarios,
         confrontantes: [],
         itens: data.itens,
-        valor_total: data.valor_total,
+        valor_total: totalAtual,
         observacoes: data.observacoes || null,
         status,
         validade_dias: data.validade_dias ?? 30,
@@ -269,7 +265,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         if (error) throw error;
         saved = row as unknown as OrcamentoData;
       }
-      setData(saved);
+      setData({ ...saved, valor_total: Number(saved.valor_total ?? totalAtual) });
       toast.success("Orçamento salvo");
       onSaved?.(saved.id!, saved.numero!);
       return saved;
@@ -284,7 +280,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   async function downloadPDF() {
     setGenerating("pdf");
     try {
-      const cur = data.id ? data : (await save()) ?? data;
+      const cur = data.id ? { ...data, valor_total: total } : (await save()) ?? { ...data, valor_total: total };
       const blob = await gerarOrcamentoPDF(cur);
       saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.pdf`);
     } catch (e) {
@@ -294,7 +290,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   async function downloadDOCX() {
     setGenerating("docx");
     try {
-      const cur = data.id ? data : (await save()) ?? data;
+      const cur = data.id ? { ...data, valor_total: total } : (await save()) ?? { ...data, valor_total: total };
       const blob = await gerarOrcamentoDOCX(cur);
       saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.docx`);
     } catch (e) {
@@ -504,7 +500,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             <p className="text-sm text-muted-foreground">Nenhum item. Clique em <b>Aplicar template</b> para usar o padrão do tipo de serviço selecionado.</p>
           ) : null}
           {data.itens.map((it, i) => (
-            <div key={i} className="grid grid-cols-[1fr_160px_40px] gap-2 items-center">
+            <div key={i} className="grid gap-2 items-center sm:grid-cols-[1fr_160px_40px]">
               <Input value={it.descricao} onChange={(e) => updateItem(i, { descricao: e.target.value })} placeholder="Descrição do serviço" />
               <Input type="number" step="0.01" className="text-right tabular-nums"
                 value={it.valor} onChange={(e) => updateItem(i, { valor: Number(e.target.value) || 0 })} />

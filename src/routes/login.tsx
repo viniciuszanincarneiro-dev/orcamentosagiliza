@@ -15,8 +15,9 @@ import logo from "@/assets/agiliza-logo.png";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: "/dashboard" });
+    if (typeof window === "undefined") return;
+    const { data, error } = await supabase.auth.getUser();
+    if (!error && data.user) throw redirect({ to: "/dashboard" });
   },
   component: LoginPage,
 });
@@ -32,8 +33,10 @@ function LoginPage() {
     e.preventDefault();
     setLoading(true);
     const { error } = await signIn(email, password);
-    setLoading(false);
-    if (error) return toast.error("Erro ao entrar", { description: error });
+    if (error) {
+      setLoading(false);
+      return toast.error("Erro ao entrar", { description: error });
+    }
     toast.success("Bem-vindo!");
     navigate({ to: "/dashboard" });
   }
@@ -72,7 +75,7 @@ function LoginPage() {
                   <Field id="signin-email" label="E-mail" value={email} setValue={setEmail} type="email" />
                   <Field id="signin-pass" label="Senha" value={password} setValue={setPassword} type="password" />
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Entrar
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {loading ? "Entrando…" : "Entrar"}
                   </Button>
                 </form>
               </TabsContent>
@@ -81,7 +84,7 @@ function LoginPage() {
                   <Field id="signup-email" label="E-mail" value={email} setValue={setEmail} type="email" />
                   <Field id="signup-pass" label="Senha (mín. 6)" value={password} setValue={setPassword} type="password" />
                   <Button type="submit" variant="secondary" className="w-full" disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Criar conta
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} {loading ? "Criando…" : "Criar conta"}
                   </Button>
                 </form>
               </TabsContent>

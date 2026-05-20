@@ -280,7 +280,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   async function downloadPDF() {
     setGenerating("pdf");
     try {
-      const cur = data.id ? data : (await save()) ?? data;
+      const cur = data.id ? { ...data, valor_total: total } : (await save()) ?? { ...data, valor_total: total };
       const blob = await gerarOrcamentoPDF(cur);
       saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.pdf`);
     } catch (e) {
@@ -290,7 +290,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   async function downloadDOCX() {
     setGenerating("docx");
     try {
-      const cur = data.id ? data : (await save()) ?? data;
+      const cur = data.id ? { ...data, valor_total: total } : (await save()) ?? { ...data, valor_total: total };
       const blob = await gerarOrcamentoDOCX(cur);
       saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.docx`);
     } catch (e) {
@@ -500,7 +500,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             <p className="text-sm text-muted-foreground">Nenhum item. Clique em <b>Aplicar template</b> para usar o padrão do tipo de serviço selecionado.</p>
           ) : null}
           {data.itens.map((it, i) => (
-            <div key={i} className="grid grid-cols-[1fr_160px_40px] gap-2 items-center">
+            <div key={i} className="grid gap-2 items-center sm:grid-cols-[1fr_160px_40px]">
               <Input value={it.descricao} onChange={(e) => updateItem(i, { descricao: e.target.value })} placeholder="Descrição do serviço" />
               <Input type="number" step="0.01" className="text-right tabular-nums"
                 value={it.valor} onChange={(e) => updateItem(i, { valor: Number(e.target.value) || 0 })} />

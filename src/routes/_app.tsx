@@ -12,8 +12,8 @@ import logo from "@/assets/agiliza-logo.png";
 
 export const Route = createFileRoute("/_app")({
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) throw redirect({ to: "/login" });
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/login" });
   },
   component: AppLayout,
 });
@@ -58,7 +58,7 @@ function AppLayout() {
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-card border-b border-border h-14 flex items-center justify-end px-4 lg:px-8 gap-3">
+        <header className="bg-card border-b border-border min-h-14 flex items-center justify-end px-4 lg:px-8 gap-3 pl-16 lg:pl-8">
           <span className="text-sm text-muted-foreground hidden sm:inline">{user?.email}</span>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" /> Sair
@@ -78,7 +78,7 @@ function SidebarContent({ onNavigate }: { onNavigate: () => void }) {
     <>
       <div className="p-5 border-b border-sidebar-border bg-white/5">
         <div className="flex items-center gap-3">
-          <div className="bg-white rounded-md p-1.5">
+          <div className="bg-card rounded-md p-1.5">
             <img src={logo} alt="AGILIZA" className="h-9 w-9 object-contain" />
           </div>
           <div className="min-w-0">

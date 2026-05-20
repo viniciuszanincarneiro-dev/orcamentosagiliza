@@ -15,6 +15,7 @@ import logo from "@/assets/agiliza-logo.png";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
+    if (typeof window === "undefined") return;
     const { data, error } = await supabase.auth.getUser();
     if (!error && data.user) throw redirect({ to: "/dashboard" });
   },

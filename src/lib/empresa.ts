@@ -14,6 +14,7 @@ export const EMPRESA = {
 
 export const TIPOS_SERVICO = [
   { value: "retificacao_geo", label: "Retificação Administrativa com Georreferenciamento" },
+  { value: "retificacao_urbana", label: "Retificação Administrativa Urbana" },
   { value: "georreferenciamento", label: "Georreferenciamento Certificado pelo INCRA" },
   { value: "levantamento_topografico", label: "Levantamento Topográfico" },
   { value: "desmembramento", label: "Desmembramento" },
@@ -25,6 +26,7 @@ export const TIPOS_SERVICO = [
 
 export const TIPO_TITULOS: Record<string, string> = {
   retificacao_geo: "RETIFICAÇÃO ADMINISTRATIVA COM GEORREFERENCIAMENTO CERTIFICADO PELO INCRA",
+  retificacao_urbana: "RETIFICAÇÃO ADMINISTRATIVA DE IMÓVEL URBANO",
   georreferenciamento: "GEORREFERENCIAMENTO CERTIFICADO PELO INCRA",
   levantamento_topografico: "LEVANTAMENTO TOPOGRÁFICO",
   desmembramento: "DESMEMBRAMENTO DE IMÓVEL",
@@ -49,6 +51,8 @@ export const DESCRICAO_PADRAO: Record<string, string> = {
     "Inclui levantamento topográfico, elaboração de memorial descritivo, coleta de assinaturas de confrontantes, assessoria documental e encaminhamento ao tabelionato e Registro de Imóveis.",
   inventario_extrajudicial:
     "Inclui assessoria documental, elaboração de minuta, coleta de certidões e encaminhamento ao tabelionato.",
+  retificacao_urbana:
+    "Retificação administrativa de imóvel urbano: assessoria documental completa (memorial descritivo, planta, requerimento), coleta de certidões e assinaturas, e encaminhamento ao Registro de Imóveis. Modelo simplificado, sem georreferenciamento.",
   outros: "Serviços conforme descrição abaixo.",
 };
 
@@ -67,6 +71,11 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
     { descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", auto: "certidoes" },
     { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", auto: "ccir" },
+  ],
+  retificacao_urbana: [
+    { descricao: "SERVIÇO PRESTADO (ASSESSORIA DOCUMENTAL)", valor_base: 1500 },
+    { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", valor_base: 420 },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
   ],
   georreferenciamento: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO GEORREFERENCIADO", auto: "topografia" },

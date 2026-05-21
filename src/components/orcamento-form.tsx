@@ -200,9 +200,29 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
   function onTipoServicoChange(tipo: string) {
     set("tipo_servico", tipo);
-    // Se ainda não há itens (ou estavam vazios), aplica o template do novo tipo
-    if (data.itens.length === 0) aplicarTemplate(tipo);
+    // Aplica template do novo tipo se vazio OU se for retificação urbana (atalho rápido)
+    if (data.itens.length === 0 || tipo === "retificacao_urbana") aplicarTemplate(tipo);
   }
+
+  // Explicação do RI baseado no valor declarado do imóvel
+  const explicacaoRI = useMemo(
+    () => explicarRegistroImoveis(Number(data.imovel_valor_avaliado) || 0),
+    [data.imovel_valor_avaliado],
+  );
+
+  function recalcularRI() {
+    const novo = explicacaoRI.valor;
+    setData((d) => {
+      const idx = d.itens.findIndex((i) => /registro\s+de\s+im[oó]veis/i.test(i.descricao));
+      if (idx === -1) {
+        return { ...d, itens: [...d.itens, { descricao: "REGISTRO DE IMÓVEIS", valor: novo }] };
+      }
+      const itens = d.itens.map((it, i) => (i === idx ? { ...it, valor: novo } : it));
+      return { ...d, itens };
+    });
+    toast.success(`RI recalculado: ${formatBRL(novo)}`);
+  }
+
 
   function addItem() { setData((d) => ({ ...d, itens: [...d.itens, { descricao: "", valor: 0 }] })); }
   function removeItem(idx: number) { setData((d) => ({ ...d, itens: d.itens.filter((_, i) => i !== idx) })); }

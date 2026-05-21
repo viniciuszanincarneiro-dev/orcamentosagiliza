@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X, AlertTriangle, CheckCircle2, AlertCircle, Eraser, PencilLine } from "lucide-react";
 import { toast } from "sonner";
-import { saveAs } from "file-saver";
+import fileSaver from "file-saver";
+const { saveAs } = fileSaver;
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [modo, setModo] = useState<"auto" | "manual">("auto");
   const [ultimaLeitura, setUltimaLeitura] = useState<{ parsed: MatriculaParsed; qualidade: ReturnType<typeof avaliarQualidade> } | null>(null);
   const [erroLeitura, setErroLeitura] = useState<string | null>(null);
+  const [fatorRI, setFatorRI] = useState<number>(70);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parseFn = useServerFn(parseMatricula);
@@ -74,6 +76,19 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       return data ?? [];
     },
   });
+
+  // Sincroniza o fator de ajuste interno do RI vindo da configuração (se existir).
+  // O usuário pode sobrescrever localmente no card de cálculo.
+  const fatorRIConfig = useMemo(() => {
+    const row = tabelaValores?.find((x) => x.chave === "ri_fator_ajuste");
+    const n = row ? Number(row.valor) : 70;
+    return Number.isFinite(n) && n > 0 ? Math.min(100, Math.max(1, n)) : 70;
+  }, [tabelaValores]);
+  const fatorRIInicializado = useRef(false);
+  if (!fatorRIInicializado.current && tabelaValores) {
+    fatorRIInicializado.current = true;
+    if (fatorRI !== fatorRIConfig) setFatorRI(fatorRIConfig);
+  }
 
   const set = <K extends keyof OrcamentoData>(k: K, v: OrcamentoData[K]) => setData((d) => ({ ...d, [k]: v }));
 
@@ -92,7 +107,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             })
           : v.ate_5ha ?? 3600;
       }
-      case "registro": return calcularRegistroImoveis(valor ?? 0);
+      case "registro": return calcularRegistroImoveis(valor ?? 0, fatorRI);
       case "certidoes": return v.certidoes_assinaturas ?? 450;
       case "ccir": return v.atualizacao_ccir ?? 250;
       default: return 0;
@@ -204,11 +219,25 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     if (data.itens.length === 0 || tipo === "retificacao_urbana") aplicarTemplate(tipo);
   }
 
-  // Explicação do RI baseado no valor declarado do imóvel
+  // Explicação do RI baseado no valor declarado do imóvel e no fator interno
   const explicacaoRI = useMemo(
-    () => explicarRegistroImoveis(Number(data.imovel_valor_avaliado) || 0),
-    [data.imovel_valor_avaliado],
+    () => explicarRegistroImoveis(Number(data.imovel_valor_avaliado) || 0, fatorRI),
+    [data.imovel_valor_avaliado, fatorRI],
   );
+
+  async function salvarFatorPadrao() {
+    try {
+      const { error } = await supabase
+        .from("tabela_valores")
+        .update({ valor: fatorRI } as never)
+        .eq("categoria", "config")
+        .eq("chave", "ri_fator_ajuste");
+      if (error) throw error;
+      toast.success(`Fator de ajuste salvo como padrão: ${fatorRI}%`);
+    } catch (e) {
+      toast.error("Erro ao salvar fator", { description: (e as Error).message });
+    }
+  }
 
   function recalcularRI() {
     const novo = explicacaoRI.valor;
@@ -502,7 +531,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
             {data.imovel_valor_avaliado ? (
               <div className={
-                "mt-2 rounded-md border px-3 py-2 text-sm flex flex-col gap-1 " +
+                "mt-2 rounded-md border px-3 py-2 text-sm flex flex-col gap-2 " +
                 (explicacaoRI.alerta === "muito_alto"
                   ? "border-destructive/50 bg-destructive/10 text-destructive"
                   : explicacaoRI.alerta === "alto"
@@ -519,11 +548,42 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                     Aplicar no item RI
                   </Button>
                 </div>
+
+                <div className="grid sm:grid-cols-[auto_120px_auto] items-center gap-2 text-xs">
+                  <Label className="text-xs font-medium m-0">Fator de ajuste interno do RI</Label>
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={100}
+                      step={1}
+                      value={fatorRI}
+                      onChange={(e) => {
+                        const n = Number(e.target.value);
+                        if (Number.isFinite(n)) setFatorRI(Math.min(100, Math.max(1, n)));
+                      }}
+                      className="h-7 text-right tabular-nums"
+                    />
+                    <span className="text-muted-foreground">%</span>
+                  </div>
+                  <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={salvarFatorPadrao}>
+                    Salvar como padrão
+                  </Button>
+                </div>
+
+                <p className="text-xs opacity-90 tabular-nums">
+                  Valor declarado: <b>{formatBRL(explicacaoRI.valorImovelOriginal)}</b>
+                  {explicacaoRI.fatorPct < 100 ? (
+                    <>
+                      {" "}→ Base de cálculo (após {explicacaoRI.fatorPct}%): <b>{formatBRL(explicacaoRI.valorImovelAjustado)}</b>
+                    </>
+                  ) : null}
+                </p>
                 <p className="text-xs opacity-90">{explicacaoRI.descricao}</p>
                 {explicacaoRI.alerta ? (
                   <p className="text-xs font-medium">
-                    ⚠ Valor de RI representa {((explicacaoRI.valor / (data.imovel_valor_avaliado || 1)) * 100).toFixed(1)}% do valor do imóvel.
-                    Confira se o valor declarado está coerente com a prática do cartório — ajuste manualmente se necessário.
+                    ⚠ RI representa {((explicacaoRI.valor / (data.imovel_valor_avaliado || 1)) * 100).toFixed(1)}% do valor declarado.
+                    Ajuste o fator interno ou edite manualmente o valor do RI no item correspondente abaixo.
                   </p>
                 ) : null}
               </div>

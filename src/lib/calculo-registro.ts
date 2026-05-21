@@ -40,15 +40,19 @@ const FAIXAS_REGISTRO_IMOVEIS: Faixa[] = [
 ];
 
 /**
- * Calcula o valor de Registro de Imóveis baseado no valor do imóvel.
- * Para valores acima da última faixa tabelada, aplica progressão.
+ * Calcula o RI a partir do valor declarado do imóvel.
+ * `fatorPct` (1–100) é o fator de ajuste interno do escritório aplicado
+ * sobre o valor declarado antes de consultar a tabela. Default 100 (sem ajuste).
  */
-export function calcularRegistroImoveis(valorImovel: number): number {
-  return explicarRegistroImoveis(valorImovel).valor;
+export function calcularRegistroImoveis(valorImovel: number, fatorPct = 100): number {
+  return explicarRegistroImoveis(valorImovel, fatorPct).valor;
 }
 
 export type ExplicacaoRI = {
   valor: number;
+  valorImovelOriginal: number;
+  valorImovelAjustado: number;
+  fatorPct: number;
   faixaAte: number;
   faixaIndex: number;
   progressivo: boolean;
@@ -59,12 +63,16 @@ export type ExplicacaoRI = {
 
 /**
  * Retorna o valor do RI + explicação de como foi calculado.
- * A tabela LC 755/2019 (item 2.2) já inclui FRJ + ISS — NÃO somar separado.
- * Inclui alerta heurístico quando o RI calculado parece destoar do valor
- * declarado do imóvel (acima de 5% ou 8% do valor do imóvel).
+ * - A tabela LC 755/2019 (item 2.2) já inclui FRJ + ISS.
+ * - O `fatorPct` é multiplicado no valor declarado antes de aplicar a tabela.
+ *   Ex.: valor declarado R$ 500.000 + fator 70% => base de cálculo R$ 350.000.
+ * - Alerta heurístico: RI > 5% do valor declarado (alto) ou > 8% (muito alto).
  */
-export function explicarRegistroImoveis(valorImovel: number): ExplicacaoRI {
-  const v = !valorImovel || valorImovel <= 0 ? 0 : valorImovel;
+export function explicarRegistroImoveis(valorImovel: number, fatorPct = 100): ExplicacaoRI {
+  const original = !valorImovel || valorImovel <= 0 ? 0 : valorImovel;
+  const fator = Math.min(100, Math.max(1, Number.isFinite(fatorPct) ? fatorPct : 100));
+  const v = Math.round(original * (fator / 100) * 100) / 100;
+
   let valor = FAIXAS_REGISTRO_IMOVEIS[0].total;
   let faixaAte = FAIXAS_REGISTRO_IMOVEIS[0].ate;
   let faixaIndex = 0;
@@ -90,18 +98,32 @@ export function explicarRegistroImoveis(valorImovel: number): ExplicacaoRI {
   valor = Math.round(valor * 100) / 100;
 
   let alerta: ExplicacaoRI["alerta"];
-  if (v > 0) {
-    const pct = valor / v;
+  if (original > 0) {
+    const pct = valor / original;
     if (pct >= 0.08) alerta = "muito_alto";
     else if (pct >= 0.05) alerta = "alto";
   }
 
   const fmt = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+  const baseDesc = fator < 100
+    ? `Base ajustada: R$ ${fmt(v)} (fator interno ${fator}% sobre R$ ${fmt(original)}). `
+    : "";
   const descricao = progressivo
-    ? `Tabela LC 755/2019 (item 2.2) — faixa progressiva acima de R$ ${fmt(faixaAte)}: acréscimo de R$ 63,87 a cada R$ 50.000 (${excedente} acréscimo${(excedente ?? 0) > 1 ? "s" : ""}). Valor já inclui FRJ + ISS.`
-    : `Tabela LC 755/2019 (item 2.2) — faixa ${faixaIndex + 1}: imóveis até R$ ${fmt(faixaAte)}. Valor já inclui FRJ + ISS.`;
+    ? `${baseDesc}Tabela LC 755/2019 (item 2.2) — faixa progressiva acima de R$ ${fmt(faixaAte)}: acréscimo de R$ 63,87 a cada R$ 50.000 (${excedente} acréscimo${(excedente ?? 0) > 1 ? "s" : ""}). Valor já inclui FRJ + ISS.`
+    : `${baseDesc}Tabela LC 755/2019 (item 2.2) — faixa ${faixaIndex + 1}: imóveis até R$ ${fmt(faixaAte)}. Valor já inclui FRJ + ISS.`;
 
-  return { valor, faixaAte, faixaIndex, progressivo, excedente, descricao, alerta };
+  return {
+    valor,
+    valorImovelOriginal: original,
+    valorImovelAjustado: v,
+    fatorPct: fator,
+    faixaAte,
+    faixaIndex,
+    progressivo,
+    excedente,
+    descricao,
+    alerta,
+  };
 }
 
 /** Faixas de georreferenciamento por hectare (valores padrão). */

@@ -77,6 +77,19 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     },
   });
 
+  // Sincroniza o fator de ajuste interno do RI vindo da configuração (se existir).
+  // O usuário pode sobrescrever localmente no card de cálculo.
+  const fatorRIConfig = useMemo(() => {
+    const row = tabelaValores?.find((x) => x.chave === "ri_fator_ajuste");
+    const n = row ? Number(row.valor) : 70;
+    return Number.isFinite(n) && n > 0 ? Math.min(100, Math.max(1, n)) : 70;
+  }, [tabelaValores]);
+  const fatorRIInicializado = useRef(false);
+  if (!fatorRIInicializado.current && tabelaValores) {
+    fatorRIInicializado.current = true;
+    if (fatorRI !== fatorRIConfig) setFatorRI(fatorRIConfig);
+  }
+
   const set = <K extends keyof OrcamentoData>(k: K, v: OrcamentoData[K]) => setData((d) => ({ ...d, [k]: v }));
 
   type AutoKind = "topografia" | "registro" | "certidoes" | "ccir";
@@ -94,7 +107,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             })
           : v.ate_5ha ?? 3600;
       }
-      case "registro": return calcularRegistroImoveis(valor ?? 0);
+      case "registro": return calcularRegistroImoveis(valor ?? 0, fatorRI);
       case "certidoes": return v.certidoes_assinaturas ?? 450;
       case "ccir": return v.atualizacao_ccir ?? 250;
       default: return 0;

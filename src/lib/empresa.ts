@@ -72,6 +72,11 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", auto: "certidoes" },
     { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", auto: "ccir" },
   ],
+  retificacao_urbana: [
+    { descricao: "SERVIÇO PRESTADO (ASSESSORIA DOCUMENTAL)", valor_base: 1500 },
+    { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", valor_base: 420 },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+  ],
   georreferenciamento: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO GEORREFERENCIADO", auto: "topografia" },
     { descricao: "LOCAÇÃO DE MARCOS E CERTIFICAÇÃO INCRA", valor_base: 1800 },

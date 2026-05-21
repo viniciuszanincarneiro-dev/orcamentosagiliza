@@ -496,9 +496,42 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             <Input type="number" step="0.01"
               value={data.imovel_valor_avaliado ?? ""}
               onChange={(e) => set("imovel_valor_avaliado", e.target.value === "" ? undefined : Number(e.target.value))} />
+            <p className="text-xs text-muted-foreground mt-1">
+              O valor declarado nem sempre reflete o valor de mercado. Você pode ajustar manualmente o valor do imóvel e o valor do RI no item correspondente.
+            </p>
+
+            {data.imovel_valor_avaliado ? (
+              <div className={
+                "mt-2 rounded-md border px-3 py-2 text-sm flex flex-col gap-1 " +
+                (explicacaoRI.alerta === "muito_alto"
+                  ? "border-destructive/50 bg-destructive/10 text-destructive"
+                  : explicacaoRI.alerta === "alto"
+                  ? "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                  : "border-border bg-muted/40 text-foreground")
+              }>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    {explicacaoRI.alerta ? <AlertTriangle className="h-4 w-4" /> : <Calculator className="h-4 w-4 text-primary" />}
+                    <span className="font-medium">Registro de Imóveis estimado:</span>
+                    <span className="tabular-nums font-semibold">{formatBRL(explicacaoRI.valor)}</span>
+                  </div>
+                  <Button type="button" size="sm" variant="outline" onClick={recalcularRI}>
+                    Aplicar no item RI
+                  </Button>
+                </div>
+                <p className="text-xs opacity-90">{explicacaoRI.descricao}</p>
+                {explicacaoRI.alerta ? (
+                  <p className="text-xs font-medium">
+                    ⚠ Valor de RI representa {((explicacaoRI.valor / (data.imovel_valor_avaliado || 1)) * 100).toFixed(1)}% do valor do imóvel.
+                    Confira se o valor declarado está coerente com a prática do cartório — ajuste manualmente se necessário.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader>

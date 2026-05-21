@@ -26,6 +26,7 @@ export const TIPOS_SERVICO = [
 
 export const TIPO_TITULOS: Record<string, string> = {
   retificacao_geo: "RETIFICAÇÃO ADMINISTRATIVA COM GEORREFERENCIAMENTO CERTIFICADO PELO INCRA",
+  retificacao_urbana: "RETIFICAÇÃO ADMINISTRATIVA DE IMÓVEL URBANO",
   georreferenciamento: "GEORREFERENCIAMENTO CERTIFICADO PELO INCRA",
   levantamento_topografico: "LEVANTAMENTO TOPOGRÁFICO",
   desmembramento: "DESMEMBRAMENTO DE IMÓVEL",

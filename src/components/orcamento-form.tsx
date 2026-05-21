@@ -219,11 +219,25 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     if (data.itens.length === 0 || tipo === "retificacao_urbana") aplicarTemplate(tipo);
   }
 
-  // Explicação do RI baseado no valor declarado do imóvel
+  // Explicação do RI baseado no valor declarado do imóvel e no fator interno
   const explicacaoRI = useMemo(
-    () => explicarRegistroImoveis(Number(data.imovel_valor_avaliado) || 0),
-    [data.imovel_valor_avaliado],
+    () => explicarRegistroImoveis(Number(data.imovel_valor_avaliado) || 0, fatorRI),
+    [data.imovel_valor_avaliado, fatorRI],
   );
+
+  async function salvarFatorPadrao() {
+    try {
+      const { error } = await supabase
+        .from("tabela_valores")
+        .update({ valor: fatorRI } as never)
+        .eq("categoria", "config")
+        .eq("chave", "ri_fator_ajuste");
+      if (error) throw error;
+      toast.success(`Fator de ajuste salvo como padrão: ${fatorRI}%`);
+    } catch (e) {
+      toast.error("Erro ao salvar fator", { description: (e as Error).message });
+    }
+  }
 
   function recalcularRI() {
     const novo = explicacaoRI.valor;

@@ -531,7 +531,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
             {data.imovel_valor_avaliado ? (
               <div className={
-                "mt-2 rounded-md border px-3 py-2 text-sm flex flex-col gap-1 " +
+                "mt-2 rounded-md border px-3 py-2 text-sm flex flex-col gap-2 " +
                 (explicacaoRI.alerta === "muito_alto"
                   ? "border-destructive/50 bg-destructive/10 text-destructive"
                   : explicacaoRI.alerta === "alto"
@@ -548,11 +548,42 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                     Aplicar no item RI
                   </Button>
                 </div>
+
+                <div className="grid sm:grid-cols-[auto_120px_auto] items-center gap-2 text-xs">
+                  <Label className="text-xs font-medium m-0">Fator de ajuste interno do RI</Label>
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={100}
+                      step={1}
+                      value={fatorRI}
+                      onChange={(e) => {
+                        const n = Number(e.target.value);
+                        if (Number.isFinite(n)) setFatorRI(Math.min(100, Math.max(1, n)));
+                      }}
+                      className="h-7 text-right tabular-nums"
+                    />
+                    <span className="text-muted-foreground">%</span>
+                  </div>
+                  <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={salvarFatorPadrao}>
+                    Salvar como padrão
+                  </Button>
+                </div>
+
+                <p className="text-xs opacity-90 tabular-nums">
+                  Valor declarado: <b>{formatBRL(explicacaoRI.valorImovelOriginal)}</b>
+                  {explicacaoRI.fatorPct < 100 ? (
+                    <>
+                      {" "}→ Base de cálculo (após {explicacaoRI.fatorPct}%): <b>{formatBRL(explicacaoRI.valorImovelAjustado)}</b>
+                    </>
+                  ) : null}
+                </p>
                 <p className="text-xs opacity-90">{explicacaoRI.descricao}</p>
                 {explicacaoRI.alerta ? (
                   <p className="text-xs font-medium">
-                    ⚠ Valor de RI representa {((explicacaoRI.valor / (data.imovel_valor_avaliado || 1)) * 100).toFixed(1)}% do valor do imóvel.
-                    Confira se o valor declarado está coerente com a prática do cartório — ajuste manualmente se necessário.
+                    ⚠ RI representa {((explicacaoRI.valor / (data.imovel_valor_avaliado || 1)) * 100).toFixed(1)}% do valor declarado.
+                    Ajuste o fator interno ou edite manualmente o valor do RI no item correspondente abaixo.
                   </p>
                 ) : null}
               </div>

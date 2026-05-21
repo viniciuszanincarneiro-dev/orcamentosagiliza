@@ -51,6 +51,8 @@ export const DESCRICAO_PADRAO: Record<string, string> = {
     "Inclui levantamento topográfico, elaboração de memorial descritivo, coleta de assinaturas de confrontantes, assessoria documental e encaminhamento ao tabelionato e Registro de Imóveis.",
   inventario_extrajudicial:
     "Inclui assessoria documental, elaboração de minuta, coleta de certidões e encaminhamento ao tabelionato.",
+  retificacao_urbana:
+    "Retificação administrativa de imóvel urbano: assessoria documental completa (memorial descritivo, planta, requerimento), coleta de certidões e assinaturas, e encaminhamento ao Registro de Imóveis. Modelo simplificado, sem georreferenciamento.",
   outros: "Serviços conforme descrição abaixo.",
 };
 

@@ -14,6 +14,7 @@ export const EMPRESA = {
 
 export const TIPOS_SERVICO = [
   { value: "retificacao_geo", label: "Retificação Administrativa com Georreferenciamento" },
+  { value: "retificacao_urbana", label: "Retificação Administrativa Urbana" },
   { value: "georreferenciamento", label: "Georreferenciamento Certificado pelo INCRA" },
   { value: "levantamento_topografico", label: "Levantamento Topográfico" },
   { value: "desmembramento", label: "Desmembramento" },

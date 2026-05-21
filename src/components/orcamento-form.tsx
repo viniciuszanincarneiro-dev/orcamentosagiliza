@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X, AlertTriangle, CheckCircle2, AlertCircle, Eraser, PencilLine } from "lucide-react";
 import { toast } from "sonner";
-import { saveAs } from "file-saver";
+import fileSaver from "file-saver";
+const { saveAs } = fileSaver;
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

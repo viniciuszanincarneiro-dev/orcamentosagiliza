@@ -57,6 +57,10 @@ function ValoresPage() {
 
   const grupos: Record<string, ValorRow[]> = {};
   for (const v of data ?? []) (grupos[v.categoria] ||= []).push(v);
+  const categoriasOrdenadas = [
+    ...ORDEM_CATEGORIAS.filter((c) => grupos[c]),
+    ...Object.keys(grupos).filter((c) => !ORDEM_CATEGORIAS.includes(c)),
+  ];
 
   return (
     <div className="space-y-6">
@@ -69,13 +73,33 @@ function ValoresPage() {
       </div>
 
       {isLoading ? (
-        <p className="text-muted-foreground">Carregando…</p>
+        <div className="space-y-4">
+          {[0, 1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-64" />
+                <Skeleton className="h-4 w-96 mt-2" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : categoriasOrdenadas.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            Nenhum valor cadastrado ainda.
+          </CardContent>
+        </Card>
       ) : (
-        Object.entries(grupos).map(([cat, rows]) => (
+        categoriasOrdenadas.map((cat) => (
           <Card key={cat}>
             <CardHeader>
               <CardTitle>{labels[cat]?.title ?? cat}</CardTitle>
-              <CardDescription>{labels[cat]?.desc}</CardDescription>
+              {labels[cat]?.desc && <CardDescription>{labels[cat].desc}</CardDescription>}
             </CardHeader>
             <CardContent>
               <Table>

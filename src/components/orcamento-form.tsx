@@ -24,6 +24,9 @@ import { gerarOrcamentoDOCX } from "@/lib/gerar-docx";
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento } from "@/lib/orcamento-types";
 
+// Cache de leitura por sessão (chave: hash leve do arquivo/texto).
+const parseCache = new Map<string, MatriculaParsed>();
+
 type Qualidade = "alta" | "parcial" | "baixa";
 function avaliarQualidade(p: MatriculaParsed): { nivel: Qualidade; preenchidos: number; total: number } {
   const campos = [

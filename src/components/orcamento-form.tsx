@@ -24,6 +24,9 @@ import { gerarOrcamentoDOCX } from "@/lib/gerar-docx";
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento } from "@/lib/orcamento-types";
 
+// Cache de leitura por sessão (chave: hash leve do arquivo/texto).
+const parseCache = new Map<string, MatriculaParsed>();
+
 type Qualidade = "alta" | "parcial" | "baixa";
 function avaliarQualidade(p: MatriculaParsed): { nivel: Qualidade; preenchidos: number; total: number } {
   const campos = [
@@ -124,7 +127,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     setData((d) => ({ ...d, itens }));
   }
 
-  async function fileToBase64(file: File): Promise<string> {
+  async function fileToBase64(file: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
       const r = new FileReader();
       r.onload = () => {
@@ -137,6 +140,37 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     });
   }
 
+  // Reduz imagens grandes antes de enviar para a IA: drasticamente mais rápido.
+  async function downscaleImage(file: File, maxDim = 1600, quality = 0.78): Promise<{ blob: Blob; mime: string }> {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = url;
+      });
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      if (scale >= 1 && file.size < 800 * 1024) return { blob: file, mime: file.type };
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return { blob: file, mime: file.type };
+      ctx.drawImage(img, 0, 0, w, h);
+      const blob: Blob = await new Promise((resolve) =>
+        canvas.toBlob((b) => resolve(b ?? file), "image/jpeg", quality) as unknown as void,
+      );
+      return { blob, mime: "image/jpeg" };
+    } catch {
+      return { blob: file, mime: file.type };
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
@@ -145,8 +179,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       return;
     }
     try {
-      const base64 = await fileToBase64(f);
-      setArquivo({ nome: f.name, mime: f.type || "application/octet-stream", size: f.size, base64 });
+      const isImg = f.type.startsWith("image/");
+      const { blob, mime } = isImg ? await downscaleImage(f) : { blob: f, mime: f.type || "application/pdf" };
+      const base64 = await fileToBase64(blob);
+      setArquivo({ nome: f.name, mime: mime || "application/octet-stream", size: blob.size, base64 });
       toast.success(`Arquivo carregado: ${f.name}`);
     } catch (err) {
       toast.error("Erro ao ler arquivo", { description: (err as Error).message });
@@ -164,12 +200,16 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     setParsing(true);
     setErroLeitura(null);
     try {
-      const parsed = await parseFn({
+      // Cache em memória por sessão: evita reprocessar o mesmo arquivo/texto.
+      const cacheKey = `m:${arquivo?.base64.slice(0, 64) ?? ""}|${arquivo?.size ?? 0}|${texto.slice(0, 200)}`;
+      const cached = parseCache.get(cacheKey);
+      const parsed = cached ?? await parseFn({
         data: {
           texto: texto || undefined,
           arquivo: arquivo ? { data_base64: arquivo.base64, mime_type: arquivo.mime, nome: arquivo.nome } : undefined,
         },
       });
+      if (!cached) parseCache.set(cacheKey, parsed);
       const qualidade = avaliarQualidade(parsed);
       setUltimaLeitura({ parsed, qualidade });
       setData((d) => ({

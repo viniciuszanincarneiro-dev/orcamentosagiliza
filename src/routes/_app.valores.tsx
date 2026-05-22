@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatBRL } from "@/lib/format";
 
@@ -20,6 +21,14 @@ type ValorRow = {
 };
 
 const labels: Record<string, { title: string; desc: string }> = {
+  config: {
+    title: "Configurações de cálculo",
+    desc: "Parâmetros internos que afetam o cálculo automático (ex.: fator de ajuste do Registro de Imóveis).",
+  },
+  servico_base: {
+    title: "Serviços base",
+    desc: "Itens fixos incluídos nos orçamentos (certidões, atualizações cadastrais, etc.).",
+  },
   geo_hectare: {
     title: "Georreferenciamento por faixa de hectare",
     desc: "Valores aplicados automaticamente ao calcular o levantamento topográfico de acordo com a área do imóvel.",
@@ -28,11 +37,9 @@ const labels: Record<string, { title: string; desc: string }> = {
     title: "Valor por hectare por município",
     desc: "Referência usada para avaliar o imóvel quando não há valor declarado.",
   },
-  servico_base: {
-    title: "Serviços base",
-    desc: "Itens fixos incluídos nos orçamentos (certidões, atualizações cadastrais, etc.).",
-  },
 };
+
+const ORDEM_CATEGORIAS = ["servico_base", "geo_hectare", "valor_municipio", "config"];
 
 function ValoresPage() {
   const { data, isLoading, refetch } = useQuery({
@@ -50,6 +57,10 @@ function ValoresPage() {
 
   const grupos: Record<string, ValorRow[]> = {};
   for (const v of data ?? []) (grupos[v.categoria] ||= []).push(v);
+  const categoriasOrdenadas = [
+    ...ORDEM_CATEGORIAS.filter((c) => grupos[c]),
+    ...Object.keys(grupos).filter((c) => !ORDEM_CATEGORIAS.includes(c)),
+  ];
 
   return (
     <div className="space-y-6">
@@ -62,13 +73,33 @@ function ValoresPage() {
       </div>
 
       {isLoading ? (
-        <p className="text-muted-foreground">Carregando…</p>
+        <div className="space-y-4">
+          {[0, 1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-64" />
+                <Skeleton className="h-4 w-96 mt-2" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : categoriasOrdenadas.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            Nenhum valor cadastrado ainda.
+          </CardContent>
+        </Card>
       ) : (
-        Object.entries(grupos).map(([cat, rows]) => (
+        categoriasOrdenadas.map((cat) => (
           <Card key={cat}>
             <CardHeader>
               <CardTitle>{labels[cat]?.title ?? cat}</CardTitle>
-              <CardDescription>{labels[cat]?.desc}</CardDescription>
+              {labels[cat]?.desc && <CardDescription>{labels[cat].desc}</CardDescription>}
             </CardHeader>
             <CardContent>
               <Table>
@@ -80,7 +111,7 @@ function ValoresPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((r) => <LinhaValor key={r.id} row={r} onSaved={() => refetch()} />)}
+                  {grupos[cat].map((r) => <LinhaValor key={r.id} row={r} onSaved={() => refetch()} />)}
                 </TableBody>
               </Table>
             </CardContent>

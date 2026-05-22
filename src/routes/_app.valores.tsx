@@ -21,6 +21,14 @@ type ValorRow = {
 };
 
 const labels: Record<string, { title: string; desc: string }> = {
+  config: {
+    title: "Configurações de cálculo",
+    desc: "Parâmetros internos que afetam o cálculo automático (ex.: fator de ajuste do Registro de Imóveis).",
+  },
+  servico_base: {
+    title: "Serviços base",
+    desc: "Itens fixos incluídos nos orçamentos (certidões, atualizações cadastrais, etc.).",
+  },
   geo_hectare: {
     title: "Georreferenciamento por faixa de hectare",
     desc: "Valores aplicados automaticamente ao calcular o levantamento topográfico de acordo com a área do imóvel.",
@@ -29,11 +37,9 @@ const labels: Record<string, { title: string; desc: string }> = {
     title: "Valor por hectare por município",
     desc: "Referência usada para avaliar o imóvel quando não há valor declarado.",
   },
-  servico_base: {
-    title: "Serviços base",
-    desc: "Itens fixos incluídos nos orçamentos (certidões, atualizações cadastrais, etc.).",
-  },
 };
+
+const ORDEM_CATEGORIAS = ["servico_base", "geo_hectare", "valor_municipio", "config"];
 
 function ValoresPage() {
   const { data, isLoading, refetch } = useQuery({

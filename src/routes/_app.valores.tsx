@@ -111,7 +111,7 @@ function ValoresPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((r) => <LinhaValor key={r.id} row={r} onSaved={() => refetch()} />)}
+                  {grupos[cat].map((r) => <LinhaValor key={r.id} row={r} onSaved={() => refetch()} />)}
                 </TableBody>
               </Table>
             </CardContent>

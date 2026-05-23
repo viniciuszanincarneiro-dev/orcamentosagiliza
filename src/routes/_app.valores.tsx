@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, Pencil, Save, X } from "lucide-react";
-import { useState } from "react";
+import { AlertCircle, Loader2, Pencil, RefreshCw, Save, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,39 @@ export const Route = createFileRoute("/_app/valores")({
 type ValorRow = {
   id: string; categoria: string; chave: string; descricao: string; valor: number; ordem: number;
 };
+
+const VALORES_CACHE_KEY = "agiliza:tabela-valores:v1";
+
+function getCachedValores(): ValorRow[] | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const cached = window.localStorage.getItem(VALORES_CACHE_KEY);
+    return cached ? (JSON.parse(cached) as ValorRow[]) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function cacheValores(rows: ValorRow[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(VALORES_CACHE_KEY, JSON.stringify(rows));
+  } catch {
+    // Cache é apenas uma melhoria de carregamento; se falhar, a tabela segue funcionando.
+  }
+}
+
+async function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("A tabela demorou para responder. Tente recarregar.")), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
 
 const labels: Record<string, { title: string; desc: string }> = {
   config: {

@@ -118,14 +118,45 @@ function ValoresPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Tabela de Valores</h1>
-        <p className="text-muted-foreground mt-1">
-          Configure os valores padrão usados no cálculo automático dos orçamentos. Esses valores podem ser
-          ajustados individualmente em cada orçamento para aplicar descontos negociados.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Tabela de Valores</h1>
+            <p className="text-muted-foreground mt-1">
+              Configure os valores padrão usados no cálculo automático dos orçamentos. Esses valores podem ser
+              ajustados individualmente em cada orçamento para aplicar descontos negociados.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={cn("h-4 w-4 mr-2", isFetching && "animate-spin")} />
+            Recarregar
+          </Button>
+        </div>
       </div>
 
-      {isLoading ? (
+      {showSlowHint && (
+        <Alert>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertTitle>Carregando tabela</AlertTitle>
+          <AlertDescription>
+            A conexão está demorando mais que o normal. Se não carregar em instantes, use o botão Recarregar.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Não foi possível carregar a tabela de valores</AlertTitle>
+          <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>{error instanceof Error ? error.message : "Verifique sua sessão e tente novamente."}</span>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              Tentar novamente
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isLoading && !data ? (
         <div className="space-y-4">
           {[0, 1, 2].map((i) => (
             <Card key={i}>

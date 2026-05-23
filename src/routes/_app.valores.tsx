@@ -76,18 +76,37 @@ const labels: Record<string, { title: string; desc: string }> = {
 const ORDEM_CATEGORIAS = ["servico_base", "geo_hectare", "valor_municipio", "config"];
 
 function ValoresPage() {
-  const { data, isLoading, refetch } = useQuery({
+  const [showSlowHint, setShowSlowHint] = useState(false);
+  const cachedValores = getCachedValores();
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["tabela-valores"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tabela_valores")
-        .select("*")
-        .order("categoria", { ascending: true })
-        .order("ordem", { ascending: true });
+      const { data, error } = await withTimeout(
+        supabase
+          .from("tabela_valores")
+          .select("*")
+          .order("categoria", { ascending: true })
+          .order("ordem", { ascending: true }),
+        10_000,
+      );
       if (error) throw error;
-      return (data ?? []) as ValorRow[];
+      const rows = (data ?? []) as ValorRow[];
+      cacheValores(rows);
+      return rows;
     },
+    initialData: cachedValores,
+    staleTime: 30_000,
+    retry: 1,
   });
+
+  useEffect(() => {
+    if (!isLoading) {
+      setShowSlowHint(false);
+      return;
+    }
+    const id = window.setTimeout(() => setShowSlowHint(true), 4_000);
+    return () => window.clearTimeout(id);
+  }, [isLoading]);
 
   const grupos: Record<string, ValorRow[]> = {};
   for (const v of data ?? []) (grupos[v.categoria] ||= []).push(v);

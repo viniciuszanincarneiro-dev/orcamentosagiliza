@@ -163,8 +163,9 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
 
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 24;
 
-  // Verifica se cabe observações; senão nova página
-  if (y > H - 250) {
+  // Garante espaço mínimo para Observações; senão nova página
+  const OBS_MIN_HEIGHT = 180;
+  if (y > H - 70 - OBS_MIN_HEIGHT) {
     doc.addPage();
     addHeader();
     y = 120;
@@ -196,18 +197,51 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   const agradec = "Agradecemos pela oportunidade de apresentar nossa proposta. Estamos confiantes de que podemos atender às suas necessidades com qualidade e eficiência!";
   const agradecLines = doc.splitTextToSize(agradec, W - 2 * M);
   doc.text(agradecLines, M, y);
-  y += agradecLines.length * 12 + 30;
+  y += agradecLines.length * 12 + 20;
 
+  // --- BLOCO DE ASSINATURA (com espaço garantido p/ assinatura digital) ---
+  const SIGN_BLOCK_HEIGHT = 260;
+  if (y > H - 70 - SIGN_BLOCK_HEIGHT) {
+    doc.addPage();
+    addHeader();
+    y = 130;
+  } else {
+    y += 20;
+  }
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(...PRETO);
   doc.text(`São Miguel do Oeste/SC, ${formatDateLong(new Date())}.`, M, y);
-  y += 50;
+  y += 40;
 
+  // Caixa reservada para assinatura digital
+  const boxW = 320;
+  const boxH = 90;
+  const boxX = (W - boxW) / 2;
+  const boxY = y;
+  doc.setDrawColor(200, 200, 205);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(boxX, boxY, boxW, boxH, 4, 4);
+  doc.setFontSize(8);
+  doc.setTextColor(...CINZA);
+  doc.text("Espaço reservado para assinatura digital", W / 2, boxY + boxH / 2 + 3, { align: "center" });
+
+  y = boxY + boxH + 18;
+
+  // Linha + identificação abaixo da caixa (sem sobreposição)
   doc.setDrawColor(...PRETO);
-  doc.line(W / 2 - 120, y, W / 2 + 120, y);
-  y += 12;
+  doc.setLineWidth(0.7);
+  doc.line(W / 2 - 140, y, W / 2 + 140, y);
+  y += 14;
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...PRETO);
   doc.text(EMPRESA.razao, W / 2, y, { align: "center" });
   y += 12;
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...CINZA);
   doc.text(`${EMPRESA.razaoLegal} — CNPJ ${EMPRESA.cnpj}`, W / 2, y, { align: "center" });
 
   // Footers

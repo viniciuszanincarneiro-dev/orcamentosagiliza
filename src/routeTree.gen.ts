@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppValoresRouteImport } from './routes/_app.valores'
+import { Route as AppTutorialRouteImport } from './routes/_app.tutorial'
 import { Route as AppFollowUpRouteImport } from './routes/_app.follow-up'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppOrcamentosIndexRouteImport } from './routes/_app.orcamentos.index'
@@ -36,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppValoresRoute = AppValoresRouteImport.update({
   id: '/valores',
   path: '/valores',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTutorialRoute = AppTutorialRouteImport.update({
+  id: '/tutorial',
+  path: '/tutorial',
   getParentRoute: () => AppRoute,
 } as any)
 const AppFollowUpRoute = AppFollowUpRouteImport.update({
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
   '/follow-up': typeof AppFollowUpRoute
+  '/tutorial': typeof AppTutorialRoute
   '/valores': typeof AppValoresRoute
   '/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/orcamentos/novo': typeof AppOrcamentosNovoRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
   '/follow-up': typeof AppFollowUpRoute
+  '/tutorial': typeof AppTutorialRoute
   '/valores': typeof AppValoresRoute
   '/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/orcamentos/novo': typeof AppOrcamentosNovoRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/follow-up': typeof AppFollowUpRoute
+  '/_app/tutorial': typeof AppTutorialRoute
   '/_app/valores': typeof AppValoresRoute
   '/_app/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/_app/orcamentos/novo': typeof AppOrcamentosNovoRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/dashboard'
     | '/follow-up'
+    | '/tutorial'
     | '/valores'
     | '/orcamentos/$id'
     | '/orcamentos/novo'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/dashboard'
     | '/follow-up'
+    | '/tutorial'
     | '/valores'
     | '/orcamentos/$id'
     | '/orcamentos/novo'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/dashboard'
     | '/_app/follow-up'
+    | '/_app/tutorial'
     | '/_app/valores'
     | '/_app/orcamentos/$id'
     | '/_app/orcamentos/novo'
@@ -164,6 +176,13 @@ declare module '@tanstack/react-router' {
       path: '/valores'
       fullPath: '/valores'
       preLoaderRoute: typeof AppValoresRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tutorial': {
+      id: '/_app/tutorial'
+      path: '/tutorial'
+      fullPath: '/tutorial'
+      preLoaderRoute: typeof AppTutorialRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/follow-up': {
@@ -207,6 +226,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppFollowUpRoute: typeof AppFollowUpRoute
+  AppTutorialRoute: typeof AppTutorialRoute
   AppValoresRoute: typeof AppValoresRoute
   AppOrcamentosIdRoute: typeof AppOrcamentosIdRoute
   AppOrcamentosNovoRoute: typeof AppOrcamentosNovoRoute
@@ -216,6 +236,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppFollowUpRoute: AppFollowUpRoute,
+  AppTutorialRoute: AppTutorialRoute,
   AppValoresRoute: AppValoresRoute,
   AppOrcamentosIdRoute: AppOrcamentosIdRoute,
   AppOrcamentosNovoRoute: AppOrcamentosNovoRoute,

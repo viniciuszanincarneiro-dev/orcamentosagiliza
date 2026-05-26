@@ -25,6 +25,7 @@ const navItems = [
   { to: "/orcamentos", label: "Histórico", icon: History },
   { to: "/follow-up", label: "Follow-up", icon: AlertTriangle },
   { to: "/valores", label: "Tabela de Valores", icon: Settings },
+  { to: "/tutorial", label: "Tutorial", icon: BookOpen },
 ] as const;
 
 function AppLayout() {

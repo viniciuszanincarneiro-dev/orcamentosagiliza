@@ -48,6 +48,7 @@ function abrirWhatsapp(o: Row) {
 function FollowUpPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["follow-up"],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")

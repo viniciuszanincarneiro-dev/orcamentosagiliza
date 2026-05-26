@@ -15,21 +15,30 @@ export const Route = createFileRoute("/_app/dashboard")({
 function DashboardPage() {
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
+    staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orcamentos")
-        .select("id, valor_total, status, created_at");
-      if (error) throw error;
-      const total = data?.length ?? 0;
-      const finalizados = data?.filter((o) => o.status === "finalizado").length ?? 0;
-      const rascunhos = data?.filter((o) => o.status === "rascunho").length ?? 0;
-      const valorTotal = data?.reduce((s, o) => s + Number(o.valor_total ?? 0), 0) ?? 0;
-      return { total, finalizados, rascunhos, valorTotal };
+      // Conta linhas no servidor sem trazer dados; soma apenas valores via select leve
+      const [totalRes, finalRes, rascRes, valoresRes] = await Promise.all([
+        supabase.from("orcamentos").select("*", { count: "exact", head: true }),
+        supabase.from("orcamentos").select("*", { count: "exact", head: true }).eq("status", "finalizado"),
+        supabase.from("orcamentos").select("*", { count: "exact", head: true }).eq("status", "rascunho"),
+        supabase.from("orcamentos").select("valor_total"),
+      ]);
+      if (totalRes.error) throw totalRes.error;
+      if (valoresRes.error) throw valoresRes.error;
+      const valorTotal = (valoresRes.data ?? []).reduce((s, o) => s + Number(o.valor_total ?? 0), 0);
+      return {
+        total: totalRes.count ?? 0,
+        finalizados: finalRes.count ?? 0,
+        rascunhos: rascRes.count ?? 0,
+        valorTotal,
+      };
     },
   });
 
   const { data: recentes } = useQuery({
     queryKey: ["orcamentos-recentes"],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")

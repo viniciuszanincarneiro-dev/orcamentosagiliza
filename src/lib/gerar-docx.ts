@@ -12,10 +12,13 @@ const VERDE = "2EA84E";
 const VERMELHO = "DC352F";
 const PRETO = "19191C";
 
+let _logoBytesCache: Uint8Array | undefined;
 async function logoBytes(): Promise<Uint8Array> {
+  if (_logoBytesCache) return _logoBytesCache;
   const res = await fetch(logoUrl);
   const buf = await res.arrayBuffer();
-  return new Uint8Array(buf);
+  _logoBytesCache = new Uint8Array(buf);
+  return _logoBytesCache;
 }
 
 function P(opts: { text?: string; bold?: boolean; color?: string; size?: number; align?: typeof AlignmentType[keyof typeof AlignmentType]; spacing?: number; runs?: TextRun[] }): Paragraph {

@@ -12,15 +12,18 @@ const VERMELHO: [number, number, number] = [220, 53, 47];
 const PRETO: [number, number, number] = [25, 25, 28];
 const CINZA: [number, number, number] = [110, 110, 115];
 
+let _logoCache: string | undefined;
 async function loadLogoBase64(): Promise<string> {
+  if (_logoCache) return _logoCache;
   const res = await fetch(logoUrl);
   const blob = await res.blob();
-  return new Promise((resolve, reject) => {
+  _logoCache = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => resolve(reader.result as string);
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+  return _logoCache;
 }
 
 export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {

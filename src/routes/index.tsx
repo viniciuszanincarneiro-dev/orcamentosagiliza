@@ -10,7 +10,7 @@ export const Route = createFileRoute("/")({
       throw redirect({ to: "/login" });
     } catch (err) {
       // Re-throw redirects, fall back to login on any other error
-      if (err && typeof err === "object" && "isRedirect" in err) throw err;
+      if (isRedirect(err)) throw err;
       throw redirect({ to: "/login" });
     }
   },

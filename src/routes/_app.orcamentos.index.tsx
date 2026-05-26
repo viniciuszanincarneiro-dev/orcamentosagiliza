@@ -27,6 +27,7 @@ function HistoricoPage() {
   const navigate = useNavigate();
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["orcamentos-lista"],
+    staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")

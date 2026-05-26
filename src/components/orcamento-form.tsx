@@ -3,8 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X, AlertTriangle, CheckCircle2, AlertCircle, Eraser, PencilLine } from "lucide-react";
 import { toast } from "sonner";
-import fileSaver from "file-saver";
-const { saveAs } = fileSaver;
+// file-saver é carregado sob demanda para reduzir o bundle inicial
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
 import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO } from "@/lib/empresa";
 import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
-import { gerarOrcamentoPDF } from "@/lib/gerar-pdf";
-import { gerarOrcamentoDOCX } from "@/lib/gerar-docx";
+// gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento } from "@/lib/orcamento-types";
 
@@ -370,8 +368,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     setGenerating("pdf");
     try {
       const cur = data.id ? { ...data, valor_total: total } : (await save()) ?? { ...data, valor_total: total };
+      const [{ gerarOrcamentoPDF }, { default: fileSaver }] = await Promise.all([
+        import("@/lib/gerar-pdf"),
+        import("file-saver"),
+      ]);
       const blob = await gerarOrcamentoPDF(cur);
-      saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.pdf`);
+      fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.pdf`);
     } catch (e) {
       toast.error("Erro ao gerar PDF", { description: (e as Error).message });
     } finally { setGenerating(null); }
@@ -380,8 +382,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     setGenerating("docx");
     try {
       const cur = data.id ? { ...data, valor_total: total } : (await save()) ?? { ...data, valor_total: total };
+      const [{ gerarOrcamentoDOCX }, { default: fileSaver }] = await Promise.all([
+        import("@/lib/gerar-docx"),
+        import("file-saver"),
+      ]);
       const blob = await gerarOrcamentoDOCX(cur);
-      saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.docx`);
+      fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.docx`);
     } catch (e) {
       toast.error("Erro ao gerar DOCX", { description: (e as Error).message });
     } finally { setGenerating(null); }

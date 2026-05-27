@@ -24,6 +24,7 @@ export const Route = createFileRoute("/_app/orcamentos/")({
 function HistoricoPage() {
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
+  const [acaoPendente, setAcaoPendente] = useState<string | null>(null);
   const navigate = useNavigate();
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["orcamentos-lista"],
@@ -50,13 +51,18 @@ function HistoricoPage() {
   });
 
   async function excluir(id: string) {
+    if (acaoPendente) return;
+    setAcaoPendente(id);
     const { error } = await supabase.from("orcamentos").delete().eq("id", id);
+    setAcaoPendente(null);
     if (error) return toast.error("Erro ao excluir", { description: error.message });
     toast.success("Orçamento excluído");
     refetch();
   }
 
   async function duplicar(id: string) {
+    if (acaoPendente) return;
+    setAcaoPendente(id);
     try {
       const { data: orig, error } = await supabase.from("orcamentos").select("*").eq("id", id).single();
       if (error) throw error;
@@ -74,6 +80,8 @@ function HistoricoPage() {
       navigate({ to: "/orcamentos/$id", params: { id: (novo as { id: string }).id } });
     } catch (e) {
       toast.error("Erro ao duplicar", { description: (e as Error).message });
+    } finally {
+      setAcaoPendente(null);
     }
   }
 

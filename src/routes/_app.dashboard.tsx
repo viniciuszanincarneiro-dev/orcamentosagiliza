@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FilePlus2, FileText, Clock, CheckCircle2, DollarSign } from "lucide-react";
+import { FilePlus2, FileText, Clock, CheckCircle2, DollarSign, TrendingUp } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatBRL, formatDate } from "@/lib/format";
+import { calcularLucro, calcularRepasse, type ItemLike } from "@/lib/lucro";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,

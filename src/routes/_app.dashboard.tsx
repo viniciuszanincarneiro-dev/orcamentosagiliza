@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FilePlus2, FileText, Clock, CheckCircle2, DollarSign } from "lucide-react";
+import { FilePlus2, FileText, Clock, CheckCircle2, DollarSign, TrendingUp } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatBRL, formatDate } from "@/lib/format";
+import { calcularLucro, calcularRepasse, type ItemLike } from "@/lib/lucro";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
@@ -22,16 +23,26 @@ function DashboardPage() {
         supabase.from("orcamentos").select("*", { count: "exact", head: true }),
         supabase.from("orcamentos").select("*", { count: "exact", head: true }).eq("status", "finalizado"),
         supabase.from("orcamentos").select("*", { count: "exact", head: true }).eq("status", "rascunho"),
-        supabase.from("orcamentos").select("valor_total"),
+        supabase.from("orcamentos").select("valor_total, itens"),
       ]);
       if (totalRes.error) throw totalRes.error;
       if (valoresRes.error) throw valoresRes.error;
-      const valorTotal = (valoresRes.data ?? []).reduce((s, o) => s + Number(o.valor_total ?? 0), 0);
+      let valorTotal = 0;
+      let lucroBruto = 0;
+      let repasses = 0;
+      for (const o of valoresRes.data ?? []) {
+        valorTotal += Number(o.valor_total ?? 0);
+        const itens = (o.itens as ItemLike[] | null) ?? [];
+        lucroBruto += calcularLucro(itens);
+        repasses += calcularRepasse(itens);
+      }
       return {
         total: totalRes.count ?? 0,
         finalizados: finalRes.count ?? 0,
         rascunhos: rascRes.count ?? 0,
         valorTotal,
+        lucroBruto: Math.round(lucroBruto * 100) / 100,
+        repasses: Math.round(repasses * 100) / 100,
       };
     },
   });
@@ -70,6 +81,48 @@ function DashboardPage() {
         <StatCard title="Rascunhos" value={stats?.rascunhos ?? 0} icon={Clock} color="text-destructive" />
         <StatCard title="Valor Acumulado" value={formatBRL(stats?.valorTotal ?? 0)} icon={DollarSign} color="text-primary" />
       </div>
+
+      <Card className="border-primary/30 bg-primary/5">
+        <CardHeader>
+          <div className="flex justify-between items-center gap-3 flex-wrap">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" /> Lucro Bruto AGILIZA
+              </CardTitle>
+              <CardDescription>
+                Total apenas dos serviços prestados (campo, assessoria, CCIR/ITR/CAR). Não inclui
+                repasses a cartório (RI e certidões).
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/financeiro">Ver mês a mês</Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Lucro bruto acumulado</p>
+              <p className="text-3xl font-bold tabular-nums text-primary mt-1">
+                {formatBRL(stats?.lucroBruto ?? 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Repasses a cartório</p>
+              <p className="text-2xl font-semibold tabular-nums text-muted-foreground mt-1">
+                {formatBRL(stats?.repasses ?? 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Faturamento total</p>
+              <p className="text-2xl font-semibold tabular-nums mt-1">
+                {formatBRL(stats?.valorTotal ?? 0)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
 
       <Card>
         <CardHeader>

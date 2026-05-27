@@ -24,6 +24,7 @@ export const Route = createFileRoute("/_app/orcamentos/")({
 function HistoricoPage() {
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
+  const [acaoPendente, setAcaoPendente] = useState<string | null>(null);
   const navigate = useNavigate();
   const { data, refetch, isLoading } = useQuery({
     queryKey: ["orcamentos-lista"],
@@ -50,13 +51,18 @@ function HistoricoPage() {
   });
 
   async function excluir(id: string) {
+    if (acaoPendente) return;
+    setAcaoPendente(id);
     const { error } = await supabase.from("orcamentos").delete().eq("id", id);
+    setAcaoPendente(null);
     if (error) return toast.error("Erro ao excluir", { description: error.message });
     toast.success("Orçamento excluído");
     refetch();
   }
 
   async function duplicar(id: string) {
+    if (acaoPendente) return;
+    setAcaoPendente(id);
     try {
       const { data: orig, error } = await supabase.from("orcamentos").select("*").eq("id", id).single();
       if (error) throw error;
@@ -74,6 +80,8 @@ function HistoricoPage() {
       navigate({ to: "/orcamentos/$id", params: { id: (novo as { id: string }).id } });
     } catch (e) {
       toast.error("Erro ao duplicar", { description: (e as Error).message });
+    } finally {
+      setAcaoPendente(null);
     }
   }
 
@@ -167,7 +175,7 @@ function HistoricoPage() {
                     const semContato = ativo && diasContato !== null && diasContato >= 7;
                     const alerta = vencido || vencendo || semContato;
                     return (
-                      <TableRow key={o.id} className={alerta ? "bg-destructive/5" : undefined}>
+                      <TableRow key={o.id} className={alerta ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/40"}>
                         <TableCell className="font-mono text-xs">{o.numero}</TableCell>
                         <TableCell className="font-medium">
                           <Link to="/orcamentos/$id" params={{ id: o.id }} className="hover:underline">
@@ -201,12 +209,24 @@ function HistoricoPage() {
                             >
                               <MessageCircle className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => duplicar(o.id)} title="Duplicar">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => duplicar(o.id)}
+                              disabled={acaoPendente === o.id}
+                              title="Duplicar"
+                            >
                               <Copy className="h-4 w-4" />
                             </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" title="Excluir">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  disabled={acaoPendente === o.id}
+                                  className="text-destructive hover:text-destructive"
+                                  title="Excluir"
+                                >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -219,7 +239,11 @@ function HistoricoPage() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => excluir(o.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  <AlertDialogAction
+                                    onClick={() => excluir(o.id)}
+                                    disabled={acaoPendente === o.id}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
                                     Excluir
                                   </AlertDialogAction>
                                 </AlertDialogFooter>

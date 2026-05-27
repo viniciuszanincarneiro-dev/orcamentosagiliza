@@ -23,16 +23,26 @@ function DashboardPage() {
         supabase.from("orcamentos").select("*", { count: "exact", head: true }),
         supabase.from("orcamentos").select("*", { count: "exact", head: true }).eq("status", "finalizado"),
         supabase.from("orcamentos").select("*", { count: "exact", head: true }).eq("status", "rascunho"),
-        supabase.from("orcamentos").select("valor_total"),
+        supabase.from("orcamentos").select("valor_total, itens"),
       ]);
       if (totalRes.error) throw totalRes.error;
       if (valoresRes.error) throw valoresRes.error;
-      const valorTotal = (valoresRes.data ?? []).reduce((s, o) => s + Number(o.valor_total ?? 0), 0);
+      let valorTotal = 0;
+      let lucroBruto = 0;
+      let repasses = 0;
+      for (const o of valoresRes.data ?? []) {
+        valorTotal += Number(o.valor_total ?? 0);
+        const itens = (o.itens as ItemLike[] | null) ?? [];
+        lucroBruto += calcularLucro(itens);
+        repasses += calcularRepasse(itens);
+      }
       return {
         total: totalRes.count ?? 0,
         finalizados: finalRes.count ?? 0,
         rascunhos: rascRes.count ?? 0,
         valorTotal,
+        lucroBruto: Math.round(lucroBruto * 100) / 100,
+        repasses: Math.round(repasses * 100) / 100,
       };
     },
   });

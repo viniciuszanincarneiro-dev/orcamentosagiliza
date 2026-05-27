@@ -82,6 +82,48 @@ function DashboardPage() {
         <StatCard title="Valor Acumulado" value={formatBRL(stats?.valorTotal ?? 0)} icon={DollarSign} color="text-primary" />
       </div>
 
+      <Card className="border-primary/30 bg-primary/5">
+        <CardHeader>
+          <div className="flex justify-between items-center gap-3 flex-wrap">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" /> Lucro Bruto AGILIZA
+              </CardTitle>
+              <CardDescription>
+                Total apenas dos serviços prestados (campo, assessoria, CCIR/ITR/CAR). Não inclui
+                repasses a cartório (RI e certidões).
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/financeiro">Ver mês a mês</Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <p className="text-sm text-muted-foreground">Lucro bruto acumulado</p>
+              <p className="text-3xl font-bold tabular-nums text-primary mt-1">
+                {formatBRL(stats?.lucroBruto ?? 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Repasses a cartório</p>
+              <p className="text-2xl font-semibold tabular-nums text-muted-foreground mt-1">
+                {formatBRL(stats?.repasses ?? 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Faturamento total</p>
+              <p className="text-2xl font-semibold tabular-nums mt-1">
+                {formatBRL(stats?.valorTotal ?? 0)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center gap-3 flex-wrap">

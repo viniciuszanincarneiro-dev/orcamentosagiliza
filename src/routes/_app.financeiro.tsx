@@ -253,8 +253,8 @@ function FinanceiroPage() {
                   <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => compact(v)} />
                   <Tooltip formatter={(v: number) => formatBRL(v)} contentStyle={tooltipStyle} />
-                  <Bar dataKey="Faturamento" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Líquido" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Faturamento" fill="var(--muted-foreground)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Líquido" fill="var(--primary)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -276,7 +276,7 @@ function FinanceiroPage() {
                   <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                   <Tooltip contentStyle={tooltipStyle} />
-                  <Line type="monotone" dataKey="Orçamentos" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="Orçamentos" stroke="var(--primary)" strokeWidth={2} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -373,8 +373,8 @@ function EmptyMini() {
 }
 
 const tooltipStyle: React.CSSProperties = {
-  background: "hsl(var(--background))",
-  border: "1px solid hsl(var(--border))",
+  background: "var(--background)",
+  border: "1px solid var(--border)",
   borderRadius: 8,
   fontSize: 12,
 };

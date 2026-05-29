@@ -349,6 +349,26 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   );
   const total = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
 
+  // Explicação do RI baseado no valor declarado do imóvel e no fator interno
+  const explicacaoRI = useMemo(
+    () => explicarRegistroImoveis(Number(data.imovel_valor_avaliado) || 0, fatorRI),
+    [data.imovel_valor_avaliado, fatorRI],
+  );
+
+  async function salvarFatorPadrao() {
+    try {
+      const { error } = await supabase
+        .from("tabela_valores")
+        .update({ valor: fatorRI } as never)
+        .eq("categoria", "config")
+        .eq("chave", "ri_fator_ajuste");
+      if (error) throw error;
+      toast.success(`Fator de ajuste salvo como padrão: ${fatorRI}%`);
+    } catch (e) {
+      toast.error("Erro ao salvar fator", { description: (e as Error).message });
+    }
+  }
+
   function recalcularRI() {
     const novo = explicacaoRI.valor;
     setServicos((arr) => {

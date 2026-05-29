@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X, AlertTriangle, CheckCircle2, AlertCircle, Eraser, PencilLine } from "lucide-react";
+import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X, AlertTriangle, CheckCircle2, AlertCircle, Eraser, PencilLine, ChevronUp, ChevronDown, Copy as CopyIcon } from "lucide-react";
 import { toast } from "sonner";
 // file-saver é carregado sob demanda para reduzir o bundle inicial
 
@@ -20,7 +20,38 @@ import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO } from "@/lib/empresa"
 import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
 // gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
-import type { OrcamentoData, ItemOrcamento } from "@/lib/orcamento-types";
+import type { OrcamentoData, ItemOrcamento, ServicoBloco } from "@/lib/orcamento-types";
+
+function novoId(): string {
+  try { return (globalThis.crypto as Crypto).randomUUID(); }
+  catch { return `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
+}
+
+function blocoVazio(tipo = "retificacao_geo"): ServicoBloco {
+  return { id: novoId(), tipo_servico: tipo, itens: [], observacoes: "", subtotal: 0 };
+}
+
+function normalizarServicos(d: OrcamentoData): ServicoBloco[] {
+  if (Array.isArray(d.servicos) && d.servicos.length > 0) {
+    return d.servicos.map((s) => ({
+      id: s.id ?? novoId(),
+      tipo_servico: s.tipo_servico ?? "outros",
+      titulo_personalizado: s.titulo_personalizado,
+      itens: Array.isArray(s.itens) ? s.itens : [],
+      observacoes: s.observacoes ?? "",
+      subtotal: Array.isArray(s.itens) ? s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) : 0,
+    }));
+  }
+  // legado: monta um único bloco a partir de tipo_servico + itens
+  const itens = Array.isArray(d.itens) ? d.itens : [];
+  return [{
+    id: novoId(),
+    tipo_servico: d.tipo_servico ?? "outros",
+    itens,
+    observacoes: d.observacoes ?? "",
+    subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0),
+  }];
+}
 
 // Cache de leitura por sessão (chave: hash leve do arquivo/texto).
 const parseCache = new Map<string, MatriculaParsed>();

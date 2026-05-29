@@ -84,9 +84,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     proprietarios: [],
     confrontantes: [],
     itens: [],
+    servicos: [blocoVazio("retificacao_geo")],
     valor_total: 0,
     status: "rascunho",
   });
+  // Garante que sempre existe pelo menos um bloco (normaliza orçamentos legados)
+  const [servicos, setServicos] = useState<ServicoBloco[]>(() => normalizarServicos(initial ?? {
+    tipo_servico: "retificacao_geo", requerente_nome: "", proprietarios: [], confrontantes: [], itens: [], valor_total: 0,
+  } as OrcamentoData));
   const [matriculaTexto, setMatriculaTexto] = useState("");
   const [arquivo, setArquivo] = useState<{ nome: string; mime: string; size: number; base64: string } | null>(null);
   const [parsing, setParsing] = useState(false);

@@ -151,14 +151,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     }
   }
 
-  function aplicarTemplate(tipo: string, area_m2 = data.imovel_area_m2, valor = data.imovel_valor_avaliado) {
+  function aplicarTemplate(tipo: string, blocoIdx = 0, area_m2 = data.imovel_area_m2, valor = data.imovel_valor_avaliado) {
     const template = TEMPLATES_ITENS[tipo] ?? [];
     const itens: ItemOrcamento[] = template.map((t) =>
       "auto" in t
         ? { descricao: t.descricao, valor: calcValorAuto(t.auto, area_m2, valor) }
         : { descricao: t.descricao, valor: t.valor_base }
     );
-    setData((d) => ({ ...d, itens }));
+    setServicos((arr) => arr.map((s, i) => i === blocoIdx ? { ...s, tipo_servico: tipo, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) } : s));
   }
 
   async function fileToBase64(file: Blob): Promise<string> {
@@ -257,7 +257,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         requerente_nome: d.requerente_nome || (parsed.proprietarios[0]?.nome ?? ""),
         requerente_cpf_cnpj: d.requerente_cpf_cnpj || parsed.proprietarios[0]?.cpf_cnpj,
       }));
-      aplicarTemplate(data.tipo_servico, parsed.area_m2, parsed.valor_avaliado);
+      // Recalcula itens automáticos do primeiro bloco com a nova área/valor
+      aplicarTemplate(servicos[0]?.tipo_servico ?? data.tipo_servico, 0, parsed.area_m2, parsed.valor_avaliado);
       if (qualidade.nivel === "alta") toast.success("Leitura confiável. Revise os campos antes de gerar o orçamento.");
       else if (qualidade.nivel === "parcial") toast.warning("Leitura parcial. Complete os campos faltantes manualmente.");
       else toast.warning("Leitura ruim. Recomendamos preencher manualmente.");
@@ -287,50 +288,83 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     toast.success("Campos extraídos limpos. Preencha manualmente.");
   }
 
-  function onTipoServicoChange(tipo: string) {
-    set("tipo_servico", tipo);
-    // Aplica template do novo tipo se vazio OU se for retificação urbana (atalho rápido)
-    if (data.itens.length === 0 || tipo === "retificacao_urbana") aplicarTemplate(tipo);
+  // ============ Helpers de blocos de serviço (multisserviço) ============
+  function addServico() {
+    setServicos((arr) => [...arr, blocoVazio("outros")]);
   }
-
-  // Explicação do RI baseado no valor declarado do imóvel e no fator interno
-  const explicacaoRI = useMemo(
-    () => explicarRegistroImoveis(Number(data.imovel_valor_avaliado) || 0, fatorRI),
-    [data.imovel_valor_avaliado, fatorRI],
-  );
-
-  async function salvarFatorPadrao() {
-    try {
-      const { error } = await supabase
-        .from("tabela_valores")
-        .update({ valor: fatorRI } as never)
-        .eq("categoria", "config")
-        .eq("chave", "ri_fator_ajuste");
-      if (error) throw error;
-      toast.success(`Fator de ajuste salvo como padrão: ${fatorRI}%`);
-    } catch (e) {
-      toast.error("Erro ao salvar fator", { description: (e as Error).message });
+  function removeServico(idx: number) {
+    setServicos((arr) => arr.length <= 1 ? arr : arr.filter((_, i) => i !== idx));
+  }
+  function duplicarServico(idx: number) {
+    setServicos((arr) => {
+      const src = arr[idx];
+      if (!src) return arr;
+      const novo: ServicoBloco = { ...src, id: novoId(), itens: src.itens.map((i) => ({ ...i })) };
+      const out = [...arr];
+      out.splice(idx + 1, 0, novo);
+      return out;
+    });
+  }
+  function moverServico(idx: number, dir: -1 | 1) {
+    setServicos((arr) => {
+      const novo = [...arr];
+      const j = idx + dir;
+      if (j < 0 || j >= novo.length) return arr;
+      [novo[idx], novo[j]] = [novo[j], novo[idx]];
+      return novo;
+    });
+  }
+  function updateBlocoTipo(idx: number, tipo: string) {
+    const itensAtuais = servicos[idx]?.itens ?? [];
+    // Aplica template se bloco está vazio
+    if (itensAtuais.length === 0 || tipo === "retificacao_urbana") {
+      aplicarTemplate(tipo, idx);
+    } else {
+      setServicos((arr) => arr.map((s, i) => i === idx ? { ...s, tipo_servico: tipo } : s));
     }
   }
+  function updateBlocoObs(idx: number, observacoes: string) {
+    setServicos((arr) => arr.map((s, i) => i === idx ? { ...s, observacoes } : s));
+  }
+
+  // ============ Itens (escopados ao bloco) ============
+  function addItem(blocoIdx: number) {
+    setServicos((arr) => arr.map((s, i) => i === blocoIdx ? { ...s, itens: [...s.itens, { descricao: "", valor: 0 }] } : s));
+  }
+  function removeItem(blocoIdx: number, idx: number) {
+    setServicos((arr) => arr.map((s, i) => i === blocoIdx ? { ...s, itens: s.itens.filter((_, k) => k !== idx) } : s));
+  }
+  function updateItem(blocoIdx: number, idx: number, patch: Partial<ItemOrcamento>) {
+    setServicos((arr) => arr.map((s, i) => {
+      if (i !== blocoIdx) return s;
+      const itens = s.itens.map((it, k) => k === idx ? { ...it, ...patch } : it);
+      return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
+    }));
+  }
+
+  // Subtotais por bloco + total geral
+  const subtotais = useMemo(
+    () => servicos.map((s) => s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0)),
+    [servicos],
+  );
+  const total = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
 
   function recalcularRI() {
     const novo = explicacaoRI.valor;
-    setData((d) => {
-      const idx = d.itens.findIndex((i) => /registro\s+de\s+im[oó]veis/i.test(i.descricao));
-      if (idx === -1) {
-        return { ...d, itens: [...d.itens, { descricao: "REGISTRO DE IMÓVEIS", valor: novo }] };
-      }
-      const itens = d.itens.map((it, i) => (i === idx ? { ...it, valor: novo } : it));
-      return { ...d, itens };
+    setServicos((arr) => {
+      // Procura primeiro bloco com item RI; se não houver, adiciona no primeiro bloco
+      let alvo = arr.findIndex((s) => s.itens.some((i) => /registro\s+de\s+im[oó]veis/i.test(i.descricao)));
+      if (alvo === -1) alvo = 0;
+      return arr.map((s, i) => {
+        if (i !== alvo) return s;
+        const idx = s.itens.findIndex((it) => /registro\s+de\s+im[oó]veis/i.test(it.descricao));
+        const itens = idx === -1
+          ? [...s.itens, { descricao: "REGISTRO DE IMÓVEIS", valor: novo }]
+          : s.itens.map((it, k) => k === idx ? { ...it, valor: novo } : it);
+        return { ...s, itens };
+      });
     });
     toast.success(`RI recalculado: ${formatBRL(novo)}`);
-  }
-
-
-  function addItem() { setData((d) => ({ ...d, itens: [...d.itens, { descricao: "", valor: 0 }] })); }
-  function removeItem(idx: number) { setData((d) => ({ ...d, itens: d.itens.filter((_, i) => i !== idx) })); }
-  function updateItem(idx: number, patch: Partial<ItemOrcamento>) {
-    setData((d) => ({ ...d, itens: d.itens.map((it, i) => i === idx ? { ...it, ...patch } : it) }));
   }
 
   async function save(status: string = data.status ?? "rascunho"): Promise<OrcamentoData | null> {

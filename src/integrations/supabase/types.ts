@@ -37,6 +37,7 @@ export type Database = {
           proprietarios: Json | null
           requerente_cpf_cnpj: string | null
           requerente_nome: string
+          servicos: Json
           status: string
           tipo_servico: string
           ultimo_contato: string | null
@@ -66,6 +67,7 @@ export type Database = {
           proprietarios?: Json | null
           requerente_cpf_cnpj?: string | null
           requerente_nome: string
+          servicos?: Json
           status?: string
           tipo_servico?: string
           ultimo_contato?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           proprietarios?: Json | null
           requerente_cpf_cnpj?: string | null
           requerente_nome?: string
+          servicos?: Json
           status?: string
           tipo_servico?: string
           ultimo_contato?: string | null

@@ -29,6 +29,24 @@ export function isPassthrough(descricao?: string | null): boolean {
   return PASSTHROUGH_PATTERNS.some((rx) => rx.test(descricao));
 }
 
+/**
+ * Achata itens de um orçamento (suporta multisserviço).
+ * Se `servicos` estiver presente e não-vazio, usa os itens de cada bloco.
+ * Caso contrário, retorna `itens` como estão.
+ */
+export function flattenItens(orc: {
+  itens?: ItemLike[] | null;
+  servicos?: { itens?: ItemLike[] | null }[] | null;
+} | null | undefined): ItemLike[] {
+  if (!orc) return [];
+  if (Array.isArray(orc.servicos) && orc.servicos.length > 0) {
+    const out: ItemLike[] = [];
+    for (const s of orc.servicos) if (Array.isArray(s?.itens)) out.push(...s.itens);
+    return out;
+  }
+  return Array.isArray(orc.itens) ? orc.itens : [];
+}
+
 export function calcularLucro(itens: ItemLike[] | null | undefined): number {
   if (!Array.isArray(itens)) return 0;
   let lucro = 0;

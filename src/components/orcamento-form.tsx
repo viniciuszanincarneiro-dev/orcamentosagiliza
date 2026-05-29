@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X, AlertTriangle, CheckCircle2, AlertCircle, Eraser, PencilLine } from "lucide-react";
+import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X, AlertTriangle, CheckCircle2, AlertCircle, Eraser, PencilLine, ChevronUp, ChevronDown, Copy as CopyIcon } from "lucide-react";
 import { toast } from "sonner";
 // file-saver é carregado sob demanda para reduzir o bundle inicial
 
@@ -20,7 +20,38 @@ import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO } from "@/lib/empresa"
 import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
 // gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
-import type { OrcamentoData, ItemOrcamento } from "@/lib/orcamento-types";
+import type { OrcamentoData, ItemOrcamento, ServicoBloco } from "@/lib/orcamento-types";
+
+function novoId(): string {
+  try { return (globalThis.crypto as Crypto).randomUUID(); }
+  catch { return `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
+}
+
+function blocoVazio(tipo = "retificacao_geo"): ServicoBloco {
+  return { id: novoId(), tipo_servico: tipo, itens: [], observacoes: "", subtotal: 0 };
+}
+
+function normalizarServicos(d: OrcamentoData): ServicoBloco[] {
+  if (Array.isArray(d.servicos) && d.servicos.length > 0) {
+    return d.servicos.map((s) => ({
+      id: s.id ?? novoId(),
+      tipo_servico: s.tipo_servico ?? "outros",
+      titulo_personalizado: s.titulo_personalizado,
+      itens: Array.isArray(s.itens) ? s.itens : [],
+      observacoes: s.observacoes ?? "",
+      subtotal: Array.isArray(s.itens) ? s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) : 0,
+    }));
+  }
+  // legado: monta um único bloco a partir de tipo_servico + itens
+  const itens = Array.isArray(d.itens) ? d.itens : [];
+  return [{
+    id: novoId(),
+    tipo_servico: d.tipo_servico ?? "outros",
+    itens,
+    observacoes: d.observacoes ?? "",
+    subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0),
+  }];
+}
 
 // Cache de leitura por sessão (chave: hash leve do arquivo/texto).
 const parseCache = new Map<string, MatriculaParsed>();
@@ -53,9 +84,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     proprietarios: [],
     confrontantes: [],
     itens: [],
+    servicos: [blocoVazio("retificacao_geo")],
     valor_total: 0,
     status: "rascunho",
   });
+  // Garante que sempre existe pelo menos um bloco (normaliza orçamentos legados)
+  const [servicos, setServicos] = useState<ServicoBloco[]>(() => normalizarServicos(initial ?? {
+    tipo_servico: "retificacao_geo", requerente_nome: "", proprietarios: [], confrontantes: [], itens: [], valor_total: 0,
+  } as OrcamentoData));
   const [matriculaTexto, setMatriculaTexto] = useState("");
   const [arquivo, setArquivo] = useState<{ nome: string; mime: string; size: number; base64: string } | null>(null);
   const [parsing, setParsing] = useState(false);
@@ -115,14 +151,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     }
   }
 
-  function aplicarTemplate(tipo: string, area_m2 = data.imovel_area_m2, valor = data.imovel_valor_avaliado) {
+  function aplicarTemplate(tipo: string, blocoIdx = 0, area_m2 = data.imovel_area_m2, valor = data.imovel_valor_avaliado) {
     const template = TEMPLATES_ITENS[tipo] ?? [];
     const itens: ItemOrcamento[] = template.map((t) =>
       "auto" in t
         ? { descricao: t.descricao, valor: calcValorAuto(t.auto, area_m2, valor) }
         : { descricao: t.descricao, valor: t.valor_base }
     );
-    setData((d) => ({ ...d, itens }));
+    setServicos((arr) => arr.map((s, i) => i === blocoIdx ? { ...s, tipo_servico: tipo, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) } : s));
   }
 
   async function fileToBase64(file: Blob): Promise<string> {
@@ -221,7 +257,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         requerente_nome: d.requerente_nome || (parsed.proprietarios[0]?.nome ?? ""),
         requerente_cpf_cnpj: d.requerente_cpf_cnpj || parsed.proprietarios[0]?.cpf_cnpj,
       }));
-      aplicarTemplate(data.tipo_servico, parsed.area_m2, parsed.valor_avaliado);
+      // Recalcula itens automáticos do primeiro bloco com a nova área/valor
+      aplicarTemplate(servicos[0]?.tipo_servico ?? data.tipo_servico, 0, parsed.area_m2, parsed.valor_avaliado);
       if (qualidade.nivel === "alta") toast.success("Leitura confiável. Revise os campos antes de gerar o orçamento.");
       else if (qualidade.nivel === "parcial") toast.warning("Leitura parcial. Complete os campos faltantes manualmente.");
       else toast.warning("Leitura ruim. Recomendamos preencher manualmente.");
@@ -251,11 +288,66 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     toast.success("Campos extraídos limpos. Preencha manualmente.");
   }
 
-  function onTipoServicoChange(tipo: string) {
-    set("tipo_servico", tipo);
-    // Aplica template do novo tipo se vazio OU se for retificação urbana (atalho rápido)
-    if (data.itens.length === 0 || tipo === "retificacao_urbana") aplicarTemplate(tipo);
+  // ============ Helpers de blocos de serviço (multisserviço) ============
+  function addServico() {
+    setServicos((arr) => [...arr, blocoVazio("outros")]);
   }
+  function removeServico(idx: number) {
+    setServicos((arr) => arr.length <= 1 ? arr : arr.filter((_, i) => i !== idx));
+  }
+  function duplicarServico(idx: number) {
+    setServicos((arr) => {
+      const src = arr[idx];
+      if (!src) return arr;
+      const novo: ServicoBloco = { ...src, id: novoId(), itens: src.itens.map((i) => ({ ...i })) };
+      const out = [...arr];
+      out.splice(idx + 1, 0, novo);
+      return out;
+    });
+  }
+  function moverServico(idx: number, dir: -1 | 1) {
+    setServicos((arr) => {
+      const novo = [...arr];
+      const j = idx + dir;
+      if (j < 0 || j >= novo.length) return arr;
+      [novo[idx], novo[j]] = [novo[j], novo[idx]];
+      return novo;
+    });
+  }
+  function updateBlocoTipo(idx: number, tipo: string) {
+    const itensAtuais = servicos[idx]?.itens ?? [];
+    // Aplica template se bloco está vazio
+    if (itensAtuais.length === 0 || tipo === "retificacao_urbana") {
+      aplicarTemplate(tipo, idx);
+    } else {
+      setServicos((arr) => arr.map((s, i) => i === idx ? { ...s, tipo_servico: tipo } : s));
+    }
+  }
+  function updateBlocoObs(idx: number, observacoes: string) {
+    setServicos((arr) => arr.map((s, i) => i === idx ? { ...s, observacoes } : s));
+  }
+
+  // ============ Itens (escopados ao bloco) ============
+  function addItem(blocoIdx: number) {
+    setServicos((arr) => arr.map((s, i) => i === blocoIdx ? { ...s, itens: [...s.itens, { descricao: "", valor: 0 }] } : s));
+  }
+  function removeItem(blocoIdx: number, idx: number) {
+    setServicos((arr) => arr.map((s, i) => i === blocoIdx ? { ...s, itens: s.itens.filter((_, k) => k !== idx) } : s));
+  }
+  function updateItem(blocoIdx: number, idx: number, patch: Partial<ItemOrcamento>) {
+    setServicos((arr) => arr.map((s, i) => {
+      if (i !== blocoIdx) return s;
+      const itens = s.itens.map((it, k) => k === idx ? { ...it, ...patch } : it);
+      return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
+    }));
+  }
+
+  // Subtotais por bloco + total geral
+  const subtotais = useMemo(
+    () => servicos.map((s) => s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0)),
+    [servicos],
+  );
+  const total = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
 
   // Explicação do RI baseado no valor declarado do imóvel e no fator interno
   const explicacaoRI = useMemo(
@@ -279,22 +371,20 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
   function recalcularRI() {
     const novo = explicacaoRI.valor;
-    setData((d) => {
-      const idx = d.itens.findIndex((i) => /registro\s+de\s+im[oó]veis/i.test(i.descricao));
-      if (idx === -1) {
-        return { ...d, itens: [...d.itens, { descricao: "REGISTRO DE IMÓVEIS", valor: novo }] };
-      }
-      const itens = d.itens.map((it, i) => (i === idx ? { ...it, valor: novo } : it));
-      return { ...d, itens };
+    setServicos((arr) => {
+      // Procura primeiro bloco com item RI; se não houver, adiciona no primeiro bloco
+      let alvo = arr.findIndex((s) => s.itens.some((i) => /registro\s+de\s+im[oó]veis/i.test(i.descricao)));
+      if (alvo === -1) alvo = 0;
+      return arr.map((s, i) => {
+        if (i !== alvo) return s;
+        const idx = s.itens.findIndex((it) => /registro\s+de\s+im[oó]veis/i.test(it.descricao));
+        const itens = idx === -1
+          ? [...s.itens, { descricao: "REGISTRO DE IMÓVEIS", valor: novo }]
+          : s.itens.map((it, k) => k === idx ? { ...it, valor: novo } : it);
+        return { ...s, itens };
+      });
     });
     toast.success(`RI recalculado: ${formatBRL(novo)}`);
-  }
-
-
-  function addItem() { setData((d) => ({ ...d, itens: [...d.itens, { descricao: "", valor: 0 }] })); }
-  function removeItem(idx: number) { setData((d) => ({ ...d, itens: d.itens.filter((_, i) => i !== idx) })); }
-  function updateItem(idx: number, patch: Partial<ItemOrcamento>) {
-    setData((d) => ({ ...d, itens: d.itens.map((it, i) => i === idx ? { ...it, ...patch } : it) }));
   }
 
   async function save(status: string = data.status ?? "rascunho"): Promise<OrcamentoData | null> {
@@ -302,13 +392,32 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       toast.error("Informe o nome do cliente");
       return null;
     }
+    if (servicos.length === 0 || servicos.every((s) => s.itens.length === 0)) {
+      toast.error("Adicione pelo menos um serviço com itens");
+      return null;
+    }
     setSaving(true);
     try {
       const agora = new Date().toISOString();
       const statusMudou = status !== data.status;
-      const totalAtual = data.itens.reduce((s, i) => s + (Number(i.valor) || 0), 0);
+      // Aglutina itens de todos os blocos (mantém compat com lucro/financeiro)
+      const itensFlat: ItemOrcamento[] = servicos.flatMap((s) => s.itens);
+      const totalAtual = itensFlat.reduce((a, b) => a + (Number(b.valor) || 0), 0);
+      // Observações: concatena observações de cada bloco quando houver mais de uma
+      const obsFromBlocos = servicos
+        .map((s, i) => s.observacoes?.trim() ? `[${i + 1}] ${s.observacoes.trim()}` : "")
+        .filter(Boolean)
+        .join("\n");
+      const observacoesFinal = data.observacoes?.trim()
+        ? (obsFromBlocos ? `${data.observacoes.trim()}\n\n${obsFromBlocos}` : data.observacoes.trim())
+        : (obsFromBlocos || null);
+      // Serializa blocos (com subtotais atualizados)
+      const servicosPayload = servicos.map((s) => ({
+        ...s,
+        subtotal: s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0),
+      }));
       const payload: Record<string, unknown> = {
-        tipo_servico: data.tipo_servico,
+        tipo_servico: servicos[0]?.tipo_servico ?? data.tipo_servico,
         requerente_nome: data.requerente_nome,
         requerente_cpf_cnpj: data.requerente_cpf_cnpj || null,
         cliente_telefone: data.cliente_telefone || null,
@@ -320,9 +429,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         imovel_valor_avaliado: data.imovel_valor_avaliado ?? null,
         proprietarios: data.proprietarios,
         confrontantes: [],
-        itens: data.itens,
+        itens: itensFlat,
+        servicos: servicosPayload,
         valor_total: totalAtual,
-        observacoes: data.observacoes || null,
+        observacoes: observacoesFinal,
         status,
         validade_dias: data.validade_dias ?? 30,
         ultimo_contato: data.ultimo_contato ?? null,
@@ -352,7 +462,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         if (error) throw error;
         saved = row as unknown as OrcamentoData;
       }
-      setData({ ...saved, valor_total: Number(saved.valor_total ?? totalAtual) });
+      setData({ ...saved, valor_total: Number(saved.valor_total ?? totalAtual), itens: itensFlat, servicos: servicosPayload });
+      setServicos(normalizarServicos({ ...saved, itens: itensFlat, servicos: servicosPayload } as OrcamentoData));
       toast.success("Orçamento salvo");
       onSaved?.(saved.id!, saved.numero!);
       return saved;
@@ -364,10 +475,20 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     }
   }
 
+  // Monta um snapshot do orçamento atual (sem persistir) para geração de PDF/DOCX
+  function snapshotAtual(): OrcamentoData {
+    const itensFlat: ItemOrcamento[] = servicos.flatMap((s) => s.itens);
+    const servicosSnap = servicos.map((s) => ({
+      ...s,
+      subtotal: s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0),
+    }));
+    return { ...data, itens: itensFlat, servicos: servicosSnap, valor_total: total, tipo_servico: servicos[0]?.tipo_servico ?? data.tipo_servico };
+  }
+
   async function downloadPDF() {
     setGenerating("pdf");
     try {
-      const cur = data.id ? { ...data, valor_total: total } : (await save()) ?? { ...data, valor_total: total };
+      const cur = data.id ? snapshotAtual() : (await save()) ?? snapshotAtual();
       const [{ gerarOrcamentoPDF }, { default: fileSaver }] = await Promise.all([
         import("@/lib/gerar-pdf"),
         import("file-saver"),
@@ -381,7 +502,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   async function downloadDOCX() {
     setGenerating("docx");
     try {
-      const cur = data.id ? { ...data, valor_total: total } : (await save()) ?? { ...data, valor_total: total };
+      const cur = data.id ? snapshotAtual() : (await save()) ?? snapshotAtual();
       const [{ gerarOrcamentoDOCX }, { default: fileSaver }] = await Promise.all([
         import("@/lib/gerar-docx"),
         import("file-saver"),
@@ -393,7 +514,6 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     } finally { setGenerating(null); }
   }
 
-  const total = useMemo(() => data.itens.reduce((s, i) => s + Number(i.valor || 0), 0), [data.itens]);
 
   return (
     <div className="space-y-6">
@@ -498,18 +618,9 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       </Tabs>
 
       <Card>
-        <CardHeader><CardTitle>Tipo de serviço e status</CardTitle></CardHeader>
-        <CardContent className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <Label>Tipo de serviço</Label>
-            <Select value={data.tipo_servico} onValueChange={onTipoServicoChange}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {TIPOS_SERVICO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
+        <CardHeader><CardTitle>Status do orçamento</CardTitle></CardHeader>
+        <CardContent>
+          <div className="max-w-xs">
             <Label>Status</Label>
             <Select value={data.status ?? "rascunho"} onValueChange={(v) => set("status", v as OrcamentoData["status"])}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -520,6 +631,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           </div>
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader><CardTitle>Dados do orçamento</CardTitle></CardHeader>
@@ -639,40 +751,112 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       </Card>
 
 
+      {/* ============ SERVIÇOS DO ORÇAMENTO (multisserviço) ============ */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-start gap-3 flex-wrap">
             <div>
-              <CardTitle>Itens do orçamento</CardTitle>
-              <CardDescription>Aplique o template do tipo de serviço e ajuste qualquer valor manualmente.</CardDescription>
+              <CardTitle>Serviços do orçamento</CardTitle>
+              <CardDescription>
+                Adicione um ou mais serviços. Cada bloco tem tipo, itens e observações próprias e gera uma seção no PDF.
+              </CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="secondary" onClick={() => aplicarTemplate(data.tipo_servico)}>
-                <Calculator className="h-4 w-4 mr-1" /> Aplicar template
-              </Button>
-              <Button size="sm" variant="outline" onClick={addItem}><Plus className="h-4 w-4 mr-1" />Item</Button>
-            </div>
+            <Button size="sm" onClick={addServico}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar serviço
+            </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {data.itens.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum item. Clique em <b>Aplicar template</b> para usar o padrão do tipo de serviço selecionado.</p>
-          ) : null}
-          {data.itens.map((it, i) => (
-            <div key={i} className="grid gap-2 items-center sm:grid-cols-[1fr_160px_40px]">
-              <Input value={it.descricao} onChange={(e) => updateItem(i, { descricao: e.target.value })} placeholder="Descrição do serviço" />
-              <Input type="number" step="0.01" className="text-right tabular-nums"
-                value={it.valor} onChange={(e) => updateItem(i, { valor: Number(e.target.value) || 0 })} />
-              <Button size="icon" variant="ghost" onClick={() => removeItem(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-            </div>
-          ))}
-          <Separator className="my-3" />
-          <div className="flex justify-end items-baseline gap-4 pr-12">
-            <span className="text-sm uppercase text-muted-foreground tracking-wider">Valor total</span>
+        <CardContent className="space-y-4">
+          {servicos.map((bloco, bi) => {
+            const subtotal = subtotais[bi] ?? 0;
+            const tipoLabel = TIPOS_SERVICO.find((t) => t.value === bloco.tipo_servico)?.label ?? bloco.tipo_servico;
+            return (
+              <div key={bloco.id} className="rounded-lg border bg-card">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b bg-muted/30">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-md bg-primary/10 text-primary text-xs font-bold tabular-nums">
+                      {bi + 1}
+                    </span>
+                    <span className="text-sm font-semibold truncate">{tipoLabel}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">· {formatBRL(subtotal)}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moverServico(bi, -1)} disabled={bi === 0} title="Mover para cima">
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moverServico(bi, 1)} disabled={bi === servicos.length - 1} title="Mover para baixo">
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => duplicarServico(bi)} title="Duplicar serviço">
+                      <CopyIcon className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeServico(bi)} disabled={servicos.length <= 1} title="Remover serviço">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="p-4 space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] items-end">
+                    <div>
+                      <Label className="text-xs">Tipo de serviço</Label>
+                      <Select value={bloco.tipo_servico} onValueChange={(v) => updateBlocoTipo(bi, v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {TIPOS_SERVICO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button size="sm" variant="secondary" onClick={() => aplicarTemplate(bloco.tipo_servico, bi)}>
+                      <Calculator className="h-4 w-4 mr-1" /> Aplicar template
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => addItem(bi)}>
+                      <Plus className="h-4 w-4 mr-1" /> Item
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {bloco.itens.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhum item. Clique em <b>Aplicar template</b> para usar o padrão do tipo selecionado.
+                      </p>
+                    ) : null}
+                    {bloco.itens.map((it, i) => (
+                      <div key={i} className="grid gap-2 items-center sm:grid-cols-[1fr_160px_40px]">
+                        <Input value={it.descricao} onChange={(e) => updateItem(bi, i, { descricao: e.target.value })} placeholder="Descrição do serviço" />
+                        <Input type="number" step="0.01" className="text-right tabular-nums"
+                          value={it.valor} onChange={(e) => updateItem(bi, i, { valor: Number(e.target.value) || 0 })} />
+                        <Button size="icon" variant="ghost" onClick={() => removeItem(bi, i)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Observações deste serviço (opcional)</Label>
+                    <Textarea rows={2} value={bloco.observacoes ?? ""}
+                      onChange={(e) => updateBlocoObs(bi, e.target.value)}
+                      placeholder="Observações específicas deste serviço." />
+                  </div>
+
+                  <div className="flex justify-end items-baseline gap-3 pt-1">
+                    <span className="text-xs uppercase text-muted-foreground tracking-wider">Subtotal</span>
+                    <span className="text-lg font-semibold tabular-nums">{formatBRL(subtotal)}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          <Separator className="my-2" />
+          <div className="flex justify-end items-baseline gap-4 pr-2">
+            <span className="text-sm uppercase text-muted-foreground tracking-wider">Total geral</span>
             <span className="text-2xl font-bold text-primary tabular-nums">{formatBRL(total)}</span>
           </div>
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader><CardTitle>Observações</CardTitle></CardHeader>

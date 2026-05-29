@@ -392,13 +392,32 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       toast.error("Informe o nome do cliente");
       return null;
     }
+    if (servicos.length === 0 || servicos.every((s) => s.itens.length === 0)) {
+      toast.error("Adicione pelo menos um serviço com itens");
+      return null;
+    }
     setSaving(true);
     try {
       const agora = new Date().toISOString();
       const statusMudou = status !== data.status;
-      const totalAtual = data.itens.reduce((s, i) => s + (Number(i.valor) || 0), 0);
+      // Aglutina itens de todos os blocos (mantém compat com lucro/financeiro)
+      const itensFlat: ItemOrcamento[] = servicos.flatMap((s) => s.itens);
+      const totalAtual = itensFlat.reduce((a, b) => a + (Number(b.valor) || 0), 0);
+      // Observações: concatena observações de cada bloco quando houver mais de uma
+      const obsFromBlocos = servicos
+        .map((s, i) => s.observacoes?.trim() ? `[${i + 1}] ${s.observacoes.trim()}` : "")
+        .filter(Boolean)
+        .join("\n");
+      const observacoesFinal = data.observacoes?.trim()
+        ? (obsFromBlocos ? `${data.observacoes.trim()}\n\n${obsFromBlocos}` : data.observacoes.trim())
+        : (obsFromBlocos || null);
+      // Serializa blocos (com subtotais atualizados)
+      const servicosPayload = servicos.map((s) => ({
+        ...s,
+        subtotal: s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0),
+      }));
       const payload: Record<string, unknown> = {
-        tipo_servico: data.tipo_servico,
+        tipo_servico: servicos[0]?.tipo_servico ?? data.tipo_servico,
         requerente_nome: data.requerente_nome,
         requerente_cpf_cnpj: data.requerente_cpf_cnpj || null,
         cliente_telefone: data.cliente_telefone || null,
@@ -410,9 +429,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         imovel_valor_avaliado: data.imovel_valor_avaliado ?? null,
         proprietarios: data.proprietarios,
         confrontantes: [],
-        itens: data.itens,
+        itens: itensFlat,
+        servicos: servicosPayload,
         valor_total: totalAtual,
-        observacoes: data.observacoes || null,
+        observacoes: observacoesFinal,
         status,
         validade_dias: data.validade_dias ?? 30,
         ultimo_contato: data.ultimo_contato ?? null,
@@ -442,7 +462,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         if (error) throw error;
         saved = row as unknown as OrcamentoData;
       }
-      setData({ ...saved, valor_total: Number(saved.valor_total ?? totalAtual) });
+      setData({ ...saved, valor_total: Number(saved.valor_total ?? totalAtual), itens: itensFlat, servicos: servicosPayload });
+      setServicos(normalizarServicos({ ...saved, itens: itensFlat, servicos: servicosPayload } as OrcamentoData));
       toast.success("Orçamento salvo");
       onSaved?.(saved.id!, saved.numero!);
       return saved;
@@ -454,10 +475,20 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     }
   }
 
+  // Monta um snapshot do orçamento atual (sem persistir) para geração de PDF/DOCX
+  function snapshotAtual(): OrcamentoData {
+    const itensFlat: ItemOrcamento[] = servicos.flatMap((s) => s.itens);
+    const servicosSnap = servicos.map((s) => ({
+      ...s,
+      subtotal: s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0),
+    }));
+    return { ...data, itens: itensFlat, servicos: servicosSnap, valor_total: total, tipo_servico: servicos[0]?.tipo_servico ?? data.tipo_servico };
+  }
+
   async function downloadPDF() {
     setGenerating("pdf");
     try {
-      const cur = data.id ? { ...data, valor_total: total } : (await save()) ?? { ...data, valor_total: total };
+      const cur = data.id ? snapshotAtual() : (await save()) ?? snapshotAtual();
       const [{ gerarOrcamentoPDF }, { default: fileSaver }] = await Promise.all([
         import("@/lib/gerar-pdf"),
         import("file-saver"),
@@ -471,7 +502,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   async function downloadDOCX() {
     setGenerating("docx");
     try {
-      const cur = data.id ? { ...data, valor_total: total } : (await save()) ?? { ...data, valor_total: total };
+      const cur = data.id ? snapshotAtual() : (await save()) ?? snapshotAtual();
       const [{ gerarOrcamentoDOCX }, { default: fileSaver }] = await Promise.all([
         import("@/lib/gerar-docx"),
         import("file-saver"),
@@ -483,7 +514,6 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     } finally { setGenerating(null); }
   }
 
-  const total = useMemo(() => data.itens.reduce((s, i) => s + Number(i.valor || 0), 0), [data.itens]);
 
   return (
     <div className="space-y-6">

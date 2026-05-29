@@ -74,30 +74,54 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
     ? `${isRural ? "GEORREFERENCIAMENTO" : "SERVIÇOS"} – Área de ${formatNumberBR(orc.imovel_area_m2)} m²`
     : "SERVIÇOS";
 
-  const tabelaServicos = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [
-      new TableRow({ tableHeader: true, children: [
-        new TableCell({
-          columnSpan: 2,
-          shading: { fill: CINZA_TAB, color: "auto", type: "clear" },
-          margins: { top: 100, bottom: 100, left: 120, right: 120 },
-          children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: areaTitulo, bold: true, color: "FFFFFF", size: 22, font: "Calibri" })] })],
-        }),
-      ]}),
-      new TableRow({ tableHeader: true, children: [
-        cell("SERVIÇOS:", { bold: true, bg: CINZA_CLARO }),
-        cell("VALORES:", { bold: true, bg: CINZA_CLARO, align: AlignmentType.RIGHT }),
-      ]}),
-      ...orc.itens.map((i) => new TableRow({
-        children: [cell(i.descricao), cell(formatBRL(i.valor), { align: AlignmentType.RIGHT })],
-      })),
-      new TableRow({ children: [
-        cell("VALOR:", { bold: true, bg: CINZA_CLARO }),
-        cell(formatBRL(orc.valor_total), { bold: true, bg: CINZA_CLARO, align: AlignmentType.RIGHT }),
-      ]}),
-    ],
+  // Lista de blocos: usa servicos se presente, senão um bloco legado.
+  const blocos = (Array.isArray(orc.servicos) && orc.servicos.length > 0)
+    ? orc.servicos
+    : [{ id: "legacy", tipo_servico: orc.tipo_servico, itens: orc.itens, observacoes: undefined as string | undefined, subtotal: orc.valor_total }];
+
+  const tabelasServicos = blocos.flatMap((bloco, bi) => {
+    const tipoB = bloco.tipo_servico;
+    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
+    const isRuralB = TIPOS_RURAIS.has(tipoB);
+    const subtotal = bloco.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0);
+    const areaTitB = orc.imovel_area_m2 && (isRuralB || bi === 0)
+      ? `${isRuralB ? "GEORREFERENCIAMENTO" : "SERVIÇOS"} – Área de ${formatNumberBR(orc.imovel_area_m2)} m²`
+      : "SERVIÇOS";
+    const prefixo = blocos.length > 1 ? `SERVIÇO ${bi + 1} — ` : "";
+    const descTxtB = DESCRICAO_PADRAO[tipoB] ?? "";
+    const tabelaB = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: [
+        new TableRow({ tableHeader: true, children: [
+          new TableCell({
+            columnSpan: 2,
+            shading: { fill: CINZA_TAB, color: "auto", type: "clear" },
+            margins: { top: 100, bottom: 100, left: 120, right: 120 },
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: areaTitB, bold: true, color: "FFFFFF", size: 22, font: "Calibri" })] })],
+          }),
+        ]}),
+        new TableRow({ tableHeader: true, children: [
+          cell("SERVIÇOS:", { bold: true, bg: CINZA_CLARO }),
+          cell("VALORES:", { bold: true, bg: CINZA_CLARO, align: AlignmentType.RIGHT }),
+        ]}),
+        ...bloco.itens.map((i) => new TableRow({
+          children: [cell(i.descricao), cell(formatBRL(i.valor), { align: AlignmentType.RIGHT })],
+        })),
+        new TableRow({ children: [
+          cell("SUBTOTAL:", { bold: true, bg: CINZA_CLARO }),
+          cell(formatBRL(subtotal), { bold: true, bg: CINZA_CLARO, align: AlignmentType.RIGHT }),
+        ]}),
+      ],
+    });
+    const blocoParagraphs: (Paragraph | Table)[] = [
+      P({ text: `${prefixo}${tituloB}`, bold: true, size: 22 }),
+    ];
+    if (descTxtB) blocoParagraphs.push(P({ text: descTxtB, spacing: 160 }));
+    if (bloco.observacoes?.trim()) blocoParagraphs.push(P({ text: `Observações: ${bloco.observacoes.trim()}`, spacing: 120 }));
+    blocoParagraphs.push(tabelaB, P({ text: "", spacing: 120 }));
+    return blocoParagraphs;
   });
+
 
   const tabelaTotal = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },

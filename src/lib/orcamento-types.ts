@@ -6,6 +6,19 @@ export type ItemOrcamento = {
 export type Proprietario = { nome: string; cpf_cnpj?: string };
 export type Confrontante = { nome: string; lado?: string };
 
+/**
+ * Bloco de serviço dentro de um orçamento multisserviço.
+ * Cada bloco tem tipo, itens e observações próprias.
+ */
+export type ServicoBloco = {
+  id: string;                // uuid simples (crypto.randomUUID)
+  tipo_servico: string;      // chave em TIPOS_SERVICO
+  titulo_personalizado?: string; // opcional — sobrescreve TIPO_TITULOS
+  itens: ItemOrcamento[];
+  observacoes?: string;
+  subtotal: number;
+};
+
 export type OrcamentoData = {
   id?: string;
   numero?: string;
@@ -24,7 +37,10 @@ export type OrcamentoData = {
   imovel_car?: string;
   proprietarios: Proprietario[];
   confrontantes: Confrontante[];
+  /** Itens consolidados (aglutinação de todos os blocos) — mantido para compat. */
   itens: ItemOrcamento[];
+  /** Lista de blocos de serviço. Quando vazio, usa modo legado (tipo_servico + itens). */
+  servicos?: ServicoBloco[];
   valor_total: number;
   observacoes?: string;
   status?: string;

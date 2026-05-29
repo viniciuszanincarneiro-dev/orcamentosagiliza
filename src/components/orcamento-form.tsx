@@ -618,18 +618,9 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       </Tabs>
 
       <Card>
-        <CardHeader><CardTitle>Tipo de serviço e status</CardTitle></CardHeader>
-        <CardContent className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <Label>Tipo de serviço</Label>
-            <Select value={data.tipo_servico} onValueChange={onTipoServicoChange}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {TIPOS_SERVICO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
+        <CardHeader><CardTitle>Status do orçamento</CardTitle></CardHeader>
+        <CardContent>
+          <div className="max-w-xs">
             <Label>Status</Label>
             <Select value={data.status ?? "rascunho"} onValueChange={(v) => set("status", v as OrcamentoData["status"])}>
               <SelectTrigger><SelectValue /></SelectTrigger>
@@ -640,6 +631,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           </div>
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader><CardTitle>Dados do orçamento</CardTitle></CardHeader>
@@ -759,40 +751,112 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       </Card>
 
 
+      {/* ============ SERVIÇOS DO ORÇAMENTO (multisserviço) ============ */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-start gap-3 flex-wrap">
             <div>
-              <CardTitle>Itens do orçamento</CardTitle>
-              <CardDescription>Aplique o template do tipo de serviço e ajuste qualquer valor manualmente.</CardDescription>
+              <CardTitle>Serviços do orçamento</CardTitle>
+              <CardDescription>
+                Adicione um ou mais serviços. Cada bloco tem tipo, itens e observações próprias e gera uma seção no PDF.
+              </CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="secondary" onClick={() => aplicarTemplate(data.tipo_servico)}>
-                <Calculator className="h-4 w-4 mr-1" /> Aplicar template
-              </Button>
-              <Button size="sm" variant="outline" onClick={addItem}><Plus className="h-4 w-4 mr-1" />Item</Button>
-            </div>
+            <Button size="sm" onClick={addServico}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar serviço
+            </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {data.itens.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum item. Clique em <b>Aplicar template</b> para usar o padrão do tipo de serviço selecionado.</p>
-          ) : null}
-          {data.itens.map((it, i) => (
-            <div key={i} className="grid gap-2 items-center sm:grid-cols-[1fr_160px_40px]">
-              <Input value={it.descricao} onChange={(e) => updateItem(i, { descricao: e.target.value })} placeholder="Descrição do serviço" />
-              <Input type="number" step="0.01" className="text-right tabular-nums"
-                value={it.valor} onChange={(e) => updateItem(i, { valor: Number(e.target.value) || 0 })} />
-              <Button size="icon" variant="ghost" onClick={() => removeItem(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-            </div>
-          ))}
-          <Separator className="my-3" />
-          <div className="flex justify-end items-baseline gap-4 pr-12">
-            <span className="text-sm uppercase text-muted-foreground tracking-wider">Valor total</span>
+        <CardContent className="space-y-4">
+          {servicos.map((bloco, bi) => {
+            const subtotal = subtotais[bi] ?? 0;
+            const tipoLabel = TIPOS_SERVICO.find((t) => t.value === bloco.tipo_servico)?.label ?? bloco.tipo_servico;
+            return (
+              <div key={bloco.id} className="rounded-lg border bg-card">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b bg-muted/30">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-md bg-primary/10 text-primary text-xs font-bold tabular-nums">
+                      {bi + 1}
+                    </span>
+                    <span className="text-sm font-semibold truncate">{tipoLabel}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">· {formatBRL(subtotal)}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moverServico(bi, -1)} disabled={bi === 0} title="Mover para cima">
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moverServico(bi, 1)} disabled={bi === servicos.length - 1} title="Mover para baixo">
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => duplicarServico(bi)} title="Duplicar serviço">
+                      <CopyIcon className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeServico(bi)} disabled={servicos.length <= 1} title="Remover serviço">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="p-4 space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] items-end">
+                    <div>
+                      <Label className="text-xs">Tipo de serviço</Label>
+                      <Select value={bloco.tipo_servico} onValueChange={(v) => updateBlocoTipo(bi, v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {TIPOS_SERVICO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button size="sm" variant="secondary" onClick={() => aplicarTemplate(bloco.tipo_servico, bi)}>
+                      <Calculator className="h-4 w-4 mr-1" /> Aplicar template
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => addItem(bi)}>
+                      <Plus className="h-4 w-4 mr-1" /> Item
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {bloco.itens.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhum item. Clique em <b>Aplicar template</b> para usar o padrão do tipo selecionado.
+                      </p>
+                    ) : null}
+                    {bloco.itens.map((it, i) => (
+                      <div key={i} className="grid gap-2 items-center sm:grid-cols-[1fr_160px_40px]">
+                        <Input value={it.descricao} onChange={(e) => updateItem(bi, i, { descricao: e.target.value })} placeholder="Descrição do serviço" />
+                        <Input type="number" step="0.01" className="text-right tabular-nums"
+                          value={it.valor} onChange={(e) => updateItem(bi, i, { valor: Number(e.target.value) || 0 })} />
+                        <Button size="icon" variant="ghost" onClick={() => removeItem(bi, i)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Observações deste serviço (opcional)</Label>
+                    <Textarea rows={2} value={bloco.observacoes ?? ""}
+                      onChange={(e) => updateBlocoObs(bi, e.target.value)}
+                      placeholder="Observações específicas deste serviço." />
+                  </div>
+
+                  <div className="flex justify-end items-baseline gap-3 pt-1">
+                    <span className="text-xs uppercase text-muted-foreground tracking-wider">Subtotal</span>
+                    <span className="text-lg font-semibold tabular-nums">{formatBRL(subtotal)}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          <Separator className="my-2" />
+          <div className="flex justify-end items-baseline gap-4 pr-2">
+            <span className="text-sm uppercase text-muted-foreground tracking-wider">Total geral</span>
             <span className="text-2xl font-bold text-primary tabular-nums">{formatBRL(total)}</span>
           </div>
         </CardContent>
       </Card>
+
 
       <Card>
         <CardHeader><CardTitle>Observações</CardTitle></CardHeader>

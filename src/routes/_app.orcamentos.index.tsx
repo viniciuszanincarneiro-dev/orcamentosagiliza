@@ -260,7 +260,6 @@ function HistoricoPage() {
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                <AlertDialogHeader>
                                   <AlertDialogTitle>Mover para a lixeira?</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     O orçamento <b>{o.numero}</b> ficará disponível em <b>Lixeira</b> e poderá ser restaurado.
@@ -275,7 +274,6 @@ function HistoricoPage() {
                                   >
                                     Mover para lixeira
                                   </AlertDialogAction>
-                                </AlertDialogFooter>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>

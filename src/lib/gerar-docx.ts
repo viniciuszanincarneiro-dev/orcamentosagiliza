@@ -212,7 +212,7 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
 
         // DOS VALORES
         P({ text: "DOS VALORES:", bold: true, size: 22 }),
-        tabelaServicos,
+        ...tabelasServicos,
         P({ text: "", spacing: 100 }),
         tabelaTotal,
         P({ text: "", spacing: 100 }),

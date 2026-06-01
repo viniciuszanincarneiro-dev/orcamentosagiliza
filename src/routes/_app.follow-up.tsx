@@ -53,6 +53,7 @@ function FollowUpPage() {
       const { data, error } = await supabase
         .from("orcamentos")
         .select("id, numero, requerente_nome, cliente_telefone, cliente_whatsapp, imovel_municipio, valor_total, status, data_envio, ultimo_contato, validade_dias")
+        .is("deleted_at", null)
         .in("status", ["enviado", "aguardando", "em_andamento"])
         .order("data_envio", { ascending: true, nullsFirst: false });
       if (error) throw error;

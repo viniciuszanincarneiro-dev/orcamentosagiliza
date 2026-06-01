@@ -104,8 +104,10 @@ function HistoricoPage() {
         .select()
         .single();
       if (insErr) throw insErr;
-      toast.success(`Orçamento duplicado: ${(novo as { numero: string }).numero}`);
-      navigate({ to: "/orcamentos/$id", params: { id: (novo as { id: string }).id } });
+      const novoTyped = novo as { id: string; numero: string };
+      await registrarLog({ acao: "duplicar", entidade: "orcamento", entidade_id: novoTyped.id, descricao: `Duplicado de ${(orig as { numero: string }).numero} → ${novoTyped.numero}` });
+      toast.success(`Orçamento duplicado: ${novoTyped.numero}`);
+      navigate({ to: "/orcamentos/$id", params: { id: novoTyped.id } });
     } catch (e) {
       toast.error("Erro ao duplicar", { description: (e as Error).message });
     } finally {

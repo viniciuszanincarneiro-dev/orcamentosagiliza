@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Copy, FilePlus2, FileText, MessageCircle, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, Copy, Download, FilePlus2, FileText, MessageCircle, Search, Trash, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -12,10 +12,15 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { diasDesde, formatBRL, formatDate, whatsappLink } from "@/lib/format";
 import { STATUS_ORCAMENTO, STATUS_VARIANTS } from "@/lib/empresa";
+import { registrarLog } from "@/lib/activity-log";
+import { exportarCSV, exportarJSON, timestampNome } from "@/lib/export-dados";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/_app/orcamentos/")({
   component: HistoricoPage,

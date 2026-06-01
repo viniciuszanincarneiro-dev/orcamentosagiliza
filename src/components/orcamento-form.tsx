@@ -21,6 +21,7 @@ import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis
 // gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento, ServicoBloco } from "@/lib/orcamento-types";
+import { registrarLog } from "@/lib/activity-log";
 
 function novoId(): string {
   try { return (globalThis.crypto as Crypto).randomUUID(); }

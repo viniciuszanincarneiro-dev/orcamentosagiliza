@@ -94,6 +94,7 @@ function FinanceiroPage() {
       const { data, error } = await supabase
         .from("orcamentos")
         .select("id, created_at, status, tipo_servico, valor_total, itens")
+        .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as OrcamentoRow[];

@@ -21,6 +21,7 @@ import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis
 // gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento, ServicoBloco } from "@/lib/orcamento-types";
+import { registrarLog } from "@/lib/activity-log";
 
 function novoId(): string {
   try { return (globalThis.crypto as Crypto).randomUUID(); }
@@ -447,6 +448,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       if (statusMudou) payload.ultimo_contato = agora;
 
       let saved: OrcamentoData;
+      const eraNovo = !data.id;
       if (data.id) {
         const { data: row, error } = await supabase.from("orcamentos").update(payload as never).eq("id", data.id).select().single();
         if (error) throw error;
@@ -465,6 +467,13 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       setData({ ...saved, valor_total: Number(saved.valor_total ?? totalAtual), itens: itensFlat, servicos: servicosPayload });
       setServicos(normalizarServicos({ ...saved, itens: itensFlat, servicos: servicosPayload } as OrcamentoData));
       toast.success("Orçamento salvo");
+      void registrarLog({
+        acao: eraNovo ? "criar" : "editar",
+        entidade: "orcamento",
+        entidade_id: saved.id,
+        descricao: `${eraNovo ? "Criado" : "Editado"} ${saved.numero} — ${saved.requerente_nome ?? ""}`,
+        metadata: { valor_total: saved.valor_total, status: saved.status },
+      });
       onSaved?.(saved.id!, saved.numero!);
       return saved;
     } catch (e) {

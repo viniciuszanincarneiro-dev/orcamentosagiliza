@@ -20,10 +20,10 @@ function DashboardPage() {
     queryFn: async () => {
       // Conta linhas no servidor sem trazer dados; soma apenas valores via select leve
       const [totalRes, finalRes, rascRes, valoresRes] = await Promise.all([
-        supabase.from("orcamentos").select("*", { count: "exact", head: true }),
-        supabase.from("orcamentos").select("*", { count: "exact", head: true }).eq("status", "finalizado"),
-        supabase.from("orcamentos").select("*", { count: "exact", head: true }).eq("status", "rascunho"),
-        supabase.from("orcamentos").select("valor_total, itens"),
+        supabase.from("orcamentos").select("*", { count: "exact", head: true }).is("deleted_at", null),
+        supabase.from("orcamentos").select("*", { count: "exact", head: true }).is("deleted_at", null).eq("status", "finalizado"),
+        supabase.from("orcamentos").select("*", { count: "exact", head: true }).is("deleted_at", null).eq("status", "rascunho"),
+        supabase.from("orcamentos").select("valor_total, itens").is("deleted_at", null),
       ]);
       if (totalRes.error) throw totalRes.error;
       if (valoresRes.error) throw valoresRes.error;
@@ -54,6 +54,7 @@ function DashboardPage() {
       const { data, error } = await supabase
         .from("orcamentos")
         .select("id, numero, requerente_nome, valor_total, status, created_at")
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(5);
       if (error) throw error;

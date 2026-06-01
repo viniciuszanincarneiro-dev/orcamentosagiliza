@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Copy, FilePlus2, FileText, MessageCircle, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, Copy, Download, FilePlus2, FileText, MessageCircle, Search, Trash, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -12,10 +12,15 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { diasDesde, formatBRL, formatDate, whatsappLink } from "@/lib/format";
 import { STATUS_ORCAMENTO, STATUS_VARIANTS } from "@/lib/empresa";
+import { registrarLog } from "@/lib/activity-log";
+import { exportarCSV, exportarJSON, timestampNome } from "@/lib/export-dados";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/_app/orcamentos/")({
   component: HistoricoPage,
@@ -33,6 +38,7 @@ function HistoricoPage() {
       const { data, error } = await supabase
         .from("orcamentos")
         .select("id, numero, requerente_nome, cliente_whatsapp, cliente_telefone, imovel_municipio, valor_total, status, created_at, data_envio, ultimo_contato, validade_dias")
+        .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -50,14 +56,36 @@ function HistoricoPage() {
     );
   });
 
-  async function excluir(id: string) {
+  async function excluir(id: string, numero: string) {
     if (acaoPendente) return;
     setAcaoPendente(id);
-    const { error } = await supabase.from("orcamentos").delete().eq("id", id);
+    const { error } = await supabase
+      .from("orcamentos")
+      .update({ deleted_at: new Date().toISOString() } as never)
+      .eq("id", id);
     setAcaoPendente(null);
     if (error) return toast.error("Erro ao excluir", { description: error.message });
-    toast.success("Orçamento excluído");
+    await registrarLog({ acao: "excluir", entidade: "orcamento", entidade_id: id, descricao: `Orçamento ${numero} movido para lixeira` });
+    toast.success("Movido para a lixeira", { description: "Você pode restaurar em Lixeira." });
     refetch();
+  }
+
+  async function exportar(formato: "csv" | "json") {
+    const linhas = (data ?? []).map((o) => ({
+      numero: o.numero,
+      requerente: o.requerente_nome,
+      municipio: o.imovel_municipio ?? "",
+      status: o.status,
+      valor_total: o.valor_total,
+      criado_em: o.created_at,
+      data_envio: o.data_envio ?? "",
+      ultimo_contato: o.ultimo_contato ?? "",
+    }));
+    const nome = `orcamentos-${timestampNome()}`;
+    if (formato === "csv") exportarCSV(nome, linhas);
+    else exportarJSON(nome, linhas);
+    await registrarLog({ acao: "exportar", entidade: "orcamento", descricao: `Exportação ${formato.toUpperCase()} (${linhas.length} registros)` });
+    toast.success(`Exportado ${linhas.length} registros`);
   }
 
   async function duplicar(id: string) {
@@ -76,8 +104,10 @@ function HistoricoPage() {
         .select()
         .single();
       if (insErr) throw insErr;
-      toast.success(`Orçamento duplicado: ${(novo as { numero: string }).numero}`);
-      navigate({ to: "/orcamentos/$id", params: { id: (novo as { id: string }).id } });
+      const novoTyped = novo as { id: string; numero: string };
+      await registrarLog({ acao: "duplicar", entidade: "orcamento", entidade_id: novoTyped.id, descricao: `Duplicado de ${(orig as { numero: string }).numero} → ${novoTyped.numero}` });
+      toast.success(`Orçamento duplicado: ${novoTyped.numero}`);
+      navigate({ to: "/orcamentos/$id", params: { id: novoTyped.id } });
     } catch (e) {
       toast.error("Erro ao duplicar", { description: (e as Error).message });
     } finally {
@@ -106,7 +136,19 @@ function HistoricoPage() {
           <h1 className="text-3xl font-bold tracking-tight">Histórico</h1>
           <p className="text-muted-foreground mt-1">Todos os orçamentos gerados.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline"><Download className="h-4 w-4 mr-2" />Exportar</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => exportar("csv")}>Exportar CSV (Excel)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportar("json")}>Exportar JSON</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" asChild>
+            <Link to="/lixeira"><Trash className="h-4 w-4 mr-2" />Lixeira</Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link to="/follow-up"><AlertTriangle className="h-4 w-4 mr-2" />Follow-up</Link>
           </Button>
@@ -232,19 +274,19 @@ function HistoricoPage() {
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
+                                  <AlertDialogTitle>Mover para a lixeira?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita. O orçamento <b>{o.numero}</b> será removido.
+                                    O orçamento <b>{o.numero}</b> ficará disponível em <b>Lixeira</b> e poderá ser restaurado.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => excluir(o.id)}
+                                    onClick={() => excluir(o.id, o.numero)}
                                     disabled={acaoPendente === o.id}
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
-                                    Excluir
+                                    Mover para lixeira
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>

@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          acao: string
+          created_at: string
+          descricao: string | null
+          entidade: string | null
+          entidade_id: string | null
+          id: string
+          metadata: Json | null
+          user_email: string | null
+          user_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          descricao?: string | null
+          entidade?: string | null
+          entidade_id?: string | null
+          id?: string
+          metadata?: Json | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          descricao?: string | null
+          entidade?: string | null
+          entidade_id?: string | null
+          id?: string
+          metadata?: Json | null
+          user_email?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       orcamentos: {
         Row: {
           cliente_telefone: string | null
@@ -22,6 +58,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           data_envio: string | null
+          deleted_at: string | null
           id: string
           imovel_area_m2: number | null
           imovel_car: string | null
@@ -52,6 +89,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_envio?: string | null
+          deleted_at?: string | null
           id?: string
           imovel_area_m2?: number | null
           imovel_car?: string | null
@@ -82,6 +120,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_envio?: string | null
+          deleted_at?: string | null
           id?: string
           imovel_area_m2?: number | null
           imovel_car?: string | null

@@ -14,6 +14,8 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppValoresRouteImport } from './routes/_app.valores'
 import { Route as AppTutorialRouteImport } from './routes/_app.tutorial'
+import { Route as AppLogsRouteImport } from './routes/_app.logs'
+import { Route as AppLixeiraRouteImport } from './routes/_app.lixeira'
 import { Route as AppFollowUpRouteImport } from './routes/_app.follow-up'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
@@ -43,6 +45,16 @@ const AppValoresRoute = AppValoresRouteImport.update({
 const AppTutorialRoute = AppTutorialRouteImport.update({
   id: '/tutorial',
   path: '/tutorial',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLogsRoute = AppLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLixeiraRoute = AppLixeiraRouteImport.update({
+  id: '/lixeira',
+  path: '/lixeira',
   getParentRoute: () => AppRoute,
 } as any)
 const AppFollowUpRoute = AppFollowUpRouteImport.update({
@@ -82,6 +94,8 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/follow-up': typeof AppFollowUpRoute
+  '/lixeira': typeof AppLixeiraRoute
+  '/logs': typeof AppLogsRoute
   '/tutorial': typeof AppTutorialRoute
   '/valores': typeof AppValoresRoute
   '/orcamentos/$id': typeof AppOrcamentosIdRoute
@@ -94,6 +108,8 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/follow-up': typeof AppFollowUpRoute
+  '/lixeira': typeof AppLixeiraRoute
+  '/logs': typeof AppLogsRoute
   '/tutorial': typeof AppTutorialRoute
   '/valores': typeof AppValoresRoute
   '/orcamentos/$id': typeof AppOrcamentosIdRoute
@@ -108,6 +124,8 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/follow-up': typeof AppFollowUpRoute
+  '/_app/lixeira': typeof AppLixeiraRoute
+  '/_app/logs': typeof AppLogsRoute
   '/_app/tutorial': typeof AppTutorialRoute
   '/_app/valores': typeof AppValoresRoute
   '/_app/orcamentos/$id': typeof AppOrcamentosIdRoute
@@ -122,6 +140,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/financeiro'
     | '/follow-up'
+    | '/lixeira'
+    | '/logs'
     | '/tutorial'
     | '/valores'
     | '/orcamentos/$id'
@@ -134,6 +154,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/financeiro'
     | '/follow-up'
+    | '/lixeira'
+    | '/logs'
     | '/tutorial'
     | '/valores'
     | '/orcamentos/$id'
@@ -147,6 +169,8 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/financeiro'
     | '/_app/follow-up'
+    | '/_app/lixeira'
+    | '/_app/logs'
     | '/_app/tutorial'
     | '/_app/valores'
     | '/_app/orcamentos/$id'
@@ -195,6 +219,20 @@ declare module '@tanstack/react-router' {
       path: '/tutorial'
       fullPath: '/tutorial'
       preLoaderRoute: typeof AppTutorialRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/logs': {
+      id: '/_app/logs'
+      path: '/logs'
+      fullPath: '/logs'
+      preLoaderRoute: typeof AppLogsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/lixeira': {
+      id: '/_app/lixeira'
+      path: '/lixeira'
+      fullPath: '/lixeira'
+      preLoaderRoute: typeof AppLixeiraRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/follow-up': {
@@ -246,6 +284,8 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppFollowUpRoute: typeof AppFollowUpRoute
+  AppLixeiraRoute: typeof AppLixeiraRoute
+  AppLogsRoute: typeof AppLogsRoute
   AppTutorialRoute: typeof AppTutorialRoute
   AppValoresRoute: typeof AppValoresRoute
   AppOrcamentosIdRoute: typeof AppOrcamentosIdRoute
@@ -257,6 +297,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppFollowUpRoute: AppFollowUpRoute,
+  AppLixeiraRoute: AppLixeiraRoute,
+  AppLogsRoute: AppLogsRoute,
   AppTutorialRoute: AppTutorialRoute,
   AppValoresRoute: AppValoresRoute,
   AppOrcamentosIdRoute: AppOrcamentosIdRoute,

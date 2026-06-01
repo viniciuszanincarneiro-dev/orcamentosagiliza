@@ -134,7 +134,19 @@ function HistoricoPage() {
           <h1 className="text-3xl font-bold tracking-tight">Histórico</h1>
           <p className="text-muted-foreground mt-1">Todos os orçamentos gerados.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline"><Download className="h-4 w-4 mr-2" />Exportar</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => exportar("csv")}>Exportar CSV (Excel)</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportar("json")}>Exportar JSON</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" asChild>
+            <Link to="/lixeira"><Trash className="h-4 w-4 mr-2" />Lixeira</Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link to="/follow-up"><AlertTriangle className="h-4 w-4 mr-2" />Follow-up</Link>
           </Button>

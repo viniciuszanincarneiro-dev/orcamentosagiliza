@@ -260,20 +260,22 @@ function HistoricoPage() {
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir orçamento?</AlertDialogTitle>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Mover para a lixeira?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita. O orçamento <b>{o.numero}</b> será removido.
+                                    O orçamento <b>{o.numero}</b> ficará disponível em <b>Lixeira</b> e poderá ser restaurado.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => excluir(o.id)}
+                                    onClick={() => excluir(o.id, o.numero)}
                                     disabled={acaoPendente === o.id}
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
-                                    Excluir
+                                    Mover para lixeira
                                   </AlertDialogAction>
+                                </AlertDialogFooter>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>

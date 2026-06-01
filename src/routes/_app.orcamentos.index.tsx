@@ -38,6 +38,7 @@ function HistoricoPage() {
       const { data, error } = await supabase
         .from("orcamentos")
         .select("id, numero, requerente_nome, cliente_whatsapp, cliente_telefone, imovel_municipio, valor_total, status, created_at, data_envio, ultimo_contato, validade_dias")
+        .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -55,14 +56,36 @@ function HistoricoPage() {
     );
   });
 
-  async function excluir(id: string) {
+  async function excluir(id: string, numero: string) {
     if (acaoPendente) return;
     setAcaoPendente(id);
-    const { error } = await supabase.from("orcamentos").delete().eq("id", id);
+    const { error } = await supabase
+      .from("orcamentos")
+      .update({ deleted_at: new Date().toISOString() } as never)
+      .eq("id", id);
     setAcaoPendente(null);
     if (error) return toast.error("Erro ao excluir", { description: error.message });
-    toast.success("Orçamento excluído");
+    await registrarLog({ acao: "excluir", entidade: "orcamento", entidade_id: id, descricao: `Orçamento ${numero} movido para lixeira` });
+    toast.success("Movido para a lixeira", { description: "Você pode restaurar em Lixeira." });
     refetch();
+  }
+
+  async function exportar(formato: "csv" | "json") {
+    const linhas = (data ?? []).map((o) => ({
+      numero: o.numero,
+      requerente: o.requerente_nome,
+      municipio: o.imovel_municipio ?? "",
+      status: o.status,
+      valor_total: o.valor_total,
+      criado_em: o.created_at,
+      data_envio: o.data_envio ?? "",
+      ultimo_contato: o.ultimo_contato ?? "",
+    }));
+    const nome = `orcamentos-${timestampNome()}`;
+    if (formato === "csv") exportarCSV(nome, linhas);
+    else exportarJSON(nome, linhas);
+    await registrarLog({ acao: "exportar", entidade: "orcamento", descricao: `Exportação ${formato.toUpperCase()} (${linhas.length} registros)` });
+    toast.success(`Exportado ${linhas.length} registros`);
   }
 
   async function duplicar(id: string) {

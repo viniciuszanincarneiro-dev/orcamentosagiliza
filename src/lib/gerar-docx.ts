@@ -224,13 +224,12 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
 
         ...proprietariosBlock,
 
-        // DESCRIÇÃO DOS SERVIÇOS
-        P({ text: "DESCRIÇÃO DOS SERVIÇOS:", bold: true, size: 22 }),
-        P({ text: DESCRICAO_PADRAO[orc.tipo_servico] ?? "", spacing: 240 }),
+        // Blocos completos por serviço (explicativo + objeto + descrição + valores + observações)
+        ...blocosServicos,
 
-        // DOS VALORES
-        P({ text: "DOS VALORES:", bold: true, size: 22 }),
-        ...tabelasServicos,
+        // VALOR TOTAL GERAL
+        P({ text: "VALOR TOTAL DO ORÇAMENTO", bold: true, size: 22, spacing: 120 }),
+        tabelaTotal,
         P({ text: "", spacing: 100 }),
         tabelaTotal,
         P({ text: "", spacing: 100 }),

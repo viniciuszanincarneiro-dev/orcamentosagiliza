@@ -292,8 +292,22 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   }
 
   // ============ Helpers de blocos de serviço (multisserviço) ============
-  function addServico() {
-    setServicos((arr) => [...arr, blocoVazio("outros")]);
+  function addServico(tipo: string = "outros") {
+    const novo = blocoVazio(tipo);
+    setServicos((arr) => [...arr, novo]);
+    // Aplica template automaticamente para o tipo escolhido
+    const template = TEMPLATES_ITENS[tipo] ?? [];
+    if (template.length > 0) {
+      const itens: ItemOrcamento[] = template.map((t) =>
+        "auto" in t
+          ? { descricao: t.descricao, valor: calcValorAuto(t.auto, data.imovel_area_m2, data.imovel_valor_avaliado) }
+          : { descricao: t.descricao, valor: t.valor_base }
+      );
+      novo.itens = itens;
+      novo.subtotal = itens.reduce((a, b) => a + (Number(b.valor) || 0), 0);
+    }
+    setEditingId(novo.id);
+    setPickerOpen(false);
   }
   function removeServico(idx: number) {
     setServicos((arr) => arr.length <= 1 ? arr : arr.filter((_, i) => i !== idx));

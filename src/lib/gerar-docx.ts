@@ -3,7 +3,7 @@ import {
   WidthType, ImageRun,
 } from "docx";
 
-import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO } from "./empresa";
+import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, TEXTO_EXPLICATIVO, OBJETO_SERVICO, DESCRICAO_ITENS } from "./empresa";
 import type { OrcamentoData } from "./orcamento-types";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";
 import logoUrl from "@/assets/agiliza-logo.png";
@@ -79,7 +79,7 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
     ? orc.servicos
     : [{ id: "legacy", tipo_servico: orc.tipo_servico, itens: orc.itens, observacoes: undefined as string | undefined, subtotal: orc.valor_total }];
 
-  const tabelasServicos = blocos.flatMap((bloco, bi) => {
+  const blocosServicos = blocos.flatMap((bloco, bi) => {
     const tipoB = bloco.tipo_servico;
     const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
     const isRuralB = TIPOS_RURAIS.has(tipoB);
@@ -88,7 +88,11 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
       ? `${isRuralB ? "GEORREFERENCIAMENTO" : "SERVIÇOS"} – Área de ${formatNumberBR(orc.imovel_area_m2)} m²`
       : "SERVIÇOS";
     const prefixo = blocos.length > 1 ? `SERVIÇO ${bi + 1} — ` : "";
-    const descTxtB = DESCRICAO_PADRAO[tipoB] ?? "";
+    const explicativo = TEXTO_EXPLICATIVO[tipoB] ?? "";
+    const objetoFrase = OBJETO_SERVICO[tipoB] ?? tituloB.toLowerCase();
+    const itensDesc = DESCRICAO_ITENS[tipoB] ?? [];
+    const descTextoLivre = DESCRICAO_PADRAO[tipoB] ?? "";
+
     const tabelaB = new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: [
@@ -113,12 +117,26 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
         ]}),
       ],
     });
+
     const blocoParagraphs: (Paragraph | Table)[] = [
       P({ text: `${prefixo}${tituloB}`, bold: true, size: 22 }),
     ];
-    if (descTxtB) blocoParagraphs.push(P({ text: descTxtB, spacing: 160 }));
-    if (bloco.observacoes?.trim()) blocoParagraphs.push(P({ text: `Observações: ${bloco.observacoes.trim()}`, spacing: 120 }));
-    blocoParagraphs.push(tabelaB, P({ text: "", spacing: 120 }));
+    if (explicativo) blocoParagraphs.push(P({ text: explicativo, spacing: 200 }));
+    blocoParagraphs.push(P({ text: blocos.length > 1 ? `OBJETO ${bi + 1}` : "OBJETO DO ORÇAMENTO", bold: true, size: 22 }));
+    blocoParagraphs.push(P({ text: `O presente orçamento refere-se à prestação de serviço de ${objetoFrase}, referente ao imóvel acima identificado.`, spacing: 160 }));
+    blocoParagraphs.push(P({ text: "DESCRIÇÃO DOS SERVIÇOS", bold: true, size: 22 }));
+    blocoParagraphs.push(P({ text: "No presente orçamento estão inclusos os seguintes serviços:", spacing: 80 }));
+    if (itensDesc.length > 0) {
+      itensDesc.forEach((it) => blocoParagraphs.push(P({ text: `• ${it};`, spacing: 40 })));
+    } else if (descTextoLivre) {
+      blocoParagraphs.push(P({ text: descTextoLivre, spacing: 120 }));
+    }
+    blocoParagraphs.push(P({ text: "DOS VALORES", bold: true, size: 22, spacing: 120 }));
+    blocoParagraphs.push(tabelaB);
+    if (bloco.observacoes?.trim()) {
+      blocoParagraphs.push(P({ text: `Observações: ${bloco.observacoes.trim()}`, spacing: 200 }));
+    }
+    blocoParagraphs.push(P({ text: "", spacing: 200 }));
     return blocoParagraphs;
   });
 
@@ -206,13 +224,12 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
 
         ...proprietariosBlock,
 
-        // DESCRIÇÃO DOS SERVIÇOS
-        P({ text: "DESCRIÇÃO DOS SERVIÇOS:", bold: true, size: 22 }),
-        P({ text: DESCRICAO_PADRAO[orc.tipo_servico] ?? "", spacing: 240 }),
+        // Blocos completos por serviço (explicativo + objeto + descrição + valores + observações)
+        ...blocosServicos,
 
-        // DOS VALORES
-        P({ text: "DOS VALORES:", bold: true, size: 22 }),
-        ...tabelasServicos,
+        // VALOR TOTAL GERAL
+        P({ text: "VALOR TOTAL DO ORÇAMENTO", bold: true, size: 22, spacing: 120 }),
+        tabelaTotal,
         P({ text: "", spacing: 100 }),
         tabelaTotal,
         P({ text: "", spacing: 100 }),

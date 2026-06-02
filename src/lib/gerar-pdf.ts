@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO } from "./empresa";
+import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, TEXTO_EXPLICATIVO, OBJETO_SERVICO, DESCRICAO_ITENS } from "./empresa";
 import type { OrcamentoData } from "./orcamento-types";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";
 import logoUrl from "@/assets/agiliza-logo.png";
@@ -250,19 +250,42 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
     ? orc.servicos
     : [{ id: "legacy", tipo_servico: orc.tipo_servico, itens: orc.itens, observacoes: undefined, subtotal: orc.valor_total }];
 
+  // ============ BLOCOS DE SERVIÇO (multisserviço) ============
+  // Cada bloco contém: título · texto explicativo · OBJETO · DESCRIÇÃO DOS SERVIÇOS (bullets) · DOS VALORES (tabela) · observações próprias.
   blocos.forEach((bloco, bi) => {
     const tipoB = bloco.tipo_servico;
     const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
     const isRuralB = TIPOS_RURAIS.has(tipoB);
     const subtotal = bloco.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0);
     const prefixo = blocos.length > 1 ? `SERVIÇO ${bi + 1} — ` : "";
+    const explicativo = TEXTO_EXPLICATIVO[tipoB] ?? "";
+    const objetoFrase = OBJETO_SERVICO[tipoB] ?? tituloB.toLowerCase();
+    const itensDesc = DESCRICAO_ITENS[tipoB] ?? [];
+    const descTextoLivre = DESCRICAO_PADRAO[tipoB] ?? "";
 
+    // Título do bloco
     ensureSpace(40);
     writeSectionTitle(`${prefixo}${tituloB}`);
-    const descTextB = DESCRICAO_PADRAO[tipoB] ?? "";
-    if (descTextB) writeParagraph(descTextB, { gap: 8 });
-    if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 8 });
 
+    // 1) Texto explicativo
+    if (explicativo) writeParagraph(explicativo, { gap: 10 });
+
+    // 2) OBJETO DO ORÇAMENTO (do bloco)
+    writeSectionTitle(blocos.length > 1 ? `OBJETO ${bi + 1}` : "OBJETO DO ORÇAMENTO");
+    writeParagraph(
+      `O presente orçamento refere-se à prestação de serviço de ${objetoFrase}, referente ao imóvel acima identificado.`,
+      { gap: 8 }
+    );
+
+    // 3) DESCRIÇÃO DOS SERVIÇOS (bullets)
+    writeSectionTitle("DESCRIÇÃO DOS SERVIÇOS");
+    writeParagraph("No presente orçamento estão inclusos os seguintes serviços:", { gap: 4 });
+    itensDesc.forEach((it) => writeParagraph(`• ${it};`, { gap: 2 }));
+    if (descTextoLivre && itensDesc.length === 0) writeParagraph(descTextoLivre, { gap: 6 });
+    y += 6;
+
+    // 4) DOS VALORES (tabela)
+    writeSectionTitle("DOS VALORES");
     const areaTxtB = orc.imovel_area_m2 && (isRuralB || bi === 0)
       ? `${isRuralB ? "GEORREFERENCIAMENTO" : "SERVIÇOS"} – Área de ${formatNumberBR(orc.imovel_area_m2)} m²`
       : "SERVIÇOS";
@@ -288,9 +311,16 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
       columnStyles: { 1: { halign: "right", cellWidth: 130 } },
     });
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+
+    // 5) Observações específicas do bloco
+    if (bloco.observacoes?.trim()) {
+      writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 10 });
+    }
+    y += 6;
   });
 
-  writeSectionTitle("DOS VALORES:");
+  // VALOR TOTAL GERAL
+  writeSectionTitle("VALOR TOTAL DO ORÇAMENTO");
 
 
   // VALOR TOTAL DO ORÇAMENTO (linha destacada)

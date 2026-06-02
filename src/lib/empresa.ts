@@ -36,6 +36,120 @@ export const TIPO_TITULOS: Record<string, string> = {
   outros: "PRESTAÇÃO DE SERVIÇOS",
 };
 
+/**
+ * Texto explicativo institucional de cada serviço (parágrafo descritivo,
+ * apresentado antes do OBJETO DO ORÇAMENTO em cada bloco).
+ */
+export const TEXTO_EXPLICATIVO: Record<string, string> = {
+  retificacao_geo:
+    "A Retificação Administrativa com Georreferenciamento é o procedimento técnico e jurídico que corrige e atualiza as informações registradas na matrícula do imóvel rural — área, limites, confrontações e coordenadas — em conformidade com a Lei nº 10.267/2001 e o Decreto nº 4.449/2002. O serviço garante a regularização do imóvel junto ao Registro de Imóveis e ao INCRA, permitindo a livre disposição, transferência, desmembramento, remembramento e demais atos registrais.",
+  retificacao_urbana:
+    "A Retificação de imóvel urbano é um procedimento legal que corrige ou altera informações registradas na matrícula do imóvel, como localização, limites, área ou características, garantindo que o registro esteja correto e atualizado, facilitando venda, transferência e regularização do imóvel. Geralmente, isso acontece quando há erro no registro ou necessidade de atualização para refletir a situação real do imóvel.",
+  georreferenciamento:
+    "O Georreferenciamento de imóveis rurais é a identificação técnica do imóvel a partir das coordenadas dos vértices definidores de seus limites, certificada pelo INCRA, conforme exigência da Lei nº 10.267/2001 e do Decreto nº 4.449/2002. Trata-se de requisito obrigatório para qualquer alteração na matrícula do imóvel rural, incluindo transferências, desmembramentos, remembramentos e regularização fundiária.",
+  levantamento_topografico:
+    "O Levantamento Topográfico consiste no conjunto de operações técnicas executadas em campo e em escritório destinadas à representação gráfica do imóvel, contemplando seus limites, área, confrontações e demais características físicas relevantes. O resultado é apresentado em planta e memorial descritivo, servindo como base para projetos, regularizações e atos registrais.",
+  desmembramento:
+    "O Desmembramento é o procedimento técnico e jurídico que permite a divisão de um imóvel em duas ou mais partes autônomas, com novas matrículas individualizadas no Registro de Imóveis. Envolve levantamento topográfico, elaboração de mapas e memoriais descritivos, aprovação municipal quando aplicável e encaminhamento ao Ofício de Registro de Imóveis competente.",
+  remembramento:
+    "O Remembramento é o procedimento que unifica dois ou mais imóveis contíguos, pertencentes ao mesmo proprietário, em uma única matrícula. Envolve levantamento topográfico, elaboração de mapas e memoriais descritivos, aprovação municipal quando aplicável e encaminhamento ao Ofício de Registro de Imóveis para a unificação registral.",
+  usucapiao_extrajudicial:
+    "A Usucapião Extrajudicial é o procedimento previsto no art. 216-A da Lei de Registros Públicos (6.015/76) que possibilita o reconhecimento da propriedade pela posse mansa e pacífica diretamente no Cartório de Registro de Imóveis, sem necessidade de processo judicial. Envolve levantamento topográfico, memorial descritivo, ata notarial, coleta de assinaturas dos confrontantes e protocolo junto ao Registro de Imóveis.",
+  inventario_extrajudicial:
+    "O Inventário Extrajudicial é o procedimento previsto na Lei nº 11.441/2007 que permite a partilha de bens em vida ou por falecimento diretamente no Tabelionato de Notas, mediante escritura pública, sempre que todos os herdeiros forem capazes e estiverem de acordo. Envolve assessoria documental, elaboração de minuta, coleta de certidões e encaminhamento ao tabelionato competente.",
+  outros:
+    "O presente serviço será prestado conforme escopo descrito a seguir, com observância das normas técnicas e jurídicas aplicáveis, garantindo a regularização documental do imóvel ou demanda do interessado.",
+};
+
+/**
+ * Frase que completa "O presente orçamento refere-se à prestação de serviço de ..."
+ * (usada no OBJETO DO ORÇAMENTO de cada bloco).
+ */
+export const OBJETO_SERVICO: Record<string, string> = {
+  retificacao_geo: "retificação administrativa com georreferenciamento certificado pelo INCRA",
+  retificacao_urbana: "retificação administrativa de imóvel urbano",
+  georreferenciamento: "georreferenciamento certificado pelo INCRA",
+  levantamento_topografico: "levantamento topográfico",
+  desmembramento: "desmembramento de imóvel",
+  remembramento: "remembramento de imóvel",
+  usucapiao_extrajudicial: "usucapião extrajudicial",
+  inventario_extrajudicial: "inventário extrajudicial",
+  outros: "prestação dos serviços descritos",
+};
+
+/**
+ * Descrição detalhada (bullet list) dos serviços inclusos por tipo.
+ * Apresentada como lista após o parágrafo "No presente orçamento estão inclusos os seguintes serviços:".
+ */
+export const DESCRICAO_ITENS: Record<string, string[]> = {
+  retificacao_geo: [
+    "Levantamento Topográfico",
+    "Locação (colocação de marcos georreferenciados)",
+    "Assessoria Documental",
+    "Elaboração de mapas",
+    "Memoriais descritivos",
+    "TRT (Termo de Responsabilidade Técnica)",
+    "Requerimentos",
+    "Coleta de Assinaturas (proprietários e confrontantes)",
+    "Encaminhamento junto ao Registro de Imóveis",
+    "Atualização dos cadastros rurais (CCIR, ITR e CAR)",
+  ],
+  retificacao_urbana: [
+    "Assessoria Documental completa",
+    "Elaboração de memorial descritivo",
+    "Elaboração de planta",
+    "Requerimento de retificação",
+    "Coleta de certidões e assinaturas",
+    "Encaminhamento junto ao Registro de Imóveis",
+  ],
+  georreferenciamento: [
+    "Levantamento Topográfico georreferenciado",
+    "Locação de marcos",
+    "Elaboração de planta e memorial descritivo",
+    "TRT (Termo de Responsabilidade Técnica)",
+    "Certificação junto ao INCRA",
+    "Atualização dos cadastros rurais (CCIR, ITR e CAR)",
+  ],
+  levantamento_topografico: [
+    "Levantamento Topográfico planialtimétrico",
+    "Elaboração de planta",
+    "Elaboração de memorial descritivo",
+    "TRT (Termo de Responsabilidade Técnica)",
+  ],
+  desmembramento: [
+    "Levantamento Topográfico",
+    "Elaboração de mapas e memoriais descritivos",
+    "Assessoria Documental",
+    "Protocolo municipal (quando aplicável)",
+    "Encaminhamento junto ao Registro de Imóveis",
+  ],
+  remembramento: [
+    "Levantamento Topográfico",
+    "Elaboração de mapas e memoriais descritivos",
+    "Assessoria Documental",
+    "Protocolo municipal (quando aplicável)",
+    "Encaminhamento junto ao Registro de Imóveis",
+  ],
+  usucapiao_extrajudicial: [
+    "Levantamento Topográfico",
+    "Elaboração de memorial descritivo",
+    "Ata notarial",
+    "Coleta de assinaturas de confrontantes",
+    "Coleta de certidões",
+    "Assessoria Documental",
+    "Encaminhamento junto ao Tabelionato e Registro de Imóveis",
+  ],
+  inventario_extrajudicial: [
+    "Assessoria Documental",
+    "Elaboração de minuta",
+    "Coleta de certidões e negativas",
+    "Encaminhamento junto ao Tabelionato de Notas",
+  ],
+  outros: [
+    "Serviços conforme escopo descrito",
+  ],
+};
+
 export const DESCRICAO_PADRAO: Record<string, string> = {
   retificacao_geo:
     "No presente orçamento está incluso os seguintes serviços: Levantamento Topográfico, Locação (marcos georreferenciados), Assessoria Documental (elaboração de mapas, memoriais descritivos, TRT, requerimentos e demais documentos que compõe o processo), Coleta de Assinaturas (proprietários e confrontantes), encaminhamento dos documentos no Registro de Imóveis e, atualização dos cadastros rurais CCIR, ITR e CAR.",

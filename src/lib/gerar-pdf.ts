@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO } from "./empresa";
+import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, TEXTO_EXPLICATIVO, OBJETO_SERVICO, DESCRICAO_ITENS } from "./empresa";
 import type { OrcamentoData } from "./orcamento-types";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";
 import logoUrl from "@/assets/agiliza-logo.png";

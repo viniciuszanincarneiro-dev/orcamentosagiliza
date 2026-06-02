@@ -103,6 +103,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [erroLeitura, setErroLeitura] = useState<string | null>(null);
   const [fatorRI, setFatorRI] = useState<number>(70);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const parseFn = useServerFn(parseMatricula);
 

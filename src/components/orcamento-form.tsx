@@ -103,8 +103,6 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [erroLeitura, setErroLeitura] = useState<string | null>(null);
   const [fatorRI, setFatorRI] = useState<number>(70);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
 
   const parseFn = useServerFn(parseMatricula);
 
@@ -292,22 +290,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   }
 
   // ============ Helpers de blocos de serviço (multisserviço) ============
-  function addServico(tipo: string = "outros") {
-    const novo = blocoVazio(tipo);
-    setServicos((arr) => [...arr, novo]);
-    // Aplica template automaticamente para o tipo escolhido
-    const template = TEMPLATES_ITENS[tipo] ?? [];
-    if (template.length > 0) {
-      const itens: ItemOrcamento[] = template.map((t) =>
-        "auto" in t
-          ? { descricao: t.descricao, valor: calcValorAuto(t.auto, data.imovel_area_m2, data.imovel_valor_avaliado) }
-          : { descricao: t.descricao, valor: t.valor_base }
-      );
-      novo.itens = itens;
-      novo.subtotal = itens.reduce((a, b) => a + (Number(b.valor) || 0), 0);
-    }
-    setEditingId(novo.id);
-    setPickerOpen(false);
+  function addServico() {
+    setServicos((arr) => [...arr, blocoVazio("outros")]);
   }
   function removeServico(idx: number) {
     setServicos((arr) => arr.length <= 1 ? arr : arr.filter((_, i) => i !== idx));
@@ -783,173 +767,104 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             <div>
               <CardTitle>Serviços do orçamento</CardTitle>
               <CardDescription>
-                Cada serviço aparece resumido. Clique em <b>Editar</b> para ver os detalhes.
+                Adicione um ou mais serviços. Cada bloco tem tipo, itens e observações próprias e gera uma seção no PDF.
               </CardDescription>
             </div>
-            <div className="relative">
-              <Button size="sm" onClick={() => setPickerOpen((v) => !v)}>
-                <Plus className="h-4 w-4 mr-1" /> Adicionar serviço
-              </Button>
-              {pickerOpen ? (
-                <div className="absolute right-0 mt-2 w-72 z-20 rounded-md border bg-popover shadow-lg p-1">
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">Escolha o tipo de serviço</div>
-                  <div className="max-h-72 overflow-auto">
-                    {TIPOS_SERVICO.map((t) => (
-                      <button
-                        key={t.value}
-                        type="button"
-                        className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                        onClick={() => addServico(t.value)}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="border-t mt-1 pt-1">
-                    <button
-                      type="button"
-                      className="w-full text-left px-2 py-1.5 text-sm rounded hover:bg-accent cursor-pointer"
-                      onClick={() => setPickerOpen(false)}
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-            </div>
+            <Button size="sm" onClick={addServico}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar serviço
+            </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           {servicos.map((bloco, bi) => {
             const subtotal = subtotais[bi] ?? 0;
             const tipoLabel = TIPOS_SERVICO.find((t) => t.value === bloco.tipo_servico)?.label ?? bloco.tipo_servico;
-            const isEditing = editingId === bloco.id;
             return (
               <div key={bloco.id} className="rounded-lg border bg-card">
-                {/* Cartão resumido */}
-                <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="inline-flex items-center justify-center h-7 min-w-7 px-2 rounded-md bg-primary/10 text-primary text-xs font-bold tabular-nums">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b bg-muted/30">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center justify-center h-6 min-w-6 px-2 rounded-md bg-primary/10 text-primary text-xs font-bold tabular-nums">
                       {bi + 1}
                     </span>
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold truncate">{tipoLabel}</div>
-                      <div className="text-xs text-muted-foreground tabular-nums">
-                        {bloco.itens.length} {bloco.itens.length === 1 ? "item" : "itens"} · {formatBRL(subtotal)}
-                      </div>
-                    </div>
+                    <span className="text-sm font-semibold truncate">{tipoLabel}</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">· {formatBRL(subtotal)}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button size="sm" variant={isEditing ? "default" : "outline"}
-                      onClick={() => setEditingId(isEditing ? null : bloco.id)}>
-                      <PencilLine className="h-4 w-4 mr-1" /> {isEditing ? "Fechar" : "Editar"}
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moverServico(bi, -1)} disabled={bi === 0} title="Mover para cima">
+                      <ChevronUp className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => duplicarServico(bi)} title="Duplicar">
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moverServico(bi, 1)} disabled={bi === servicos.length - 1} title="Mover para baixo">
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => duplicarServico(bi)} title="Duplicar serviço">
                       <CopyIcon className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => removeServico(bi)} disabled={servicos.length <= 1} title="Excluir">
+                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => removeServico(bi)} disabled={servicos.length <= 1} title="Remover serviço">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
 
-                {/* Detalhes (apenas quando em edição) */}
-                {isEditing ? (
-                  <div className="border-t p-4 space-y-3 bg-muted/20">
-                    <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] items-end">
-                      <div>
-                        <Label className="text-xs">Tipo de serviço</Label>
-                        <Select value={bloco.tipo_servico} onValueChange={(v) => updateBlocoTipo(bi, v)}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {TIPOS_SERVICO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button size="sm" variant="secondary" onClick={() => aplicarTemplate(bloco.tipo_servico, bi)}>
-                        <Calculator className="h-4 w-4 mr-1" /> Aplicar template
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => addItem(bi)}>
-                        <Plus className="h-4 w-4 mr-1" /> Item
-                      </Button>
-                    </div>
-
-                    <div className="space-y-2">
-                      {bloco.itens.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          Nenhum item. Clique em <b>Aplicar template</b> para usar o padrão do tipo selecionado.
-                        </p>
-                      ) : null}
-                      {bloco.itens.map((it, i) => (
-                        <div key={i} className="grid gap-2 items-center sm:grid-cols-[1fr_160px_40px]">
-                          <Input value={it.descricao} onChange={(e) => updateItem(bi, i, { descricao: e.target.value })} placeholder="Descrição do serviço" />
-                          <Input type="number" step="0.01" className="text-right tabular-nums"
-                            value={it.valor} onChange={(e) => updateItem(bi, i, { valor: Number(e.target.value) || 0 })} />
-                          <Button size="icon" variant="ghost" onClick={() => removeItem(bi, i)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-
+                <div className="p-4 space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] items-end">
                     <div>
-                      <Label className="text-xs">Observações deste serviço (opcional)</Label>
-                      <Textarea rows={2} value={bloco.observacoes ?? ""}
-                        onChange={(e) => updateBlocoObs(bi, e.target.value)}
-                        placeholder="Observações específicas deste serviço." />
+                      <Label className="text-xs">Tipo de serviço</Label>
+                      <Select value={bloco.tipo_servico} onValueChange={(v) => updateBlocoTipo(bi, v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {TIPOS_SERVICO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
-
-                    <div className="flex items-center justify-between gap-2 pt-1">
-                      <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moverServico(bi, -1)} disabled={bi === 0} title="Mover para cima">
-                          <ChevronUp className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => moverServico(bi, 1)} disabled={bi === servicos.length - 1} title="Mover para baixo">
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="flex items-baseline gap-3">
-                        <span className="text-xs uppercase text-muted-foreground tracking-wider">Subtotal</span>
-                        <span className="text-lg font-semibold tabular-nums">{formatBRL(subtotal)}</span>
-                      </div>
-                    </div>
+                    <Button size="sm" variant="secondary" onClick={() => aplicarTemplate(bloco.tipo_servico, bi)}>
+                      <Calculator className="h-4 w-4 mr-1" /> Aplicar template
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => addItem(bi)}>
+                      <Plus className="h-4 w-4 mr-1" /> Item
+                    </Button>
                   </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
 
-      {/* ============ RESUMO GERAL ============ */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumo geral</CardTitle>
-          <CardDescription>Soma de todos os serviços incluídos neste orçamento.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {servicos.map((bloco, bi) => {
-            const subtotal = subtotais[bi] ?? 0;
-            const tipoLabel = TIPOS_SERVICO.find((t) => t.value === bloco.tipo_servico)?.label ?? bloco.tipo_servico;
-            return (
-              <div key={bloco.id} className="flex justify-between items-center text-sm py-1 border-b last:border-b-0">
-                <span className="truncate">
-                  <span className="text-muted-foreground tabular-nums mr-2">{bi + 1}.</span>
-                  {tipoLabel}
-                  <span className="text-xs text-muted-foreground ml-2">({bloco.itens.length} {bloco.itens.length === 1 ? "item" : "itens"})</span>
-                </span>
-                <span className="tabular-nums font-medium">{formatBRL(subtotal)}</span>
+                  <div className="space-y-2">
+                    {bloco.itens.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhum item. Clique em <b>Aplicar template</b> para usar o padrão do tipo selecionado.
+                      </p>
+                    ) : null}
+                    {bloco.itens.map((it, i) => (
+                      <div key={i} className="grid gap-2 items-center sm:grid-cols-[1fr_160px_40px]">
+                        <Input value={it.descricao} onChange={(e) => updateItem(bi, i, { descricao: e.target.value })} placeholder="Descrição do serviço" />
+                        <Input type="number" step="0.01" className="text-right tabular-nums"
+                          value={it.valor} onChange={(e) => updateItem(bi, i, { valor: Number(e.target.value) || 0 })} />
+                        <Button size="icon" variant="ghost" onClick={() => removeItem(bi, i)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Observações deste serviço (opcional)</Label>
+                    <Textarea rows={2} value={bloco.observacoes ?? ""}
+                      onChange={(e) => updateBlocoObs(bi, e.target.value)}
+                      placeholder="Observações específicas deste serviço." />
+                  </div>
+
+                  <div className="flex justify-end items-baseline gap-3 pt-1">
+                    <span className="text-xs uppercase text-muted-foreground tracking-wider">Subtotal</span>
+                    <span className="text-lg font-semibold tabular-nums">{formatBRL(subtotal)}</span>
+                  </div>
+                </div>
               </div>
             );
           })}
+
           <Separator className="my-2" />
-          <div className="flex justify-between items-baseline">
+          <div className="flex justify-end items-baseline gap-4 pr-2">
             <span className="text-sm uppercase text-muted-foreground tracking-wider">Total geral</span>
             <span className="text-2xl font-bold text-primary tabular-nums">{formatBRL(total)}</span>
           </div>
         </CardContent>
       </Card>
-
 
 
       <Card>

@@ -52,7 +52,6 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   const ano = new Date().getFullYear();
   const numeroLabel = orc.numero ? `${orc.numero}/${ano}` : `—/${ano}`;
   const titulo = TIPO_TITULOS[orc.tipo_servico] ?? "PRESTAÇÃO DE SERVIÇOS";
-  const isRural = TIPOS_RURAIS.has(orc.tipo_servico);
 
   // ============ HEADER & FOOTER ============
   const HEADER_H = 70;

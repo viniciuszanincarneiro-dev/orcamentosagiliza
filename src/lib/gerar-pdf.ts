@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
-import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO } from "./empresa";
+import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, METODOLOGIA_SERVICO } from "./empresa";
 import type { OrcamentoData } from "./orcamento-types";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";
 import logoUrl from "@/assets/agiliza-logo.png";
@@ -52,7 +52,6 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   const ano = new Date().getFullYear();
   const numeroLabel = orc.numero ? `${orc.numero}/${ano}` : `—/${ano}`;
   const titulo = TIPO_TITULOS[orc.tipo_servico] ?? "PRESTAÇÃO DE SERVIÇOS";
-  const isRural = TIPOS_RURAIS.has(orc.tipo_servico);
 
   // ============ HEADER & FOOTER ============
   const HEADER_H = 70;
@@ -149,11 +148,22 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   doc.line(W / 2 - tw / 2, y + 2, W / 2 + tw / 2, y + 2);
   y += 24;
 
-  // Subtítulo (tipo de serviço)
+  // Normaliza blocos de serviço (multisserviço). Cada bloco = serviço completo.
+  const blocos = (Array.isArray(orc.servicos) && orc.servicos.length > 0)
+    ? orc.servicos
+    : [{ id: "legacy", tipo_servico: orc.tipo_servico, itens: orc.itens, observacoes: undefined, subtotal: orc.valor_total }];
+  const anyRural = blocos.some((b) => TIPOS_RURAIS.has(b.tipo_servico));
+
+  // Subtítulo (título do serviço — ou rótulo "MULTISSERVIÇO" quando >1 bloco)
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  const tituloLines = doc.splitTextToSize(titulo, usableW) as string[];
-  tituloLines.forEach((ln) => { doc.text(ln, W / 2, y, { align: "center" }); y += 14; });
+  if (blocos.length === 1) {
+    const tituloLines = doc.splitTextToSize(titulo, usableW) as string[];
+    tituloLines.forEach((ln) => { doc.text(ln, W / 2, y, { align: "center" }); y += 14; });
+  } else {
+    doc.text("ORÇAMENTO MULTISSERVIÇO", W / 2, y, { align: "center" });
+    y += 14;
+  }
   y += 10;
 
   // Interessado
@@ -164,7 +174,6 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
 
   // Prestadora
   const prestadora = `PRESTADORA DE SERVIÇO: ${EMPRESA.razao}, pessoa jurídica de direito privado, inscrita no CNPJ nº ${EMPRESA.cnpj}, com sede na Rua Marcilio Dias, nº 1539, Centro, São Miguel do Oeste/SC, com endereço eletrônico: ${EMPRESA.email}, contato telefônico: (49) 99990-9954.`;
-  // primeira parte negrito ("PRESTADORA DE SERVIÇO:") inline
   {
     const label = "PRESTADORA DE SERVIÇO: ";
     const rest = prestadora.slice(label.length);
@@ -179,11 +188,23 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
       doc.text(ln, idx === 0 ? M + labelW : M, y);
       y += 13;
     });
-    y += 8;
+    y += 12;
   }
 
-  // GEORREFERENCIAMENTO (legal) — só para serviços rurais
-  if (isRural) {
+  // ============ BLOCOS EXPLICATIVOS DOS SERVIÇOS ============
+  // Cada serviço apresenta título próprio + texto explicativo/metodologia completa.
+  blocos.forEach((bloco) => {
+    const tipoB = bloco.tipo_servico;
+    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
+    const metod = METODOLOGIA_SERVICO[tipoB] ?? "";
+    const desc = DESCRICAO_PADRAO[tipoB] ?? "";
+    writeSectionTitle(tituloB);
+    if (metod) writeParagraph(metod, { gap: 6 });
+    if (desc) writeParagraph(desc, { gap: 10 });
+  });
+
+  // GEORREFERENCIAMENTO (texto legal) — se houver pelo menos um serviço rural
+  if (anyRural) {
     writeSectionTitle("GEORREFERENCIAMENTO");
     writeParagraph(
       "A Lei nº 10.267/2001, a qual foi regulamentada pelo Decreto nº 4.449/2002, demonstra algumas alterações e determina que sejam cumpridas. Estas alterações estão relacionadas ao cadastramento de imóveis rurais, tornando obrigatório o georreferenciamento, o qual deverá conter as coordenadas dos vértices definidores dos limites dos imóveis rurais, com precisão posicional, nos casos de desmembramento, remembramento ou mudança de titularidade entre outras modalidades. Tais exigências representam uma mudança paradigmática nas formas de levantamento e cadastro imobiliário até então vigentes no Brasil.",
@@ -198,14 +219,17 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
     writeParagraph("• 20/11/2025 para os imóveis com área inferior a 25 hectares.", { gap: 10 });
   }
 
-  // OBJETO DO ORÇAMENTO
+  // ============ OBJETO DO ORÇAMENTO ============
   writeSectionTitle("OBJETO DO ORÇAMENTO");
+  const objetoServicos = blocos.length === 1
+    ? (TIPO_TITULOS[blocos[0].tipo_servico] ?? "prestação de serviços").toLowerCase()
+    : blocos.map((b) => (TIPO_TITULOS[b.tipo_servico] ?? "prestação de serviços").toLowerCase()).join("; ");
   writeParagraph(
-    `O presente orçamento refere-se à prestação de serviço de ${titulo.toLowerCase()}${isRural ? ", com certificação junto ao INCRA quando aplicável," : ""} do imóvel a seguir descrito:`,
+    `O presente orçamento refere-se à prestação dos seguintes serviços: ${objetoServicos}${anyRural ? ", com certificação junto ao INCRA quando aplicável," : ""} sobre o imóvel a seguir descrito:`,
     { gap: 6 }
   );
 
-  // Descrição do imóvel — formato numerado como no modelo
+  // IMÓVEL — descrição numerada
   const partes: string[] = [];
   if (orc.imovel_area_m2) {
     partes.push(`com área de ${formatNumberBR(orc.imovel_area_m2)} m² (${formatNumberBR(orc.imovel_area_m2 / 10000, 4)} ha)`);
@@ -216,7 +240,6 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   if (orc.imovel_valor_avaliado) partes.push(`imóvel avaliado em ${valorPorExtenso(orc.imovel_valor_avaliado)}`);
 
   const descImovel = `1. IMÓVEL: ${orc.imovel_descricao ? orc.imovel_descricao + ". " : ""}${partes.join(", ")}.`;
-  // negrito no rótulo
   {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
@@ -235,7 +258,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
     y += 8;
   }
 
-  // Proprietários (opcional)
+  // Proprietários
   if (orc.proprietarios?.length) {
     writeSectionTitle("PROPRIETÁRIOS");
     orc.proprietarios.forEach((p) => {
@@ -244,34 +267,31 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
     y += 4;
   }
 
-  // ============ DESCRIÇÃO DOS SERVIÇOS + VALORES (multisserviço) ============
-  // Normaliza para uma lista de blocos: usa `servicos` se presente, senão um único bloco legado.
-  const blocos = (Array.isArray(orc.servicos) && orc.servicos.length > 0)
-    ? orc.servicos
-    : [{ id: "legacy", tipo_servico: orc.tipo_servico, itens: orc.itens, observacoes: undefined, subtotal: orc.valor_total }];
+  // ============ DESCRIÇÃO DOS SERVIÇOS (resumo do escopo) ============
+  writeSectionTitle("DESCRIÇÃO DOS SERVIÇOS");
+  blocos.forEach((bloco, bi) => {
+    const tipoB = bloco.tipo_servico;
+    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
+    const desc = DESCRICAO_PADRAO[tipoB] ?? "";
+    writeParagraph(`${bi + 1}. ${tituloB}`, { bold: true, gap: 2 });
+    if (desc) writeParagraph(desc, { gap: 6 });
+    if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 6 });
+  });
+
+  // ============ DOS VALORES — uma tabela por serviço ============
+  writeSectionTitle("DOS VALORES");
 
   blocos.forEach((bloco, bi) => {
     const tipoB = bloco.tipo_servico;
     const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
-    const isRuralB = TIPOS_RURAIS.has(tipoB);
     const subtotal = bloco.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0);
-    const prefixo = blocos.length > 1 ? `SERVIÇO ${bi + 1} — ` : "";
-
-    ensureSpace(40);
-    writeSectionTitle(`${prefixo}${tituloB}`);
-    const descTextB = DESCRICAO_PADRAO[tipoB] ?? "";
-    if (descTextB) writeParagraph(descTextB, { gap: 8 });
-    if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 8 });
-
-    const areaTxtB = orc.imovel_area_m2 && (isRuralB || bi === 0)
-      ? `${isRuralB ? "GEORREFERENCIAMENTO" : "SERVIÇOS"} – Área de ${formatNumberBR(orc.imovel_area_m2)} m²`
-      : "SERVIÇOS";
+    const cabecalho = blocos.length > 1 ? `${bi + 1}. ${tituloB}` : tituloB;
 
     ensureSpace(60);
     autoTable(doc, {
       startY: y,
       head: [
-        [{ content: areaTxtB, colSpan: 2, styles: { halign: "center", fillColor: CINZA_TAB, textColor: [255, 255, 255], fontStyle: "bold" } }],
+        [{ content: cabecalho, colSpan: 2, styles: { halign: "center", fillColor: CINZA_TAB, textColor: [255, 255, 255], fontStyle: "bold" } }],
         [
           { content: "SERVIÇOS:", styles: { fillColor: [230, 230, 230], textColor: PRETO, fontStyle: "bold" } },
           { content: "VALORES:", styles: { fillColor: [230, 230, 230], textColor: PRETO, fontStyle: "bold", halign: "right" } },
@@ -290,10 +310,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
   });
 
-  writeSectionTitle("DOS VALORES:");
-
-
-  // VALOR TOTAL DO ORÇAMENTO (linha destacada)
+  // VALOR TOTAL DO ORÇAMENTO
   ensureSpace(36);
   autoTable(doc, {
     startY: y,
@@ -308,8 +325,8 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   });
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
 
-  // ADICIONAL - somente para serviços com marcos
-  if (isRural) {
+  // ADICIONAL — quando há serviço rural
+  if (anyRural) {
     ensureSpace(28);
     autoTable(doc, {
       startY: y,

@@ -21,6 +21,7 @@ export const TIPOS_SERVICO = [
   { value: "remembramento", label: "Remembramento" },
   { value: "usucapiao_extrajudicial", label: "Usucapião Extrajudicial" },
   { value: "inventario_extrajudicial", label: "Inventário Extrajudicial" },
+  { value: "compra_venda", label: "Compra e Venda" },
   { value: "outros", label: "Outros Serviços" },
 ] as const;
 
@@ -33,6 +34,7 @@ export const TIPO_TITULOS: Record<string, string> = {
   remembramento: "REMEMBRAMENTO DE IMÓVEL",
   usucapiao_extrajudicial: "USUCAPIÃO EXTRAJUDICIAL",
   inventario_extrajudicial: "INVENTÁRIO EXTRAJUDICIAL",
+  compra_venda: "COMPRA E VENDA",
   outros: "PRESTAÇÃO DE SERVIÇOS",
 };
 

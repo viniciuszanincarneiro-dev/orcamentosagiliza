@@ -3,7 +3,7 @@ import {
   WidthType, ImageRun,
 } from "docx";
 
-import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO } from "./empresa";
+import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, METODOLOGIA_SERVICO } from "./empresa";
 import type { OrcamentoData } from "./orcamento-types";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";
 import logoUrl from "@/assets/agiliza-logo.png";

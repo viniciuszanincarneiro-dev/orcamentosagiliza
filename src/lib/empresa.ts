@@ -138,6 +138,11 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "COLETA DE CERTIDÕES E NEGATIVAS", auto: "certidoes" },
     { descricao: "ENCAMINHAMENTO AO TABELIONATO", valor_base: 600 },
   ],
+  compra_venda: [
+    { descricao: "ASSESSORIA DOCUMENTAL (CONTRATO/ESCRITURA)", valor_base: 1500 },
+    { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
+    { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", auto: "registro" },
+  ],
   outros: [],
 };
 

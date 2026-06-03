@@ -58,10 +58,15 @@ function cell(text: string, opts: { bold?: boolean; bg?: string; color?: string;
 
 export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
   const titulo = TIPO_TITULOS[orc.tipo_servico] ?? "PRESTAÇÃO DE SERVIÇOS";
-  const isRural = TIPOS_RURAIS.has(orc.tipo_servico);
   const ano = new Date().getFullYear();
   const numero = orc.numero ? `${orc.numero}/${ano}` : `—/${ano}`;
   const logo = await logoBytes();
+
+  // Normaliza blocos (multisserviço). Cada bloco = serviço completo.
+  const blocos = (Array.isArray(orc.servicos) && orc.servicos.length > 0)
+    ? orc.servicos
+    : [{ id: "legacy", tipo_servico: orc.tipo_servico, itens: orc.itens, observacoes: undefined as string | undefined, subtotal: orc.valor_total }];
+  const anyRural = blocos.some((b) => TIPOS_RURAIS.has(b.tipo_servico));
 
   const partes: string[] = [];
   if (orc.imovel_area_m2) partes.push(`com área de ${formatNumberBR(orc.imovel_area_m2)} m² (${formatNumberBR(orc.imovel_area_m2 / 10000, 4)} ha)`);
@@ -70,25 +75,35 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
   if (orc.imovel_matricula) partes.push(`matriculado no Ofício de Registro de Imóveis sob o nº ${orc.imovel_matricula}`);
   if (orc.imovel_valor_avaliado) partes.push(`imóvel avaliado em ${formatBRL(orc.imovel_valor_avaliado)}`);
 
-  const areaTitulo = orc.imovel_area_m2
-    ? `${isRural ? "GEORREFERENCIAMENTO" : "SERVIÇOS"} – Área de ${formatNumberBR(orc.imovel_area_m2)} m²`
-    : "SERVIÇOS";
-
-  // Lista de blocos: usa servicos se presente, senão um bloco legado.
-  const blocos = (Array.isArray(orc.servicos) && orc.servicos.length > 0)
-    ? orc.servicos
-    : [{ id: "legacy", tipo_servico: orc.tipo_servico, itens: orc.itens, observacoes: undefined as string | undefined, subtotal: orc.valor_total }];
-
-  const tabelasServicos = blocos.flatMap((bloco, bi) => {
+  // BLOCOS EXPLICATIVOS (título + metodologia + descrição) — apresentados PRIMEIRO
+  const blocosExplicativos: Paragraph[] = blocos.flatMap((bloco) => {
     const tipoB = bloco.tipo_servico;
     const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
-    const isRuralB = TIPOS_RURAIS.has(tipoB);
+    const metod = METODOLOGIA_SERVICO[tipoB] ?? "";
+    const desc = DESCRICAO_PADRAO[tipoB] ?? "";
+    const ps: Paragraph[] = [P({ text: tituloB, bold: true, size: 22, spacing: 120 })];
+    if (metod) ps.push(P({ text: metod, spacing: 140 }));
+    if (desc) ps.push(P({ text: desc, spacing: 200 }));
+    return ps;
+  });
+
+  // DESCRIÇÃO DOS SERVIÇOS (resumo curto enumerado)
+  const descricaoServicos: Paragraph[] = blocos.flatMap((bloco, bi) => {
+    const tipoB = bloco.tipo_servico;
+    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
+    const desc = DESCRICAO_PADRAO[tipoB] ?? "";
+    const out: Paragraph[] = [P({ text: `${bi + 1}. ${tituloB}`, bold: true, spacing: 80 })];
+    if (desc) out.push(P({ text: desc, spacing: 120 }));
+    if (bloco.observacoes?.trim()) out.push(P({ text: `Observações: ${bloco.observacoes.trim()}`, spacing: 120 }));
+    return out;
+  });
+
+  // DOS VALORES — uma tabela por serviço
+  const tabelasServicos: (Paragraph | Table)[] = blocos.flatMap((bloco, bi) => {
+    const tipoB = bloco.tipo_servico;
+    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
     const subtotal = bloco.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0);
-    const areaTitB = orc.imovel_area_m2 && (isRuralB || bi === 0)
-      ? `${isRuralB ? "GEORREFERENCIAMENTO" : "SERVIÇOS"} – Área de ${formatNumberBR(orc.imovel_area_m2)} m²`
-      : "SERVIÇOS";
-    const prefixo = blocos.length > 1 ? `SERVIÇO ${bi + 1} — ` : "";
-    const descTxtB = DESCRICAO_PADRAO[tipoB] ?? "";
+    const cabecalho = blocos.length > 1 ? `${bi + 1}. ${tituloB}` : tituloB;
     const tabelaB = new Table({
       width: { size: 100, type: WidthType.PERCENTAGE },
       rows: [
@@ -97,7 +112,7 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
             columnSpan: 2,
             shading: { fill: CINZA_TAB, color: "auto", type: "clear" },
             margins: { top: 100, bottom: 100, left: 120, right: 120 },
-            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: areaTitB, bold: true, color: "FFFFFF", size: 22, font: "Calibri" })] })],
+            children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: cabecalho, bold: true, color: "FFFFFF", size: 22, font: "Calibri" })] })],
           }),
         ]}),
         new TableRow({ tableHeader: true, children: [
@@ -113,15 +128,8 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
         ]}),
       ],
     });
-    const blocoParagraphs: (Paragraph | Table)[] = [
-      P({ text: `${prefixo}${tituloB}`, bold: true, size: 22 }),
-    ];
-    if (descTxtB) blocoParagraphs.push(P({ text: descTxtB, spacing: 160 }));
-    if (bloco.observacoes?.trim()) blocoParagraphs.push(P({ text: `Observações: ${bloco.observacoes.trim()}`, spacing: 120 }));
-    blocoParagraphs.push(tabelaB, P({ text: "", spacing: 120 }));
-    return blocoParagraphs;
+    return [tabelaB, P({ text: "", spacing: 120 })];
   });
-
 
   const tabelaTotal = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -131,7 +139,7 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
     ]})],
   });
 
-  const tabelaAdicional = isRural ? new Table({
+  const tabelaAdicional = anyRural ? new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [new TableRow({ children: [
       cell("ADICIONAL – MARCO DE CONCRETO", { bold: true }),
@@ -139,7 +147,7 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
     ]})],
   }) : null;
 
-  const blocoLegal = isRural ? [
+  const blocoLegal = anyRural ? [
     P({ text: "GEORREFERENCIAMENTO", bold: true, size: 22 }),
     P({ text: "A Lei nº 10.267/2001, a qual foi regulamentada pelo Decreto nº 4.449/2002, demonstra algumas alterações e determina que sejam cumpridas. Estas alterações estão relacionadas ao cadastramento de imóveis rurais, tornando obrigatório o georreferenciamento, o qual deverá conter as coordenadas dos vértices definidores dos limites dos imóveis rurais, com precisão posicional, nos casos de desmembramento, remembramento ou mudança de titularidade entre outras modalidades. Tais exigências representam uma mudança paradigmática nas formas de levantamento e cadastro imobiliário até então vigentes no Brasil." }),
     P({ text: "Todos os imóveis rurais possuem a obrigatoriedade em fazer o georreferenciamento até 20 de novembro de 2025, prazo esse definido no Decreto 4.449/02, alterado pelo decreto 9.311/18." }),
@@ -161,6 +169,11 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
     spacing: 40,
   }));
 
+  const objetoServicos = blocos.length === 1
+    ? titulo.toLowerCase()
+    : blocos.map((b) => (TIPO_TITULOS[b.tipo_servico] ?? "prestação de serviços").toLowerCase()).join("; ");
+  const subtituloCapa = blocos.length === 1 ? titulo : "ORÇAMENTO MULTISSERVIÇO";
+
   const doc = new Document({
     creator: "AGILIZA",
     title: `Orçamento ${orc.numero ?? ""}`,
@@ -180,9 +193,9 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
           spacing: { after: 200 },
         }),
 
-        // Título principal
+        // Capa
         P({ text: `ORÇAMENTO Nº ${numero}`, bold: true, size: 26, align: AlignmentType.CENTER, spacing: 120 }),
-        P({ text: titulo, bold: true, size: 22, align: AlignmentType.CENTER, spacing: 200 }),
+        P({ text: subtituloCapa, bold: true, size: 22, align: AlignmentType.CENTER, spacing: 200 }),
 
         // Interessado
         P({ text: `Interessado: ${orc.requerente_nome}${orc.requerente_cpf_cnpj ? ` — ${orc.requerente_cpf_cnpj}` : ""}`, spacing: 200 }),
@@ -193,12 +206,15 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
           new TextRun({ text: `${EMPRESA.razao}, pessoa jurídica de direito privado, inscrita no CNPJ nº ${EMPRESA.cnpj}, com sede na Rua Marcilio Dias, nº 1539, Centro, São Miguel do Oeste/SC, com endereço eletrônico: ${EMPRESA.email}, contato telefônico: (49) 99990-9954.`, font: "Calibri", size: 20 }),
         ], spacing: 200 }),
 
-        // GEORREFERENCIAMENTO (legal)
+        // BLOCOS EXPLICATIVOS — cada serviço com título, metodologia e descrição
+        ...blocosExplicativos,
+
+        // GEORREFERENCIAMENTO (legal) — se houver serviço rural
         ...blocoLegal,
 
         // OBJETO
         P({ text: "OBJETO DO ORÇAMENTO", bold: true, size: 22 }),
-        P({ text: `O presente orçamento refere-se à prestação de serviço de ${titulo.toLowerCase()}${isRural ? ", com certificação junto ao INCRA quando aplicável," : ""} do imóvel a seguir descrito:`, spacing: 120 }),
+        P({ text: `O presente orçamento refere-se à prestação dos seguintes serviços: ${objetoServicos}${anyRural ? ", com certificação junto ao INCRA quando aplicável," : ""} sobre o imóvel a seguir descrito:`, spacing: 120 }),
         P({ runs: [
           new TextRun({ text: "1. IMÓVEL: ", bold: true, font: "Calibri", size: 20 }),
           new TextRun({ text: `${orc.imovel_descricao ? orc.imovel_descricao + ". " : ""}${partes.join(", ")}.`, font: "Calibri", size: 20 }),
@@ -206,14 +222,13 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
 
         ...proprietariosBlock,
 
-        // DESCRIÇÃO DOS SERVIÇOS
-        P({ text: "DESCRIÇÃO DOS SERVIÇOS:", bold: true, size: 22 }),
-        P({ text: DESCRICAO_PADRAO[orc.tipo_servico] ?? "", spacing: 240 }),
+        // DESCRIÇÃO DOS SERVIÇOS (resumo)
+        P({ text: "DESCRIÇÃO DOS SERVIÇOS", bold: true, size: 22 }),
+        ...descricaoServicos,
 
-        // DOS VALORES
-        P({ text: "DOS VALORES:", bold: true, size: 22 }),
+        // DOS VALORES (uma tabela por serviço + total geral)
+        P({ text: "DOS VALORES", bold: true, size: 22, spacing: 160 }),
         ...tabelasServicos,
-        P({ text: "", spacing: 100 }),
         tabelaTotal,
         P({ text: "", spacing: 100 }),
         ...(tabelaAdicional ? [tabelaAdicional, P({ text: "", spacing: 120 })] : []),

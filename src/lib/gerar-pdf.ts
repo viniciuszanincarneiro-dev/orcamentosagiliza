@@ -9,7 +9,10 @@ import logoUrl from "@/assets/agiliza-logo.png";
 // Cores
 const PRETO: [number, number, number] = [0, 0, 0];
 const CINZA: [number, number, number] = [90, 90, 90];
-const CINZA_TAB: [number, number, number] = [70, 70, 70];
+// Cores oficiais da empresa: verde e branco
+const VERDE: [number, number, number] = [27, 94, 32];
+const VERDE_CLARO: [number, number, number] = [232, 245, 233];
+const CINZA_TAB: [number, number, number] = [27, 94, 32];
 
 const TIPOS_RURAIS = new Set([
   "retificacao_geo",

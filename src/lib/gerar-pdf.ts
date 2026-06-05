@@ -9,7 +9,10 @@ import logoUrl from "@/assets/agiliza-logo.png";
 // Cores
 const PRETO: [number, number, number] = [0, 0, 0];
 const CINZA: [number, number, number] = [90, 90, 90];
-const CINZA_TAB: [number, number, number] = [70, 70, 70];
+// Cores oficiais da empresa: verde e branco
+const VERDE: [number, number, number] = [27, 94, 32];
+const VERDE_CLARO: [number, number, number] = [232, 245, 233];
+const CINZA_TAB: [number, number, number] = [27, 94, 32];
 
 const TIPOS_RURAIS = new Set([
   "retificacao_geo",
@@ -61,26 +64,26 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
     // Faixa de texto de identificação
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...PRETO);
+    doc.setTextColor(...VERDE);
     doc.text("AGILIZA ASSESSORIA EM DOCUMENTOS | TOPOGRAFIA | AMBIENTAL", W / 2, 30, { align: "center" });
     // Logo discreto à esquerda
     try { doc.addImage(logo, "PNG", M, 38, 90, 30); } catch { /* noop */ }
     // Linha
-    doc.setDrawColor(...PRETO);
+    doc.setDrawColor(...VERDE);
     doc.setLineWidth(0.7);
     doc.line(M, HEADER_H, W - M, HEADER_H);
   };
 
   const addFooter = (pageNum: number, totalPages: number) => {
     const y = H - FOOTER_H;
-    doc.setDrawColor(...PRETO);
+    doc.setDrawColor(...VERDE);
     doc.setLineWidth(0.5);
     doc.line(M, y, W - M, y);
     doc.setFontSize(7.5);
     let cy = y + 12;
     EMPRESA.unidades.forEach((u) => {
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...PRETO);
+      doc.setTextColor(...VERDE);
       doc.text(`${u.cidade}`, M, cy);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...CINZA);
@@ -128,7 +131,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
     ensureSpace(22);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.setTextColor(...PRETO);
+    doc.setTextColor(...VERDE);
     doc.text(text, M, y);
     y += 14;
   }
@@ -140,7 +143,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   // Título
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.setTextColor(...PRETO);
+  doc.setTextColor(...VERDE);
   doc.text(`ORÇAMENTO Nº ${numeroLabel}`, W / 2, y, { align: "center" });
   // sublinhado
   const tw = doc.getTextWidth(`ORÇAMENTO Nº ${numeroLabel}`);
@@ -293,14 +296,14 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
       head: [
         [{ content: cabecalho, colSpan: 2, styles: { halign: "center", fillColor: CINZA_TAB, textColor: [255, 255, 255], fontStyle: "bold" } }],
         [
-          { content: "SERVIÇOS:", styles: { fillColor: [230, 230, 230], textColor: PRETO, fontStyle: "bold" } },
-          { content: "VALORES:", styles: { fillColor: [230, 230, 230], textColor: PRETO, fontStyle: "bold", halign: "right" } },
+          { content: "SERVIÇOS:", styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold" } },
+          { content: "VALORES:", styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold", halign: "right" } },
         ],
       ],
       body: bloco.itens.map((i) => [i.descricao, formatBRL(i.valor)]),
       foot: [[
-        { content: "SUBTOTAL:", styles: { fillColor: [230, 230, 230], textColor: PRETO, fontStyle: "bold" } },
-        { content: formatBRL(subtotal), styles: { fillColor: [230, 230, 230], textColor: PRETO, fontStyle: "bold", halign: "right" } },
+        { content: "SUBTOTAL:", styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold" } },
+        { content: formatBRL(subtotal), styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold", halign: "right" } },
       ]],
       theme: "grid",
       margin: { left: M, right: M, bottom: FOOTER_H + 14 },
@@ -325,22 +328,6 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   });
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
 
-  // ADICIONAL — quando há serviço rural
-  if (anyRural) {
-    ensureSpace(28);
-    autoTable(doc, {
-      startY: y,
-      body: [[
-        { content: "ADICIONAL – MARCO DE CONCRETO", styles: { fontStyle: "bold" } },
-        { content: "R$ 50,00/unidade", styles: { fontStyle: "bold", halign: "right" } },
-      ]],
-      theme: "grid",
-      margin: { left: M, right: M, bottom: FOOTER_H + 14 },
-      styles: { font: "helvetica", fontSize: 10, cellPadding: 6, lineColor: [180, 180, 180], lineWidth: 0.4 },
-      columnStyles: { 1: { halign: "right", cellWidth: 160 } },
-    });
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 14;
-  }
 
   // OBSERVAÇÕES
   ensureSpace(80);

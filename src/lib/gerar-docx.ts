@@ -139,13 +139,7 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
     ]})],
   });
 
-  const tabelaAdicional = anyRural ? new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [new TableRow({ children: [
-      cell("ADICIONAL – MARCO DE CONCRETO", { bold: true }),
-      cell("R$ 50,00/unidade", { bold: true, align: AlignmentType.RIGHT }),
-    ]})],
-  }) : null;
+  const tabelaAdicional = null;
 
   const blocoLegal = anyRural ? [
     P({ text: "GEORREFERENCIAMENTO", bold: true, size: 22 }),

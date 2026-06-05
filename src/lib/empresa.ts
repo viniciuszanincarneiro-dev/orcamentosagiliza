@@ -9,6 +9,7 @@ export const EMPRESA = {
     { cidade: "Maravilha", endereco: "Avenida Anita Garibaldi, 340 - Centro", telefones: "(49) 99154-1854", email: "agiliza.mh@gmail.com" },
     { cidade: "Paraíso", endereco: "Rua Guilherme Schmidt, 834 - Centro", telefones: "(49) 99188-5181", email: "agiliza.paraiso@gmail.com" },
     { cidade: "Dionísio Cerqueira", endereco: "Avenida Washington Luis, 646 - Centro", telefones: "(49) 99192-2081", email: "agiliza.dc@gmail.com" },
+    { cidade: "Anchieta", endereco: "Av. Anchieta, 330, Sala 01, Centro, 89970-000", telefones: "(49) 9 9911-7869", email: "agiliza.anchieta@gmail.com" },
   ],
 };
 

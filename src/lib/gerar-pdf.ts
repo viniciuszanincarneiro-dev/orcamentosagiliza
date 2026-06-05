@@ -131,7 +131,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
     ensureSpace(22);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.setTextColor(...PRETO);
+    doc.setTextColor(...VERDE);
     doc.text(text, M, y);
     y += 14;
   }

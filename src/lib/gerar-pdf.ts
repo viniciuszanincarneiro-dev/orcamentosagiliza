@@ -64,19 +64,19 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
     // Faixa de texto de identificação
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(...PRETO);
+    doc.setTextColor(...VERDE);
     doc.text("AGILIZA ASSESSORIA EM DOCUMENTOS | TOPOGRAFIA | AMBIENTAL", W / 2, 30, { align: "center" });
     // Logo discreto à esquerda
     try { doc.addImage(logo, "PNG", M, 38, 90, 30); } catch { /* noop */ }
     // Linha
-    doc.setDrawColor(...PRETO);
+    doc.setDrawColor(...VERDE);
     doc.setLineWidth(0.7);
     doc.line(M, HEADER_H, W - M, HEADER_H);
   };
 
   const addFooter = (pageNum: number, totalPages: number) => {
     const y = H - FOOTER_H;
-    doc.setDrawColor(...PRETO);
+    doc.setDrawColor(...VERDE);
     doc.setLineWidth(0.5);
     doc.line(M, y, W - M, y);
     doc.setFontSize(7.5);

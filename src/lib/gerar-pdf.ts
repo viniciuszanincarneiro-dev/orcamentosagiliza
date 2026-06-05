@@ -83,7 +83,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
     let cy = y + 12;
     EMPRESA.unidades.forEach((u) => {
       doc.setFont("helvetica", "bold");
-      doc.setTextColor(...PRETO);
+      doc.setTextColor(...VERDE);
       doc.text(`${u.cidade}`, M, cy);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...CINZA);

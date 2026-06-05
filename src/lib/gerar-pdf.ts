@@ -302,8 +302,8 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
       ],
       body: bloco.itens.map((i) => [i.descricao, formatBRL(i.valor)]),
       foot: [[
-        { content: "SUBTOTAL:", styles: { fillColor: [230, 230, 230], textColor: PRETO, fontStyle: "bold" } },
-        { content: formatBRL(subtotal), styles: { fillColor: [230, 230, 230], textColor: PRETO, fontStyle: "bold", halign: "right" } },
+        { content: "SUBTOTAL:", styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold" } },
+        { content: formatBRL(subtotal), styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold", halign: "right" } },
       ]],
       theme: "grid",
       margin: { left: M, right: M, bottom: FOOTER_H + 14 },

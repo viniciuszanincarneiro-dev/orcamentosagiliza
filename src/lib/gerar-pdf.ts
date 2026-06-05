@@ -143,7 +143,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   // Título
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.setTextColor(...PRETO);
+  doc.setTextColor(...VERDE);
   doc.text(`ORÇAMENTO Nº ${numeroLabel}`, W / 2, y, { align: "center" });
   // sublinhado
   const tw = doc.getTextWidth(`ORÇAMENTO Nº ${numeroLabel}`);

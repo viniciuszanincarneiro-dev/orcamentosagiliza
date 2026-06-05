@@ -328,22 +328,6 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   });
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
 
-  // ADICIONAL — quando há serviço rural
-  if (anyRural) {
-    ensureSpace(28);
-    autoTable(doc, {
-      startY: y,
-      body: [[
-        { content: "ADICIONAL – MARCO DE CONCRETO", styles: { fontStyle: "bold" } },
-        { content: "R$ 50,00/unidade", styles: { fontStyle: "bold", halign: "right" } },
-      ]],
-      theme: "grid",
-      margin: { left: M, right: M, bottom: FOOTER_H + 14 },
-      styles: { font: "helvetica", fontSize: 10, cellPadding: 6, lineColor: [180, 180, 180], lineWidth: 0.4 },
-      columnStyles: { 1: { halign: "right", cellWidth: 160 } },
-    });
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 14;
-  }
 
   // OBSERVAÇÕES
   ensureSpace(80);

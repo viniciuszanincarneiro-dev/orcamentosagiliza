@@ -296,8 +296,8 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
       head: [
         [{ content: cabecalho, colSpan: 2, styles: { halign: "center", fillColor: CINZA_TAB, textColor: [255, 255, 255], fontStyle: "bold" } }],
         [
-          { content: "SERVIÇOS:", styles: { fillColor: [230, 230, 230], textColor: PRETO, fontStyle: "bold" } },
-          { content: "VALORES:", styles: { fillColor: [230, 230, 230], textColor: PRETO, fontStyle: "bold", halign: "right" } },
+          { content: "SERVIÇOS:", styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold" } },
+          { content: "VALORES:", styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold", halign: "right" } },
         ],
       ],
       body: bloco.itens.map((i) => [i.descricao, formatBRL(i.valor)]),

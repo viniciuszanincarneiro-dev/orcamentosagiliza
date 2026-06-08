@@ -505,6 +505,13 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       ]);
       const blob = await gerarOrcamentoPDF(cur);
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.pdf`);
+      void registrarLog({
+        acao: "gerar_pdf",
+        entidade: "orcamento",
+        entidade_id: cur.id ?? null,
+        numero: cur.numero ?? null,
+        descricao: `Gerou PDF do orçamento ${cur.numero ?? "novo"}`,
+      });
     } catch (e) {
       toast.error("Erro ao gerar PDF", { description: (e as Error).message });
     } finally { setGenerating(null); }
@@ -519,6 +526,13 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       ]);
       const blob = await gerarOrcamentoDOCX(cur);
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.docx`);
+      void registrarLog({
+        acao: "gerar_docx",
+        entidade: "orcamento",
+        entidade_id: cur.id ?? null,
+        numero: cur.numero ?? null,
+        descricao: `Gerou DOCX do orçamento ${cur.numero ?? "novo"}`,
+      });
     } catch (e) {
       toast.error("Erro ao gerar DOCX", { description: (e as Error).message });
     } finally { setGenerating(null); }

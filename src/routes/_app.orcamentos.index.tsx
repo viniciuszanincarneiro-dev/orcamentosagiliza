@@ -65,7 +65,7 @@ function HistoricoPage() {
       .eq("id", id);
     setAcaoPendente(null);
     if (error) return toast.error("Erro ao excluir", { description: error.message });
-    await registrarLog({ acao: "excluir", entidade: "orcamento", entidade_id: id, descricao: `Orçamento ${numero} movido para lixeira` });
+    await registrarLog({ acao: "excluir", entidade: "orcamento", entidade_id: id, numero, descricao: `Excluiu orçamento ${numero} (movido para lixeira)` });
     toast.success("Movido para a lixeira", { description: "Você pode restaurar em Lixeira." });
     refetch();
   }
@@ -105,7 +105,7 @@ function HistoricoPage() {
         .single();
       if (insErr) throw insErr;
       const novoTyped = novo as { id: string; numero: string };
-      await registrarLog({ acao: "duplicar", entidade: "orcamento", entidade_id: novoTyped.id, descricao: `Duplicado de ${(orig as { numero: string }).numero} → ${novoTyped.numero}` });
+      await registrarLog({ acao: "duplicar", entidade: "orcamento", entidade_id: novoTyped.id, numero: novoTyped.numero, descricao: `Duplicou orçamento ${(orig as { numero: string }).numero} → ${novoTyped.numero}` });
       toast.success(`Orçamento duplicado: ${novoTyped.numero}`);
       navigate({ to: "/orcamentos/$id", params: { id: novoTyped.id } });
     } catch (e) {

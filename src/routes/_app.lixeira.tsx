@@ -52,7 +52,7 @@ function LixeiraPage() {
     const { error } = await supabase.from("orcamentos").delete().eq("id", id);
     setPendente(null);
     if (error) return toast.error("Erro ao excluir", { description: error.message });
-    await registrarLog({ acao: "excluir_definitivo", entidade: "orcamento", entidade_id: id, descricao: `Orçamento ${numero} excluído definitivamente` });
+    await registrarLog({ acao: "excluir_definitivo", entidade: "orcamento", entidade_id: id, numero, descricao: `Excluiu definitivamente o orçamento ${numero}` });
     toast.success("Excluído definitivamente");
     refetch();
   }

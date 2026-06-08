@@ -105,7 +105,7 @@ function HistoricoPage() {
         .single();
       if (insErr) throw insErr;
       const novoTyped = novo as { id: string; numero: string };
-      await registrarLog({ acao: "duplicar", entidade: "orcamento", entidade_id: novoTyped.id, descricao: `Duplicado de ${(orig as { numero: string }).numero} → ${novoTyped.numero}` });
+      await registrarLog({ acao: "duplicar", entidade: "orcamento", entidade_id: novoTyped.id, numero: novoTyped.numero, descricao: `Duplicou orçamento ${(orig as { numero: string }).numero} → ${novoTyped.numero}` });
       toast.success(`Orçamento duplicado: ${novoTyped.numero}`);
       navigate({ to: "/orcamentos/$id", params: { id: novoTyped.id } });
     } catch (e) {

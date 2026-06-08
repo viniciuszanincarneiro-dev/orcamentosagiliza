@@ -47,7 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     async signIn(email, password) {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (data.session) setSession(data.session);
+      if (data.session) {
+        setSession(data.session);
+        void registrarLog({ acao: "login", descricao: `Login de ${data.session.user.email ?? email}` });
+      }
       return { error: error?.message ?? null };
     },
     async signUp(email, password) {
@@ -59,6 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error?.message ?? null };
     },
     async signOut() {
+      const email = session?.user?.email;
+      if (email) await registrarLog({ acao: "logout", descricao: `Logout de ${email}` });
       await supabase.auth.signOut();
       setSession(null);
     },

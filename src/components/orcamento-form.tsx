@@ -471,7 +471,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         acao: eraNovo ? "criar" : "editar",
         entidade: "orcamento",
         entidade_id: saved.id,
-        descricao: `${eraNovo ? "Criado" : "Editado"} ${saved.numero} — ${saved.requerente_nome ?? ""}`,
+        numero: saved.numero,
+        descricao: `${eraNovo ? "Criou" : "Editou"} orçamento ${saved.numero} — ${saved.requerente_nome ?? ""}`,
         metadata: { valor_total: saved.valor_total, status: saved.status },
       });
       onSaved?.(saved.id!, saved.numero!);

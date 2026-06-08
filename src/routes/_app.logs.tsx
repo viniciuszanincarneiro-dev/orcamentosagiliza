@@ -126,37 +126,15 @@ function LogsPage() {
     });
   }, [data, filtroAcao, filtroPeriodo, filtroUsuario, acoesPermitidas]);
 
-  function exportar() {
-    const linhas = filtrados.map((l) => {
-      const d = l.created_at ? new Date(l.created_at) : null;
-      return {
-        data: d ? fmtData(d) : "",
-        hora: d ? fmtHora(d) : "",
-        usuario: l.user_email ?? "",
-        acao: ACAO_LABEL[l.acao] ?? l.acao,
-        orcamento: extrairNumero(l),
-      };
-    });
-    exportarCSV(
-      `historico-${timestampNome()}`,
-      linhas,
-      { data: "Data", hora: "Hora", usuario: "Usuário", acao: "Ação", orcamento: "Orçamento" },
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Histórico de Ações</h1>
-          <p className="text-muted-foreground mt-1">
-            Registro simples das ações realizadas no sistema. Use para identificar alterações e localizar orçamentos.
-          </p>
-        </div>
-        <Button variant="outline" onClick={exportar} disabled={!filtrados.length}>
-          <Download className="h-4 w-4 mr-2" />Exportar CSV
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Histórico de Ações</h1>
+        <p className="text-muted-foreground mt-1">
+          Registro simples das ações realizadas no sistema. Use para identificar alterações e localizar orçamentos.
+        </p>
       </div>
+
 
       <Card>
         <CardHeader>

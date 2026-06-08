@@ -1,15 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Download, Search } from "lucide-react";
+import { Activity, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { exportarCSV, timestampNome } from "@/lib/export-dados";
 
 export const Route = createFileRoute("/_app/logs")({
   component: LogsPage,
@@ -128,37 +126,15 @@ function LogsPage() {
     });
   }, [data, filtroAcao, filtroPeriodo, filtroUsuario, acoesPermitidas]);
 
-  function exportar() {
-    const linhas = filtrados.map((l) => {
-      const d = l.created_at ? new Date(l.created_at) : null;
-      return {
-        data: d ? fmtData(d) : "",
-        hora: d ? fmtHora(d) : "",
-        usuario: l.user_email ?? "",
-        acao: ACAO_LABEL[l.acao] ?? l.acao,
-        orcamento: extrairNumero(l),
-      };
-    });
-    exportarCSV(
-      `historico-${timestampNome()}`,
-      linhas,
-      { data: "Data", hora: "Hora", usuario: "Usuário", acao: "Ação", orcamento: "Orçamento" },
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Histórico de Ações</h1>
-          <p className="text-muted-foreground mt-1">
-            Registro simples das ações realizadas no sistema. Use para identificar alterações e localizar orçamentos.
-          </p>
-        </div>
-        <Button variant="outline" onClick={exportar} disabled={!filtrados.length}>
-          <Download className="h-4 w-4 mr-2" />Exportar CSV
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Histórico de Ações</h1>
+        <p className="text-muted-foreground mt-1">
+          Registro simples das ações realizadas no sistema. Use para identificar alterações e localizar orçamentos.
+        </p>
       </div>
+
 
       <Card>
         <CardHeader>

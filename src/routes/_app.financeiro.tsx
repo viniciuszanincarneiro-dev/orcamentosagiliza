@@ -213,7 +213,25 @@ function FinanceiroPage() {
 
       {/* Filtros */}
       <Card>
-        <CardContent className="pt-6 grid gap-4 sm:grid-cols-3">
+        <CardContent className="pt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Escritório</Label>
+            {isAdmin ? (
+              <Select value={escritorioSel} onValueChange={setEscritorioSel}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os escritórios</SelectItem>
+                  {escritorios.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="px-3 py-2 rounded-md border bg-muted text-sm">
+                {meuEscritorio?.nome ?? "—"}
+              </div>
+            )}
+          </div>
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Período</Label>
             <Select value={periodo} onValueChange={setPeriodo}>
@@ -253,6 +271,45 @@ function FinanceiroPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Visão consolidada por escritório (admin) */}
+      {isAdmin && escritorioSel === "all" && porEscritorio.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Building2 className="h-4 w-4" /> Visão por escritório
+            </CardTitle>
+            <CardDescription>Indicadores individualizados por unidade.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Escritório</TableHead>
+                    <TableHead className="text-center">Orçamentos</TableHead>
+                    <TableHead className="text-right">Faturamento</TableHead>
+                    <TableHead className="text-right">Custas externas</TableHead>
+                    <TableHead className="text-right">Líquido Agiliza</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {porEscritorio.map((p) => (
+                    <TableRow key={p.nome}>
+                      <TableCell className="font-medium">{p.nome}</TableCell>
+                      <TableCell className="text-center tabular-nums">{p.qtd}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatBRL(p.bruto)}</TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">{formatBRL(p.despesas)}</TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums text-primary">{formatBRL(p.liquido)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
 
       {/* Cards de totais */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

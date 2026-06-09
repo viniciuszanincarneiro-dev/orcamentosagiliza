@@ -5,8 +5,24 @@ import {
 
 import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, METODOLOGIA_SERVICO } from "./empresa";
 import type { OrcamentoData } from "./orcamento-types";
+import type { Escritorio } from "@/hooks/use-profile";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";
 import logoUrl from "@/assets/agiliza-logo.png";
+
+type EscritorioInfo = {
+  razao: string; cnpj: string; email: string; telefone: string; cidade: string; endereco: string;
+};
+function toInfo(e?: Escritorio | null): EscritorioInfo {
+  if (!e) return {
+    razao: EMPRESA.razao, cnpj: EMPRESA.cnpj, email: EMPRESA.email,
+    telefone: "(49) 99990-9954", cidade: "São Miguel do Oeste/SC",
+    endereco: "Rua Marcilio Dias, nº 1539, Centro, São Miguel do Oeste/SC",
+  };
+  return {
+    razao: e.razao_social, cnpj: e.cnpj, email: e.email,
+    telefone: e.telefone, cidade: e.cidade, endereco: e.endereco,
+  };
+}
 
 const PRETO = "000000";
 const CINZA = "5A5A5A";
@@ -56,7 +72,8 @@ function cell(text: string, opts: { bold?: boolean; bg?: string; color?: string;
   });
 }
 
-export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
+export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escritorio | null): Promise<Blob> {
+  const esc = toInfo(escritorio);
   const titulo = TIPO_TITULOS[orc.tipo_servico] ?? "PRESTAÇÃO DE SERVIÇOS";
   const ano = new Date().getFullYear();
   const numero = orc.numero ? `${orc.numero}/${ano}` : `—/${ano}`;

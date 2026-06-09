@@ -645,6 +645,25 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         </TabsContent>
       </Tabs>
 
+      {escritorio ? (
+        <Alert className="border-primary/40 bg-primary/5">
+          <CheckCircle2 className="h-4 w-4 text-primary" />
+          <AlertTitle>Escritório: {escritorio.nome}</AlertTitle>
+          <AlertDescription>
+            Este orçamento será emitido em nome de <b>{escritorio.razao_social}</b> · CNPJ {escritorio.cnpj}. O CNPJ é definido automaticamente pelo seu cadastro.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Sem escritório vinculado</AlertTitle>
+          <AlertDescription>
+            Sua conta ainda não está vinculada a um escritório. Peça a um administrador para fazer o vínculo em <b>Usuários</b> — sem isso, o PDF/DOCX usará dados padrão.
+          </AlertDescription>
+        </Alert>
+      )}
+
+
       <Card>
         <CardHeader><CardTitle>Status do orçamento</CardTitle></CardHeader>
         <CardContent>

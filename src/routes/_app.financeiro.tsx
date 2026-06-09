@@ -8,6 +8,7 @@ import {
   Receipt,
   FileText,
   CheckCircle2,
+  Building2,
 } from "lucide-react";
 import {
   Bar,
@@ -48,6 +49,7 @@ import { Label } from "@/components/ui/label";
 import { formatBRL } from "@/lib/format";
 import { calcularLucro, calcularRepasse, type ItemLike } from "@/lib/lucro";
 import { TIPOS_SERVICO, STATUS_ORCAMENTO } from "@/lib/empresa";
+import { useProfile } from "@/hooks/use-profile";
 
 export const Route = createFileRoute("/_app/financeiro")({
   component: FinanceiroPage,
@@ -64,6 +66,7 @@ type OrcamentoRow = {
   created_at: string;
   status: string;
   tipo_servico: string;
+  escritorio_id: string | null;
   valor_total: number | null;
   itens: ItemLike[] | null;
 };
@@ -83,9 +86,13 @@ type LinhaMes = {
 };
 
 function FinanceiroPage() {
-  const [periodo, setPeriodo] = useState<string>("12"); // últimos N meses, "all" = tudo
+  const { isAdmin, escritorio: meuEscritorio, escritorios } = useProfile();
+  const [periodo, setPeriodo] = useState<string>("12");
   const [tipo, setTipo] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
+  // Para não-admins, força o próprio escritório
+  const [escritorioSel, setEscritorioSel] = useState<string>("all");
+  const escritorioEfetivo = isAdmin ? escritorioSel : (meuEscritorio?.id ?? "all");
 
   const { data: orcamentos, isLoading } = useQuery({
     queryKey: ["financeiro-orcamentos"],
@@ -93,13 +100,18 @@ function FinanceiroPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("id, created_at, status, tipo_servico, valor_total, itens")
+        .select("id, created_at, status, tipo_servico, escritorio_id, valor_total, itens")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as OrcamentoRow[];
     },
   });
+
+  const escritoriosMap = useMemo(
+    () => new Map(escritorios.map((e) => [e.id, e.nome])),
+    [escritorios],
+  );
 
   const filtrados = useMemo(() => {
     if (!orcamentos) return [];
@@ -113,9 +125,28 @@ function FinanceiroPage() {
       if (limite && new Date(o.created_at) < limite) return false;
       if (tipo !== "all" && o.tipo_servico !== tipo) return false;
       if (status !== "all" && o.status !== status) return false;
+      if (escritorioEfetivo !== "all" && o.escritorio_id !== escritorioEfetivo) return false;
       return true;
     });
-  }, [orcamentos, periodo, tipo, status]);
+  }, [orcamentos, periodo, tipo, status, escritorioEfetivo]);
+
+  // Breakdown por escritório (apenas admin vê todos)
+  const porEscritorio = useMemo(() => {
+    const map = new Map<string, { nome: string; qtd: number; bruto: number; liquido: number; despesas: number }>();
+    for (const o of filtrados) {
+      const k = o.escritorio_id ?? "sem";
+      const nome = o.escritorio_id ? (escritoriosMap.get(o.escritorio_id) ?? "—") : "Sem escritório";
+      const itens = o.itens ?? [];
+      const liq = calcularLucro(itens);
+      const desp = calcularRepasse(itens);
+      const bruto = Number(o.valor_total ?? 0);
+      const at = map.get(k);
+      if (at) { at.qtd += 1; at.bruto += bruto; at.liquido += liq; at.despesas += desp; }
+      else map.set(k, { nome, qtd: 1, bruto, liquido: liq, despesas: desp });
+    }
+    return Array.from(map.values()).sort((a, b) => b.bruto - a.bruto);
+  }, [filtrados, escritoriosMap]);
+
 
   const { linhas, totais } = useMemo(() => {
     const map = new Map<string, LinhaMes>();

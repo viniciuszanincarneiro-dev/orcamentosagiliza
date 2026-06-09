@@ -13,11 +13,13 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppValoresRouteImport } from './routes/_app.valores'
+import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
 import { Route as AppTutorialRouteImport } from './routes/_app.tutorial'
 import { Route as AppLogsRouteImport } from './routes/_app.logs'
 import { Route as AppLixeiraRouteImport } from './routes/_app.lixeira'
 import { Route as AppFollowUpRouteImport } from './routes/_app.follow-up'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
+import { Route as AppEscritoriosRouteImport } from './routes/_app.escritorios'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppOrcamentosIndexRouteImport } from './routes/_app.orcamentos.index'
 import { Route as AppOrcamentosNovoRouteImport } from './routes/_app.orcamentos.novo'
@@ -40,6 +42,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppValoresRoute = AppValoresRouteImport.update({
   id: '/valores',
   path: '/valores',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsuariosRoute = AppUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTutorialRoute = AppTutorialRouteImport.update({
@@ -67,6 +74,11 @@ const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEscritoriosRoute = AppEscritoriosRouteImport.update({
+  id: '/escritorios',
+  path: '/escritorios',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -92,11 +104,13 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
+  '/escritorios': typeof AppEscritoriosRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/follow-up': typeof AppFollowUpRoute
   '/lixeira': typeof AppLixeiraRoute
   '/logs': typeof AppLogsRoute
   '/tutorial': typeof AppTutorialRoute
+  '/usuarios': typeof AppUsuariosRoute
   '/valores': typeof AppValoresRoute
   '/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/orcamentos/novo': typeof AppOrcamentosNovoRoute
@@ -106,11 +120,13 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof AppDashboardRoute
+  '/escritorios': typeof AppEscritoriosRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/follow-up': typeof AppFollowUpRoute
   '/lixeira': typeof AppLixeiraRoute
   '/logs': typeof AppLogsRoute
   '/tutorial': typeof AppTutorialRoute
+  '/usuarios': typeof AppUsuariosRoute
   '/valores': typeof AppValoresRoute
   '/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/orcamentos/novo': typeof AppOrcamentosNovoRoute
@@ -122,11 +138,13 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/escritorios': typeof AppEscritoriosRoute
   '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/follow-up': typeof AppFollowUpRoute
   '/_app/lixeira': typeof AppLixeiraRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/tutorial': typeof AppTutorialRoute
+  '/_app/usuarios': typeof AppUsuariosRoute
   '/_app/valores': typeof AppValoresRoute
   '/_app/orcamentos/$id': typeof AppOrcamentosIdRoute
   '/_app/orcamentos/novo': typeof AppOrcamentosNovoRoute
@@ -138,11 +156,13 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/dashboard'
+    | '/escritorios'
     | '/financeiro'
     | '/follow-up'
     | '/lixeira'
     | '/logs'
     | '/tutorial'
+    | '/usuarios'
     | '/valores'
     | '/orcamentos/$id'
     | '/orcamentos/novo'
@@ -152,11 +172,13 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/dashboard'
+    | '/escritorios'
     | '/financeiro'
     | '/follow-up'
     | '/lixeira'
     | '/logs'
     | '/tutorial'
+    | '/usuarios'
     | '/valores'
     | '/orcamentos/$id'
     | '/orcamentos/novo'
@@ -167,11 +189,13 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/_app/dashboard'
+    | '/_app/escritorios'
     | '/_app/financeiro'
     | '/_app/follow-up'
     | '/_app/lixeira'
     | '/_app/logs'
     | '/_app/tutorial'
+    | '/_app/usuarios'
     | '/_app/valores'
     | '/_app/orcamentos/$id'
     | '/_app/orcamentos/novo'
@@ -214,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppValoresRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/usuarios': {
+      id: '/_app/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AppUsuariosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/tutorial': {
       id: '/_app/tutorial'
       path: '/tutorial'
@@ -249,6 +280,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFinanceiroRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/escritorios': {
+      id: '/_app/escritorios'
+      path: '/escritorios'
+      fullPath: '/escritorios'
+      preLoaderRoute: typeof AppEscritoriosRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -282,11 +320,13 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppEscritoriosRoute: typeof AppEscritoriosRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppFollowUpRoute: typeof AppFollowUpRoute
   AppLixeiraRoute: typeof AppLixeiraRoute
   AppLogsRoute: typeof AppLogsRoute
   AppTutorialRoute: typeof AppTutorialRoute
+  AppUsuariosRoute: typeof AppUsuariosRoute
   AppValoresRoute: typeof AppValoresRoute
   AppOrcamentosIdRoute: typeof AppOrcamentosIdRoute
   AppOrcamentosNovoRoute: typeof AppOrcamentosNovoRoute
@@ -295,11 +335,13 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppEscritoriosRoute: AppEscritoriosRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppFollowUpRoute: AppFollowUpRoute,
   AppLixeiraRoute: AppLixeiraRoute,
   AppLogsRoute: AppLogsRoute,
   AppTutorialRoute: AppTutorialRoute,
+  AppUsuariosRoute: AppUsuariosRoute,
   AppValoresRoute: AppValoresRoute,
   AppOrcamentosIdRoute: AppOrcamentosIdRoute,
   AppOrcamentosNovoRoute: AppOrcamentosNovoRoute,
@@ -316,3 +358,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

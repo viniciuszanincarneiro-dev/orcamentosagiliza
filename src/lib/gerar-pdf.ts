@@ -3,8 +3,40 @@ import autoTable from "jspdf-autotable";
 
 import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, METODOLOGIA_SERVICO } from "./empresa";
 import type { OrcamentoData } from "./orcamento-types";
+import type { Escritorio } from "@/hooks/use-profile";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";
 import logoUrl from "@/assets/agiliza-logo.png";
+
+type EscritorioInfo = {
+  razao: string;
+  cnpj: string;
+  email: string;
+  telefone: string;
+  cidade: string;
+  endereco: string;
+};
+
+function escritorioFallback(): EscritorioInfo {
+  return {
+    razao: EMPRESA.razao,
+    cnpj: EMPRESA.cnpj,
+    email: EMPRESA.email,
+    telefone: "(49) 99990-9954",
+    cidade: "São Miguel do Oeste/SC",
+    endereco: "Rua Marcilio Dias, nº 1539, Centro, São Miguel do Oeste/SC",
+  };
+}
+function toInfo(e?: Escritorio | null): EscritorioInfo {
+  if (!e) return escritorioFallback();
+  return {
+    razao: e.razao_social,
+    cnpj: e.cnpj,
+    email: e.email,
+    telefone: e.telefone,
+    cidade: e.cidade,
+    endereco: e.endereco,
+  };
+}
 
 // Cores
 const PRETO: [number, number, number] = [0, 0, 0];
@@ -45,7 +77,8 @@ function valorPorExtenso(v: number): string {
   } catch { return formatBRL(v); }
 }
 
-export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
+export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escritorio | null): Promise<Blob> {
+  const esc = toInfo(escritorio);
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -79,19 +112,23 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
     doc.setDrawColor(...VERDE);
     doc.setLineWidth(0.5);
     doc.line(M, y, W - M, y);
-    doc.setFontSize(7.5);
-    let cy = y + 12;
-    EMPRESA.unidades.forEach((u) => {
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...VERDE);
-      doc.text(`${u.cidade}`, M, cy);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...CINZA);
-      doc.text(` - ${u.endereco}`, M + doc.getTextWidth(u.cidade), cy);
-      cy += 9;
-      doc.text(`${u.telefones}   ${u.email}`, M, cy);
-      cy += 11;
-    });
+    doc.setFontSize(8);
+    let cy = y + 14;
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...VERDE);
+    doc.text(esc.cidade, M, cy);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...CINZA);
+    doc.text(` - ${esc.endereco}`, M + doc.getTextWidth(esc.cidade), cy);
+    cy += 11;
+    doc.text(`${esc.telefone}   ${esc.email}`, M, cy);
+    cy += 11;
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...VERDE);
+    doc.text(esc.razao, M, cy);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...CINZA);
+    doc.text(` · CNPJ ${esc.cnpj}`, M + doc.getTextWidth(esc.razao), cy);
     doc.setFontSize(7);
     doc.setTextColor(...CINZA);
     doc.text(`${pageNum} / ${totalPages}`, W - M, H - 18, { align: "right" });
@@ -176,7 +213,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   writeParagraph(interessado, { gap: 10 });
 
   // Prestadora
-  const prestadora = `PRESTADORA DE SERVIÇO: ${EMPRESA.razao}, pessoa jurídica de direito privado, inscrita no CNPJ nº ${EMPRESA.cnpj}, com sede na Rua Marcilio Dias, nº 1539, Centro, São Miguel do Oeste/SC, com endereço eletrônico: ${EMPRESA.email}, contato telefônico: (49) 99990-9954.`;
+  const prestadora = `PRESTADORA DE SERVIÇO: ${esc.razao}, pessoa jurídica de direito privado, inscrita no CNPJ nº ${esc.cnpj}, com sede em ${esc.endereco}, com endereço eletrônico: ${esc.email}, contato telefônico: ${esc.telefone}.`;
   {
     const label = "PRESTADORA DE SERVIÇO: ";
     const rest = prestadora.slice(label.length);
@@ -349,7 +386,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
 
   // Cidade/data + assinatura
   ensureSpace(140);
-  writeParagraph(`São Miguel do Oeste/SC, ${formatDateLong(new Date())}.`, { gap: 30 });
+  writeParagraph(`${esc.cidade}, ${formatDateLong(new Date())}.`, { gap: 30 });
 
   // Caixa para assinatura digital
   const boxW = 360;
@@ -363,7 +400,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   doc.setFontSize(8);
   doc.setTextColor(...CINZA);
   doc.text(
-    `Assinado de forma digital por ${EMPRESA.razaoLegal.toUpperCase()}:${EMPRESA.cnpj.replace(/\D/g, "")}`,
+    `Assinado de forma digital por ${esc.razao.toUpperCase()}:${esc.cnpj.replace(/\D/g, "")}`,
     W / 2, boxY + boxH / 2 - 4, { align: "center", maxWidth: boxW - 16 }
   );
   doc.text(
@@ -375,13 +412,11 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData): Promise<Blob> {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(...PRETO);
-  doc.text(EMPRESA.razao, W / 2, y, { align: "center" });
+  doc.text(esc.razao, W / 2, y, { align: "center" });
   y += 12;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text(EMPRESA.razaoLegal, W / 2, y, { align: "center" });
-  y += 11;
-  doc.text(`CNPJ ${EMPRESA.cnpj}`, W / 2, y, { align: "center" });
+  doc.text(`CNPJ ${esc.cnpj}`, W / 2, y, { align: "center" });
 
   // Footers em todas as páginas
   const totalPages = doc.getNumberOfPages();

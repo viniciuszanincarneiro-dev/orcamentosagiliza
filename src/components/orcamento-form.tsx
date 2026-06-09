@@ -22,6 +22,7 @@ import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento, ServicoBloco } from "@/lib/orcamento-types";
 import { registrarLog } from "@/lib/activity-log";
+import { useProfile } from "@/hooks/use-profile";
 
 function novoId(): string {
   try { return (globalThis.crypto as Crypto).randomUUID(); }
@@ -103,6 +104,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [erroLeitura, setErroLeitura] = useState<string | null>(null);
   const [fatorRI, setFatorRI] = useState<number>(70);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { escritorio, profile } = useProfile();
 
   const parseFn = useServerFn(parseMatricula);
 
@@ -419,6 +422,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       }));
       const payload: Record<string, unknown> = {
         tipo_servico: servicos[0]?.tipo_servico ?? data.tipo_servico,
+        escritorio_id: data.escritorio_id ?? profile?.escritorio_id ?? null,
         requerente_nome: data.requerente_nome,
         requerente_cpf_cnpj: data.requerente_cpf_cnpj || null,
         cliente_telefone: data.cliente_telefone || null,
@@ -503,7 +507,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         import("@/lib/gerar-pdf"),
         import("file-saver"),
       ]);
-      const blob = await gerarOrcamentoPDF(cur);
+      const blob = await gerarOrcamentoPDF(cur, escritorio);
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.pdf`);
       void registrarLog({
         acao: "gerar_pdf",
@@ -524,7 +528,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         import("@/lib/gerar-docx"),
         import("file-saver"),
       ]);
-      const blob = await gerarOrcamentoDOCX(cur);
+      const blob = await gerarOrcamentoDOCX(cur, escritorio);
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.docx`);
       void registrarLog({
         acao: "gerar_docx",

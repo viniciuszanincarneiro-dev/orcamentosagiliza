@@ -5,8 +5,24 @@ import {
 
 import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, METODOLOGIA_SERVICO } from "./empresa";
 import type { OrcamentoData } from "./orcamento-types";
+import type { Escritorio } from "@/hooks/use-profile";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";
 import logoUrl from "@/assets/agiliza-logo.png";
+
+type EscritorioInfo = {
+  razao: string; cnpj: string; email: string; telefone: string; cidade: string; endereco: string;
+};
+function toInfo(e?: Escritorio | null): EscritorioInfo {
+  if (!e) return {
+    razao: EMPRESA.razao, cnpj: EMPRESA.cnpj, email: EMPRESA.email,
+    telefone: "(49) 99990-9954", cidade: "São Miguel do Oeste/SC",
+    endereco: "Rua Marcilio Dias, nº 1539, Centro, São Miguel do Oeste/SC",
+  };
+  return {
+    razao: e.razao_social, cnpj: e.cnpj, email: e.email,
+    telefone: e.telefone, cidade: e.cidade, endereco: e.endereco,
+  };
+}
 
 const PRETO = "000000";
 const CINZA = "5A5A5A";
@@ -56,7 +72,8 @@ function cell(text: string, opts: { bold?: boolean; bg?: string; color?: string;
   });
 }
 
-export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
+export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escritorio | null): Promise<Blob> {
+  const esc = toInfo(escritorio);
   const titulo = TIPO_TITULOS[orc.tipo_servico] ?? "PRESTAÇÃO DE SERVIÇOS";
   const ano = new Date().getFullYear();
   const numero = orc.numero ? `${orc.numero}/${ano}` : `—/${ano}`;
@@ -155,13 +172,15 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
     ...orc.proprietarios.map((p) => P({ text: `• ${p.nome}${p.cpf_cnpj ? ` — ${p.cpf_cnpj}` : ""}` })),
   ] : [];
 
-  const unidadesFooter = EMPRESA.unidades.map((u) => P({
-    runs: [
-      new TextRun({ text: `${u.cidade}`, bold: true, font: "Calibri", size: 15 }),
-      new TextRun({ text: ` - ${u.endereco} · ${u.telefones} · ${u.email}`, font: "Calibri", size: 15, color: CINZA }),
-    ],
-    spacing: 40,
-  }));
+  const unidadesFooter = [
+    P({
+      runs: [
+        new TextRun({ text: esc.cidade, bold: true, font: "Calibri", size: 15 }),
+        new TextRun({ text: ` - ${esc.endereco} · ${esc.telefone} · ${esc.email}`, font: "Calibri", size: 15, color: CINZA }),
+      ],
+      spacing: 40,
+    }),
+  ];
 
   const objetoServicos = blocos.length === 1
     ? titulo.toLowerCase()
@@ -197,7 +216,7 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
         // Prestadora
         P({ runs: [
           new TextRun({ text: "PRESTADORA DE SERVIÇO: ", bold: true, font: "Calibri", size: 20 }),
-          new TextRun({ text: `${EMPRESA.razao}, pessoa jurídica de direito privado, inscrita no CNPJ nº ${EMPRESA.cnpj}, com sede na Rua Marcilio Dias, nº 1539, Centro, São Miguel do Oeste/SC, com endereço eletrônico: ${EMPRESA.email}, contato telefônico: (49) 99990-9954.`, font: "Calibri", size: 20 }),
+          new TextRun({ text: `${esc.razao}, pessoa jurídica de direito privado, inscrita no CNPJ nº ${esc.cnpj}, com sede em ${esc.endereco}, com endereço eletrônico: ${esc.email}, contato telefônico: ${esc.telefone}.`, font: "Calibri", size: 20 }),
         ], spacing: 200 }),
 
         // BLOCOS EXPLICATIVOS — cada serviço com título, metodologia e descrição
@@ -237,14 +256,13 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData): Promise<Blob> {
 
         P({ text: "", spacing: 200 }),
         P({ text: "Agradecemos pela oportunidade de apresentar nossa proposta. Estamos confiantes de que podemos atender às suas necessidades com qualidade e eficiência!", spacing: 320 }),
-        P({ text: `São Miguel do Oeste/SC, ${formatDateLong(new Date())}.`, spacing: 600 }),
+        P({ text: `${esc.cidade}, ${formatDateLong(new Date())}.`, spacing: 600 }),
 
         // Assinatura
-        P({ text: `Assinado de forma digital por ${EMPRESA.razaoLegal.toUpperCase()}:${EMPRESA.cnpj.replace(/\D/g, "")}`, color: CINZA, size: 16, align: AlignmentType.CENTER }),
+        P({ text: `Assinado de forma digital por ${esc.razao.toUpperCase()}:${esc.cnpj.replace(/\D/g, "")}`, color: CINZA, size: 16, align: AlignmentType.CENTER }),
         P({ text: `Dados: ${new Date().toLocaleString("pt-BR")} -03'00'`, color: CINZA, size: 16, align: AlignmentType.CENTER, spacing: 200 }),
-        P({ text: EMPRESA.razao, bold: true, align: AlignmentType.CENTER }),
-        P({ text: EMPRESA.razaoLegal, align: AlignmentType.CENTER }),
-        P({ text: `CNPJ ${EMPRESA.cnpj}`, align: AlignmentType.CENTER, spacing: 400 }),
+        P({ text: esc.razao, bold: true, align: AlignmentType.CENTER }),
+        P({ text: `CNPJ ${esc.cnpj}`, align: AlignmentType.CENTER, spacing: 400 }),
 
         // Rodapé com unidades
         P({ text: "—".repeat(40), color: "C8C8CC", align: AlignmentType.CENTER, size: 14 }),

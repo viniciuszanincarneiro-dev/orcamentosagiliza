@@ -50,6 +50,51 @@ export type Database = {
         }
         Relationships: []
       }
+      escritorios: {
+        Row: {
+          ativo: boolean
+          cidade: string
+          cnpj: string
+          created_at: string
+          email: string
+          endereco: string
+          id: string
+          nome: string
+          ordem: number
+          razao_social: string
+          telefone: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cidade: string
+          cnpj: string
+          created_at?: string
+          email: string
+          endereco: string
+          id?: string
+          nome: string
+          ordem?: number
+          razao_social: string
+          telefone: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cidade?: string
+          cnpj?: string
+          created_at?: string
+          email?: string
+          endereco?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          razao_social?: string
+          telefone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orcamentos: {
         Row: {
           cliente_telefone: string | null
@@ -59,6 +104,7 @@ export type Database = {
           created_by: string | null
           data_envio: string | null
           deleted_at: string | null
+          escritorio_id: string | null
           id: string
           imovel_area_m2: number | null
           imovel_car: string | null
@@ -90,6 +136,7 @@ export type Database = {
           created_by?: string | null
           data_envio?: string | null
           deleted_at?: string | null
+          escritorio_id?: string | null
           id?: string
           imovel_area_m2?: number | null
           imovel_car?: string | null
@@ -121,6 +168,7 @@ export type Database = {
           created_by?: string | null
           data_envio?: string | null
           deleted_at?: string | null
+          escritorio_id?: string | null
           id?: string
           imovel_area_m2?: number | null
           imovel_car?: string | null
@@ -144,7 +192,53 @@ export type Database = {
           validade_dias?: number | null
           valor_total?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orcamentos_escritorio_id_fkey"
+            columns: ["escritorio_id"]
+            isOneToOne: false
+            referencedRelation: "escritorios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          escritorio_id: string | null
+          id: string
+          nome: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          escritorio_id?: string | null
+          id: string
+          nome?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          escritorio_id?: string | null
+          id?: string
+          nome?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_escritorio_id_fkey"
+            columns: ["escritorio_id"]
+            isOneToOne: false
+            referencedRelation: "escritorios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tabela_valores: {
         Row: {
@@ -184,10 +278,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_escritorio_id: { Args: never; Returns: string }
       gen_orcamento_numero: { Args: never; Returns: string }
+      is_admin: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "usuario"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -314,6 +410,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "usuario"],
+    },
   },
 } as const

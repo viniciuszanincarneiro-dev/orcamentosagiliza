@@ -22,6 +22,7 @@ import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento, ServicoBloco } from "@/lib/orcamento-types";
 import { registrarLog } from "@/lib/activity-log";
+import { useProfile } from "@/hooks/use-profile";
 
 function novoId(): string {
   try { return (globalThis.crypto as Crypto).randomUUID(); }
@@ -103,6 +104,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [erroLeitura, setErroLeitura] = useState<string | null>(null);
   const [fatorRI, setFatorRI] = useState<number>(70);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { escritorio, profile } = useProfile();
 
   const parseFn = useServerFn(parseMatricula);
 
@@ -419,6 +422,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       }));
       const payload: Record<string, unknown> = {
         tipo_servico: servicos[0]?.tipo_servico ?? data.tipo_servico,
+        escritorio_id: data.escritorio_id ?? profile?.escritorio_id ?? null,
         requerente_nome: data.requerente_nome,
         requerente_cpf_cnpj: data.requerente_cpf_cnpj || null,
         cliente_telefone: data.cliente_telefone || null,
@@ -503,7 +507,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         import("@/lib/gerar-pdf"),
         import("file-saver"),
       ]);
-      const blob = await gerarOrcamentoPDF(cur);
+      const blob = await gerarOrcamentoPDF(cur, escritorio);
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.pdf`);
       void registrarLog({
         acao: "gerar_pdf",
@@ -524,7 +528,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         import("@/lib/gerar-docx"),
         import("file-saver"),
       ]);
-      const blob = await gerarOrcamentoDOCX(cur);
+      const blob = await gerarOrcamentoDOCX(cur, escritorio);
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.docx`);
       void registrarLog({
         acao: "gerar_docx",
@@ -640,6 +644,25 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {escritorio ? (
+        <Alert className="border-primary/40 bg-primary/5">
+          <CheckCircle2 className="h-4 w-4 text-primary" />
+          <AlertTitle>Escritório: {escritorio.nome}</AlertTitle>
+          <AlertDescription>
+            Este orçamento será emitido em nome de <b>{escritorio.razao_social}</b> · CNPJ {escritorio.cnpj}. O CNPJ é definido automaticamente pelo seu cadastro.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Sem escritório vinculado</AlertTitle>
+          <AlertDescription>
+            Sua conta ainda não está vinculada a um escritório. Peça a um administrador para fazer o vínculo em <b>Usuários</b> — sem isso, o PDF/DOCX usará dados padrão.
+          </AlertDescription>
+        </Alert>
+      )}
+
 
       <Card>
         <CardHeader><CardTitle>Status do orçamento</CardTitle></CardHeader>

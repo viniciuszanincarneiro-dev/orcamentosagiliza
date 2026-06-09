@@ -8,6 +8,7 @@ import {
   Receipt,
   FileText,
   CheckCircle2,
+  Building2,
 } from "lucide-react";
 import {
   Bar,
@@ -48,6 +49,7 @@ import { Label } from "@/components/ui/label";
 import { formatBRL } from "@/lib/format";
 import { calcularLucro, calcularRepasse, type ItemLike } from "@/lib/lucro";
 import { TIPOS_SERVICO, STATUS_ORCAMENTO } from "@/lib/empresa";
+import { useProfile } from "@/hooks/use-profile";
 
 export const Route = createFileRoute("/_app/financeiro")({
   component: FinanceiroPage,
@@ -64,6 +66,7 @@ type OrcamentoRow = {
   created_at: string;
   status: string;
   tipo_servico: string;
+  escritorio_id: string | null;
   valor_total: number | null;
   itens: ItemLike[] | null;
 };
@@ -83,9 +86,13 @@ type LinhaMes = {
 };
 
 function FinanceiroPage() {
-  const [periodo, setPeriodo] = useState<string>("12"); // últimos N meses, "all" = tudo
+  const { isAdmin, escritorio: meuEscritorio, escritorios } = useProfile();
+  const [periodo, setPeriodo] = useState<string>("12");
   const [tipo, setTipo] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
+  // Para não-admins, força o próprio escritório
+  const [escritorioSel, setEscritorioSel] = useState<string>("all");
+  const escritorioEfetivo = isAdmin ? escritorioSel : (meuEscritorio?.id ?? "all");
 
   const { data: orcamentos, isLoading } = useQuery({
     queryKey: ["financeiro-orcamentos"],
@@ -93,13 +100,18 @@ function FinanceiroPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("id, created_at, status, tipo_servico, valor_total, itens")
+        .select("id, created_at, status, tipo_servico, escritorio_id, valor_total, itens")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as OrcamentoRow[];
     },
   });
+
+  const escritoriosMap = useMemo(
+    () => new Map(escritorios.map((e) => [e.id, e.nome])),
+    [escritorios],
+  );
 
   const filtrados = useMemo(() => {
     if (!orcamentos) return [];
@@ -113,9 +125,28 @@ function FinanceiroPage() {
       if (limite && new Date(o.created_at) < limite) return false;
       if (tipo !== "all" && o.tipo_servico !== tipo) return false;
       if (status !== "all" && o.status !== status) return false;
+      if (escritorioEfetivo !== "all" && o.escritorio_id !== escritorioEfetivo) return false;
       return true;
     });
-  }, [orcamentos, periodo, tipo, status]);
+  }, [orcamentos, periodo, tipo, status, escritorioEfetivo]);
+
+  // Breakdown por escritório (apenas admin vê todos)
+  const porEscritorio = useMemo(() => {
+    const map = new Map<string, { nome: string; qtd: number; bruto: number; liquido: number; despesas: number }>();
+    for (const o of filtrados) {
+      const k = o.escritorio_id ?? "sem";
+      const nome = o.escritorio_id ? (escritoriosMap.get(o.escritorio_id) ?? "—") : "Sem escritório";
+      const itens = o.itens ?? [];
+      const liq = calcularLucro(itens);
+      const desp = calcularRepasse(itens);
+      const bruto = Number(o.valor_total ?? 0);
+      const at = map.get(k);
+      if (at) { at.qtd += 1; at.bruto += bruto; at.liquido += liq; at.despesas += desp; }
+      else map.set(k, { nome, qtd: 1, bruto, liquido: liq, despesas: desp });
+    }
+    return Array.from(map.values()).sort((a, b) => b.bruto - a.bruto);
+  }, [filtrados, escritoriosMap]);
+
 
   const { linhas, totais } = useMemo(() => {
     const map = new Map<string, LinhaMes>();
@@ -182,7 +213,25 @@ function FinanceiroPage() {
 
       {/* Filtros */}
       <Card>
-        <CardContent className="pt-6 grid gap-4 sm:grid-cols-3">
+        <CardContent className="pt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Escritório</Label>
+            {isAdmin ? (
+              <Select value={escritorioSel} onValueChange={setEscritorioSel}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os escritórios</SelectItem>
+                  {escritorios.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="px-3 py-2 rounded-md border bg-muted text-sm">
+                {meuEscritorio?.nome ?? "—"}
+              </div>
+            )}
+          </div>
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Período</Label>
             <Select value={periodo} onValueChange={setPeriodo}>
@@ -222,6 +271,45 @@ function FinanceiroPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Visão consolidada por escritório (admin) */}
+      {isAdmin && escritorioSel === "all" && porEscritorio.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Building2 className="h-4 w-4" /> Visão por escritório
+            </CardTitle>
+            <CardDescription>Indicadores individualizados por unidade.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Escritório</TableHead>
+                    <TableHead className="text-center">Orçamentos</TableHead>
+                    <TableHead className="text-right">Faturamento</TableHead>
+                    <TableHead className="text-right">Custas externas</TableHead>
+                    <TableHead className="text-right">Líquido Agiliza</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {porEscritorio.map((p) => (
+                    <TableRow key={p.nome}>
+                      <TableCell className="font-medium">{p.nome}</TableCell>
+                      <TableCell className="text-center tabular-nums">{p.qtd}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatBRL(p.bruto)}</TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">{formatBRL(p.despesas)}</TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums text-primary">{formatBRL(p.liquido)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
 
       {/* Cards de totais */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

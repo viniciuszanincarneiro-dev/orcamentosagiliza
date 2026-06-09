@@ -22,6 +22,7 @@ export type ServicoBloco = {
 export type OrcamentoData = {
   id?: string;
   numero?: string;
+  escritorio_id?: string | null;
   tipo_servico: string;
   requerente_nome: string;
   requerente_cpf_cnpj?: string;

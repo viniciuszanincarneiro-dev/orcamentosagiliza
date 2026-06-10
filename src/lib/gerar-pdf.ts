@@ -87,7 +87,8 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
-  const M = 50;
+  // Margens generosas para garantir aparência profissional e impressão
+  const M = 56;
   const logo = await loadLogoBase64();
 
   const ano = new Date().getFullYear();

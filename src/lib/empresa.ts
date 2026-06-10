@@ -45,6 +45,15 @@ export const TIPO_TITULOS: Record<string, string> = {
   inventario_extrajudicial: "INVENTÁRIO EXTRAJUDICIAL",
   compra_venda: "COMPRA E VENDA",
   outros: "PRESTAÇÃO DE SERVIÇOS",
+  desdobro: "DESDOBRO DE IMÓVEL",
+  desmembramento_incra: "DESMEMBRAMENTO COM CERTIFICAÇÃO INCRA",
+  estremacao: "ESTREMAÇÃO DE IMÓVEL",
+  doacao: "DOAÇÃO DE IMÓVEL",
+  doacao_usufruto: "DOAÇÃO DE IMÓVEL COM RESERVA DE USUFRUTO",
+  divisao_amigavel: "DIVISÃO AMIGÁVEL DE IMÓVEL",
+  permuta: "PERMUTA DE IMÓVEIS",
+  declaracao_tecnica: "DECLARAÇÃO TÉCNICA",
+  levantamento_planialtimetrico: "LEVANTAMENTO PLANIALTIMÉTRICO",
 };
 
 export const DESCRICAO_PADRAO: Record<string, string> = {

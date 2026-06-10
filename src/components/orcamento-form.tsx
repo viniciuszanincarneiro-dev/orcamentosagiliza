@@ -692,6 +692,18 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         <CardHeader><CardTitle>Dados do orçamento</CardTitle></CardHeader>
         <CardContent className="grid sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
+            <Label>Número do Orçamento</Label>
+            <Input
+              value={data.numero ?? ""}
+              onChange={(e) => set("numero", e.target.value)}
+              placeholder="Deixe em branco para gerar automaticamente (ex.: 0001)"
+              className="font-mono"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Você pode definir manualmente o número. Se ficar em branco em um orçamento novo, o sistema gera automaticamente. O número informado é usado no PDF e DOCX.
+            </p>
+          </div>
+          <div className="sm:col-span-2">
             <Label>Cliente *</Label>
             <Input value={data.requerente_nome} onChange={(e) => set("requerente_nome", e.target.value)} placeholder="Nome do cliente / proprietário" />
           </div>

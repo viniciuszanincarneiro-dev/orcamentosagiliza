@@ -458,11 +458,17 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         if (error) throw error;
         saved = row as unknown as OrcamentoData;
       } else {
-        const { data: numero, error: numErr } = await supabase.rpc("gen_orcamento_numero");
-        if (numErr) throw numErr;
+        // Número: usa o informado manualmente; senão gera automaticamente.
+        const numeroManual = (data.numero ?? "").trim();
+        let numeroFinal = numeroManual;
+        if (!numeroFinal) {
+          const { data: numero, error: numErr } = await supabase.rpc("gen_orcamento_numero");
+          if (numErr) throw numErr;
+          numeroFinal = numero as string;
+        }
         const { data: row, error } = await supabase
           .from("orcamentos")
-          .insert({ ...payload, numero: numero as string } as never)
+          .insert({ ...payload, numero: numeroFinal } as never)
           .select()
           .single();
         if (error) throw error;

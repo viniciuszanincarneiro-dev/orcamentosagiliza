@@ -355,7 +355,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
       styles: { font: "helvetica", fontSize: 10, cellPadding: 6, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
       columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },
       tableWidth: "auto",
-      didDrawPage: () => { addHeader(); },
+      didDrawPage: (d) => { if (d.pageNumber > 1) addHeader(); },
     });
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
   });

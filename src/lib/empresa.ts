@@ -180,6 +180,49 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", auto: "registro" },
   ],
   outros: [],
+  desdobro: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },
+    { descricao: "REGISTRO DE IMÓVEIS (DESDOBRO)", auto: "registro" },
+    { descricao: "ASSESSORIA DOCUMENTAL E PROTOCOLO MUNICIPAL", valor_base: 1200 },
+  ],
+  desmembramento_incra: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO GEORREFERENCIADO", auto: "topografia" },
+    { descricao: "LOCAÇÃO DE MARCOS E CERTIFICAÇÃO INCRA", valor_base: 1800 },
+    { descricao: "REGISTRO DE IMÓVEIS (DESMEMBRAMENTO)", auto: "registro" },
+    { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", auto: "ccir" },
+  ],
+  estremacao: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO", auto: "topografia" },
+    { descricao: "REGISTRO DE IMÓVEIS (ESTREMAÇÃO)", auto: "registro" },
+    { descricao: "ASSESSORIA DOCUMENTAL", valor_base: 1500 },
+  ],
+  doacao: [
+    { descricao: "ASSESSORIA DOCUMENTAL (ESCRITURA DE DOAÇÃO)", valor_base: 1500 },
+    { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
+    { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", auto: "registro" },
+  ],
+  doacao_usufruto: [
+    { descricao: "ASSESSORIA DOCUMENTAL (DOAÇÃO COM USUFRUTO)", valor_base: 1800 },
+    { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
+    { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO E USUFRUTO)", auto: "registro" },
+  ],
+  divisao_amigavel: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },
+    { descricao: "REGISTRO DE IMÓVEIS (DIVISÃO AMIGÁVEL)", auto: "registro" },
+    { descricao: "ASSESSORIA DOCUMENTAL", valor_base: 1500 },
+  ],
+  permuta: [
+    { descricao: "ASSESSORIA DOCUMENTAL (ESCRITURA DE PERMUTA)", valor_base: 1800 },
+    { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
+    { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÕES)", auto: "registro" },
+  ],
+  declaracao_tecnica: [
+    { descricao: "ELABORAÇÃO DE DECLARAÇÃO TÉCNICA E ART/TRT", valor_base: 600 },
+  ],
+  levantamento_planialtimetrico: [
+    { descricao: "LEVANTAMENTO PLANIALTIMÉTRICO", auto: "topografia" },
+    { descricao: "ELABORAÇÃO DE PLANTA E MEMORIAL DESCRITIVO", valor_base: 900 },
+  ],
 };
 
 export const STATUS_ORCAMENTO = [

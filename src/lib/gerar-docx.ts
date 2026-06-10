@@ -26,8 +26,9 @@ function toInfo(e?: Escritorio | null): EscritorioInfo {
 
 const PRETO = "000000";
 const CINZA = "5A5A5A";
-const CINZA_TAB = "464646";
-const CINZA_CLARO = "E6E6E6";
+// Cores aplicadas SOMENTE ao documento final (DOCX): bordô/vinho escuro.
+const CINZA_TAB = "721C24";   // faixa de cabeçalho da tabela (bordô)
+const CINZA_CLARO = "F8E8EA"; // fundo claro de coluna (bordô bem claro)
 
 const TIPOS_RURAIS = new Set([
   "retificacao_geo",

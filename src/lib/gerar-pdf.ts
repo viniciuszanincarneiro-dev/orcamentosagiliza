@@ -41,10 +41,11 @@ function toInfo(e?: Escritorio | null): EscritorioInfo {
 // Cores
 const PRETO: [number, number, number] = [0, 0, 0];
 const CINZA: [number, number, number] = [90, 90, 90];
-// Cores oficiais da empresa: verde e branco
-const VERDE: [number, number, number] = [27, 94, 32];
-const VERDE_CLARO: [number, number, number] = [232, 245, 233];
-const CINZA_TAB: [number, number, number] = [27, 94, 32];
+// Cores aplicadas SOMENTE ao documento final (PDF): bordô/vinho escuro.
+// Não confundir com o tema do sistema (que continua com sua paleta própria).
+const VERDE: [number, number, number] = [114, 28, 36];          // bordô principal
+const VERDE_CLARO: [number, number, number] = [248, 232, 234];  // fundo claro de cabeçalho de coluna
+const CINZA_TAB: [number, number, number] = [114, 28, 36];      // faixa de cabeçalho de tabela
 
 const TIPOS_RURAIS = new Set([
   "retificacao_geo",
@@ -86,7 +87,8 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
-  const M = 50;
+  // Margens generosas para garantir aparência profissional e impressão
+  const M = 56;
   const logo = await loadLogoBase64();
 
   const ano = new Date().getFullYear();
@@ -347,9 +349,13 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
         { content: formatBRL(subtotal), styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold", halign: "right" } },
       ]],
       theme: "grid",
-      margin: { left: M, right: M, bottom: FOOTER_H + 14 },
-      styles: { font: "helvetica", fontSize: 10, cellPadding: 6, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4 },
-      columnStyles: { 1: { halign: "right", cellWidth: 130 } },
+      margin: { left: M, right: M, top: HEADER_H + 18, bottom: FOOTER_H + 14 },
+      showHead: "everyPage",
+      rowPageBreak: "avoid",
+      styles: { font: "helvetica", fontSize: 10, cellPadding: 6, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
+      columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },
+      tableWidth: "auto",
+      didDrawPage: (d) => { if (d.pageNumber > 1) addHeader(); },
     });
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
   });
@@ -363,9 +369,12 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
       { content: formatBRL(orc.valor_total), styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], halign: "right" } },
     ]],
     theme: "grid",
-    margin: { left: M, right: M, bottom: FOOTER_H + 14 },
-    styles: { font: "helvetica", fontSize: 11, cellPadding: 7, lineColor: [180, 180, 180], lineWidth: 0.4 },
-    columnStyles: { 1: { halign: "right", cellWidth: 130 } },
+    margin: { left: M, right: M, top: HEADER_H + 18, bottom: FOOTER_H + 14 },
+    rowPageBreak: "avoid",
+    styles: { font: "helvetica", fontSize: 11, cellPadding: 7, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
+    columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },
+    tableWidth: "auto",
+    didDrawPage: (d) => { if (d.pageNumber > 1) addHeader(); },
   });
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
 

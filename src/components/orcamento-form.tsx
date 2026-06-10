@@ -454,15 +454,23 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       let saved: OrcamentoData;
       const eraNovo = !data.id;
       if (data.id) {
-        const { data: row, error } = await supabase.from("orcamentos").update(payload as never).eq("id", data.id).select().single();
+        // Permite alterar manualmente o número também em edição.
+        const updatePayload = { ...payload, ...(data.numero?.trim() ? { numero: data.numero.trim() } : {}) };
+        const { data: row, error } = await supabase.from("orcamentos").update(updatePayload as never).eq("id", data.id).select().single();
         if (error) throw error;
         saved = row as unknown as OrcamentoData;
       } else {
-        const { data: numero, error: numErr } = await supabase.rpc("gen_orcamento_numero");
-        if (numErr) throw numErr;
+        // Número: usa o informado manualmente; senão gera automaticamente.
+        const numeroManual = (data.numero ?? "").trim();
+        let numeroFinal = numeroManual;
+        if (!numeroFinal) {
+          const { data: numero, error: numErr } = await supabase.rpc("gen_orcamento_numero");
+          if (numErr) throw numErr;
+          numeroFinal = numero as string;
+        }
         const { data: row, error } = await supabase
           .from("orcamentos")
-          .insert({ ...payload, numero: numero as string } as never)
+          .insert({ ...payload, numero: numeroFinal } as never)
           .select()
           .single();
         if (error) throw error;
@@ -683,6 +691,18 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       <Card>
         <CardHeader><CardTitle>Dados do orçamento</CardTitle></CardHeader>
         <CardContent className="grid sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <Label>Número do Orçamento</Label>
+            <Input
+              value={data.numero ?? ""}
+              onChange={(e) => set("numero", e.target.value)}
+              placeholder="Deixe em branco para gerar automaticamente (ex.: 0001)"
+              className="font-mono"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Você pode definir manualmente o número. Se ficar em branco em um orçamento novo, o sistema gera automaticamente. O número informado é usado no PDF e DOCX.
+            </p>
+          </div>
           <div className="sm:col-span-2">
             <Label>Cliente *</Label>
             <Input value={data.requerente_nome} onChange={(e) => set("requerente_nome", e.target.value)} placeholder="Nome do cliente / proprietário" />

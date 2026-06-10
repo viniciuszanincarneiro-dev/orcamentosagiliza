@@ -50,9 +50,13 @@ const TIPOS_RURAIS = new Set([
   "retificacao_geo",
   "georreferenciamento",
   "desmembramento",
+  "desmembramento_incra",
   "remembramento",
+  "estremacao",
+  "divisao_amigavel",
   "usucapiao_extrajudicial",
   "levantamento_topografico",
+  "levantamento_planialtimetrico",
 ]);
 
 let _logoCache: string | undefined;

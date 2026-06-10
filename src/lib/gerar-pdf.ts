@@ -41,10 +41,11 @@ function toInfo(e?: Escritorio | null): EscritorioInfo {
 // Cores
 const PRETO: [number, number, number] = [0, 0, 0];
 const CINZA: [number, number, number] = [90, 90, 90];
-// Cores oficiais da empresa: verde e branco
-const VERDE: [number, number, number] = [27, 94, 32];
-const VERDE_CLARO: [number, number, number] = [232, 245, 233];
-const CINZA_TAB: [number, number, number] = [27, 94, 32];
+// Cores aplicadas SOMENTE ao documento final (PDF): bordô/vinho escuro.
+// Não confundir com o tema do sistema (que continua com sua paleta própria).
+const VERDE: [number, number, number] = [114, 28, 36];          // bordô principal
+const VERDE_CLARO: [number, number, number] = [248, 232, 234];  // fundo claro de cabeçalho de coluna
+const CINZA_TAB: [number, number, number] = [114, 28, 36];      // faixa de cabeçalho de tabela
 
 const TIPOS_RURAIS = new Set([
   "retificacao_geo",

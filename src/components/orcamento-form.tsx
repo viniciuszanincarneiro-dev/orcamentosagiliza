@@ -454,7 +454,9 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       let saved: OrcamentoData;
       const eraNovo = !data.id;
       if (data.id) {
-        const { data: row, error } = await supabase.from("orcamentos").update(payload as never).eq("id", data.id).select().single();
+        // Permite alterar manualmente o número também em edição.
+        const updatePayload = { ...payload, ...(data.numero?.trim() ? { numero: data.numero.trim() } : {}) };
+        const { data: row, error } = await supabase.from("orcamentos").update(updatePayload as never).eq("id", data.id).select().single();
         if (error) throw error;
         saved = row as unknown as OrcamentoData;
       } else {

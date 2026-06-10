@@ -76,6 +76,24 @@ export const DESCRICAO_PADRAO: Record<string, string> = {
   compra_venda:
     "Assessoria completa em processo de compra e venda de imóvel, incluindo elaboração de contrato, levantamento de certidões, conferência documental e encaminhamento ao Registro de Imóveis para lavratura da escritura e registro da transmissão.",
   outros: "Serviços conforme descrição abaixo.",
+  desdobro:
+    "Inclui levantamento topográfico, elaboração de planta e memoriais descritivos, assessoria documental e protocolo municipal e no Registro de Imóveis para o desdobro do lote.",
+  desmembramento_incra:
+    "Inclui levantamento topográfico georreferenciado, locação de marcos, certificação INCRA, elaboração de planta e memoriais descritivos das parcelas e encaminhamento ao Registro de Imóveis.",
+  estremacao:
+    "Inclui levantamento topográfico, elaboração de planta e memorial descritivo, assessoria documental e encaminhamento ao Registro de Imóveis para a estremação da fração ideal em área certa e determinada.",
+  doacao:
+    "Assessoria completa em processo de doação de imóvel, incluindo coleta de certidões, elaboração de minuta da escritura, acompanhamento da lavratura em tabelionato e registro da transmissão.",
+  doacao_usufruto:
+    "Assessoria em doação de imóvel com reserva de usufruto, incluindo coleta de certidões, elaboração da minuta da escritura, lavratura em tabelionato e registro da transmissão e do usufruto na matrícula.",
+  divisao_amigavel:
+    "Inclui levantamento topográfico, elaboração de planta e memoriais descritivos das quotas, assessoria documental e encaminhamento ao Registro de Imóveis para a divisão amigável entre os condôminos.",
+  permuta:
+    "Assessoria completa em processo de permuta de imóveis, incluindo coleta de certidões, conferência documental, elaboração da minuta da escritura, lavratura em tabelionato e registros das transmissões.",
+  declaracao_tecnica:
+    "Elaboração de declaração técnica firmada por profissional habilitado, com emissão da ART/TRT correspondente, conforme finalidade indicada pelo requerente.",
+  levantamento_planialtimetrico:
+    "Inclui o levantamento topográfico planialtimétrico do imóvel, com curvas de nível, elaboração de planta e memorial descritivo, e emissão da ART/TRT.",
 };
 
 /**

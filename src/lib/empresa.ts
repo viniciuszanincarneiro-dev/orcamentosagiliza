@@ -14,16 +14,24 @@ export const EMPRESA = {
 };
 
 export const TIPOS_SERVICO = [
-  { value: "retificacao_geo", label: "Retificação Administrativa com Georreferenciamento" },
+  { value: "georreferenciamento", label: "Georreferenciamento Rural" },
+  { value: "retificacao_geo", label: "Retificação Administrativa Rural" },
   { value: "retificacao_urbana", label: "Retificação Administrativa Urbana" },
-  { value: "georreferenciamento", label: "Georreferenciamento Certificado pelo INCRA" },
-  { value: "levantamento_topografico", label: "Levantamento Topográfico" },
+  { value: "desdobro", label: "Desdobro" },
   { value: "desmembramento", label: "Desmembramento" },
+  { value: "desmembramento_incra", label: "Desmembramento INCRA" },
   { value: "remembramento", label: "Remembramento" },
-  { value: "usucapiao_extrajudicial", label: "Usucapião Extrajudicial" },
-  { value: "inventario_extrajudicial", label: "Inventário Extrajudicial" },
+  { value: "estremacao", label: "Estremação" },
   { value: "compra_venda", label: "Compra e Venda" },
-  { value: "outros", label: "Outros Serviços" },
+  { value: "doacao", label: "Doação" },
+  { value: "doacao_usufruto", label: "Doação com Usufruto" },
+  { value: "divisao_amigavel", label: "Divisão Amigável" },
+  { value: "permuta", label: "Permuta" },
+  { value: "declaracao_tecnica", label: "Declaração Técnica" },
+  { value: "levantamento_topografico", label: "Levantamento Planimétrico" },
+  { value: "levantamento_planialtimetrico", label: "Levantamento Planialtimétrico" },
+  { value: "inventario_extrajudicial", label: "Inventário" },
+  { value: "usucapiao_extrajudicial", label: "Usucapião" },
 ] as const;
 
 export const TIPO_TITULOS: Record<string, string> = {
@@ -37,6 +45,15 @@ export const TIPO_TITULOS: Record<string, string> = {
   inventario_extrajudicial: "INVENTÁRIO EXTRAJUDICIAL",
   compra_venda: "COMPRA E VENDA",
   outros: "PRESTAÇÃO DE SERVIÇOS",
+  desdobro: "DESDOBRO DE IMÓVEL",
+  desmembramento_incra: "DESMEMBRAMENTO COM CERTIFICAÇÃO INCRA",
+  estremacao: "ESTREMAÇÃO DE IMÓVEL",
+  doacao: "DOAÇÃO DE IMÓVEL",
+  doacao_usufruto: "DOAÇÃO DE IMÓVEL COM RESERVA DE USUFRUTO",
+  divisao_amigavel: "DIVISÃO AMIGÁVEL DE IMÓVEL",
+  permuta: "PERMUTA DE IMÓVEIS",
+  declaracao_tecnica: "DECLARAÇÃO TÉCNICA",
+  levantamento_planialtimetrico: "LEVANTAMENTO PLANIALTIMÉTRICO",
 };
 
 export const DESCRICAO_PADRAO: Record<string, string> = {
@@ -59,6 +76,24 @@ export const DESCRICAO_PADRAO: Record<string, string> = {
   compra_venda:
     "Assessoria completa em processo de compra e venda de imóvel, incluindo elaboração de contrato, levantamento de certidões, conferência documental e encaminhamento ao Registro de Imóveis para lavratura da escritura e registro da transmissão.",
   outros: "Serviços conforme descrição abaixo.",
+  desdobro:
+    "Inclui levantamento topográfico, elaboração de planta e memoriais descritivos, assessoria documental e protocolo municipal e no Registro de Imóveis para o desdobro do lote.",
+  desmembramento_incra:
+    "Inclui levantamento topográfico georreferenciado, locação de marcos, certificação INCRA, elaboração de planta e memoriais descritivos das parcelas e encaminhamento ao Registro de Imóveis.",
+  estremacao:
+    "Inclui levantamento topográfico, elaboração de planta e memorial descritivo, assessoria documental e encaminhamento ao Registro de Imóveis para a estremação da fração ideal em área certa e determinada.",
+  doacao:
+    "Assessoria completa em processo de doação de imóvel, incluindo coleta de certidões, elaboração de minuta da escritura, acompanhamento da lavratura em tabelionato e registro da transmissão.",
+  doacao_usufruto:
+    "Assessoria em doação de imóvel com reserva de usufruto, incluindo coleta de certidões, elaboração da minuta da escritura, lavratura em tabelionato e registro da transmissão e do usufruto na matrícula.",
+  divisao_amigavel:
+    "Inclui levantamento topográfico, elaboração de planta e memoriais descritivos das quotas, assessoria documental e encaminhamento ao Registro de Imóveis para a divisão amigável entre os condôminos.",
+  permuta:
+    "Assessoria completa em processo de permuta de imóveis, incluindo coleta de certidões, conferência documental, elaboração da minuta da escritura, lavratura em tabelionato e registros das transmissões.",
+  declaracao_tecnica:
+    "Elaboração de declaração técnica firmada por profissional habilitado, com emissão da ART/TRT correspondente, conforme finalidade indicada pelo requerente.",
+  levantamento_planialtimetrico:
+    "Inclui o levantamento topográfico planialtimétrico do imóvel, com curvas de nível, elaboração de planta e memorial descritivo, e emissão da ART/TRT.",
 };
 
 /**
@@ -145,6 +180,49 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", auto: "registro" },
   ],
   outros: [],
+  desdobro: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },
+    { descricao: "REGISTRO DE IMÓVEIS (DESDOBRO)", auto: "registro" },
+    { descricao: "ASSESSORIA DOCUMENTAL E PROTOCOLO MUNICIPAL", valor_base: 1200 },
+  ],
+  desmembramento_incra: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO GEORREFERENCIADO", auto: "topografia" },
+    { descricao: "LOCAÇÃO DE MARCOS E CERTIFICAÇÃO INCRA", valor_base: 1800 },
+    { descricao: "REGISTRO DE IMÓVEIS (DESMEMBRAMENTO)", auto: "registro" },
+    { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", auto: "ccir" },
+  ],
+  estremacao: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO", auto: "topografia" },
+    { descricao: "REGISTRO DE IMÓVEIS (ESTREMAÇÃO)", auto: "registro" },
+    { descricao: "ASSESSORIA DOCUMENTAL", valor_base: 1500 },
+  ],
+  doacao: [
+    { descricao: "ASSESSORIA DOCUMENTAL (ESCRITURA DE DOAÇÃO)", valor_base: 1500 },
+    { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
+    { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", auto: "registro" },
+  ],
+  doacao_usufruto: [
+    { descricao: "ASSESSORIA DOCUMENTAL (DOAÇÃO COM USUFRUTO)", valor_base: 1800 },
+    { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
+    { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO E USUFRUTO)", auto: "registro" },
+  ],
+  divisao_amigavel: [
+    { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },
+    { descricao: "REGISTRO DE IMÓVEIS (DIVISÃO AMIGÁVEL)", auto: "registro" },
+    { descricao: "ASSESSORIA DOCUMENTAL", valor_base: 1500 },
+  ],
+  permuta: [
+    { descricao: "ASSESSORIA DOCUMENTAL (ESCRITURA DE PERMUTA)", valor_base: 1800 },
+    { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
+    { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÕES)", auto: "registro" },
+  ],
+  declaracao_tecnica: [
+    { descricao: "ELABORAÇÃO DE DECLARAÇÃO TÉCNICA E ART/TRT", valor_base: 600 },
+  ],
+  levantamento_planialtimetrico: [
+    { descricao: "LEVANTAMENTO PLANIALTIMÉTRICO", auto: "topografia" },
+    { descricao: "ELABORAÇÃO DE PLANTA E MEMORIAL DESCRITIVO", valor_base: 900 },
+  ],
 };
 
 export const STATUS_ORCAMENTO = [

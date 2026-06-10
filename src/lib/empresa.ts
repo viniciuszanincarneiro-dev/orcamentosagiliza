@@ -14,16 +14,24 @@ export const EMPRESA = {
 };
 
 export const TIPOS_SERVICO = [
-  { value: "retificacao_geo", label: "Retificação Administrativa com Georreferenciamento" },
+  { value: "georreferenciamento", label: "Georreferenciamento Rural" },
+  { value: "retificacao_geo", label: "Retificação Administrativa Rural" },
   { value: "retificacao_urbana", label: "Retificação Administrativa Urbana" },
-  { value: "georreferenciamento", label: "Georreferenciamento Certificado pelo INCRA" },
-  { value: "levantamento_topografico", label: "Levantamento Topográfico" },
+  { value: "desdobro", label: "Desdobro" },
   { value: "desmembramento", label: "Desmembramento" },
+  { value: "desmembramento_incra", label: "Desmembramento INCRA" },
   { value: "remembramento", label: "Remembramento" },
-  { value: "usucapiao_extrajudicial", label: "Usucapião Extrajudicial" },
-  { value: "inventario_extrajudicial", label: "Inventário Extrajudicial" },
+  { value: "estremacao", label: "Estremação" },
   { value: "compra_venda", label: "Compra e Venda" },
-  { value: "outros", label: "Outros Serviços" },
+  { value: "doacao", label: "Doação" },
+  { value: "doacao_usufruto", label: "Doação com Usufruto" },
+  { value: "divisao_amigavel", label: "Divisão Amigável" },
+  { value: "permuta", label: "Permuta" },
+  { value: "declaracao_tecnica", label: "Declaração Técnica" },
+  { value: "levantamento_topografico", label: "Levantamento Planimétrico" },
+  { value: "levantamento_planialtimetrico", label: "Levantamento Planialtimétrico" },
+  { value: "inventario_extrajudicial", label: "Inventário" },
+  { value: "usucapiao_extrajudicial", label: "Usucapião" },
 ] as const;
 
 export const TIPO_TITULOS: Record<string, string> = {

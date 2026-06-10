@@ -349,9 +349,13 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
         { content: formatBRL(subtotal), styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold", halign: "right" } },
       ]],
       theme: "grid",
-      margin: { left: M, right: M, bottom: FOOTER_H + 14 },
-      styles: { font: "helvetica", fontSize: 10, cellPadding: 6, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4 },
-      columnStyles: { 1: { halign: "right", cellWidth: 130 } },
+      margin: { left: M, right: M, top: HEADER_H + 18, bottom: FOOTER_H + 14 },
+      showHead: "everyPage",
+      rowPageBreak: "avoid",
+      styles: { font: "helvetica", fontSize: 10, cellPadding: 6, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
+      columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },
+      tableWidth: "auto",
+      didDrawPage: () => { addHeader(); },
     });
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
   });

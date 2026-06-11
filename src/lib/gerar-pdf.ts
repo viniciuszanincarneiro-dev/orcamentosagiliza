@@ -408,12 +408,10 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     { gap: 16 }
   );
 
-  // Cidade/data + assinatura — todo o bloco deve caber junto na mesma página
-  const dateLineH = 13;
-  const dateGap = 30;
-  const boxW = 360;
-  const boxH = 70;
-  const blocoAssinaturaH = dateLineH + dateGap + boxH + 20;
+  // Cidade/data + assinatura manual — todo o bloco deve caber junto na mesma página
+  const dateGap = 70;
+  const lineW = 280;
+  const blocoAssinaturaH = 13 + dateGap + 12 + 4 * 12 + 10;
   if (y + blocoAssinaturaH > BOTTOM) {
     doc.addPage();
     addHeader();
@@ -422,24 +420,26 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
 
   writeParagraph(`${esc.cidade}, ${formatDateLong(new Date())}.`, { gap: dateGap });
 
-  // Caixa única para assinatura digital oficial (sem duplicação de nome/CNPJ abaixo)
-  const boxX = (W - boxW) / 2;
-  const boxY = y;
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(boxX, boxY, boxW, boxH, 4, 4);
+  // Linha horizontal para assinatura manual (em aberto)
+  const lineX = (W - lineW) / 2;
+  doc.setDrawColor(...PRETO);
+  doc.setLineWidth(0.6);
+  doc.line(lineX, y, lineX + lineW, y);
+  y += 14;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...PRETO);
+  doc.text("Everton de Oliveira Meyer", W / 2, y, { align: "center" });
+  y += 12;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(...CINZA);
-  doc.text(
-    `Assinado de forma digital por ${esc.razao.toUpperCase()}:${esc.cnpj.replace(/\D/g, "")}`,
-    W / 2, boxY + boxH / 2 - 4, { align: "center", maxWidth: boxW - 16 }
-  );
-  doc.text(
-    `Dados: ${new Date().toLocaleString("pt-BR")} -03'00'`,
-    W / 2, boxY + boxH / 2 + 10, { align: "center" }
-  );
-  y = boxY + boxH + 14;
+  doc.setFontSize(9);
+  doc.text("Técnico em Agrimensura", W / 2, y, { align: "center" });
+  y += 11;
+  doc.text("CRT – 0406853290-7", W / 2, y, { align: "center" });
+  y += 11;
+  doc.text("Código INCRA: XAFW", W / 2, y, { align: "center" });
+  y += 10;
 
   // Footers em todas as páginas
   const totalPages = doc.getNumberOfPages();

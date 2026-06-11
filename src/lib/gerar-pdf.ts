@@ -154,13 +154,23 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     }
   }
 
-  function writeParagraph(text: string, opts: { bold?: boolean; size?: number; color?: [number, number, number]; align?: "left" | "center" | "right" | "justify"; gap?: number } = {}) {
+  function writeParagraph(text: string, opts: { bold?: boolean; size?: number; color?: [number, number, number]; align?: "left" | "center" | "right" | "justify"; gap?: number; keepTogether?: boolean } = {}) {
     const size = opts.size ?? 10;
     doc.setFont("helvetica", opts.bold ? "bold" : "normal");
     doc.setFontSize(size);
     doc.setTextColor(...(opts.color ?? PRETO));
     const lines = doc.splitTextToSize(text, usableW) as string[];
     const lineH = size + 3;
+    // Mantém parágrafo inteiro junto: se não couber, quebra página antes de iniciar.
+    const keepTogether = opts.keepTogether ?? true;
+    if (keepTogether) {
+      const totalH = lines.length * lineH;
+      if (totalH <= (BOTTOM - TOP) && y + totalH > BOTTOM) {
+        doc.addPage();
+        addHeader();
+        y = TOP;
+      }
+    }
     for (const ln of lines) {
       ensureSpace(lineH);
       const x = opts.align === "center" ? W / 2 : opts.align === "right" ? W - M : M;
@@ -171,7 +181,8 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   }
 
   function writeSectionTitle(text: string) {
-    ensureSpace(22);
+    // Reserva espaço para o título + ao menos 2 linhas seguintes (evita órfão no fim da página)
+    ensureSpace(22 + 26);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(...VERDE);
@@ -397,19 +408,27 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     { gap: 16 }
   );
 
-  // Cidade/data + assinatura
-  ensureSpace(140);
-  writeParagraph(`${esc.cidade}, ${formatDateLong(new Date())}.`, { gap: 30 });
-
-  // Caixa para assinatura digital
+  // Cidade/data + assinatura — todo o bloco deve caber junto na mesma página
+  const dateLineH = 13;
+  const dateGap = 30;
   const boxW = 360;
   const boxH = 70;
+  const blocoAssinaturaH = dateLineH + dateGap + boxH + 20;
+  if (y + blocoAssinaturaH > BOTTOM) {
+    doc.addPage();
+    addHeader();
+    y = TOP;
+  }
+
+  writeParagraph(`${esc.cidade}, ${formatDateLong(new Date())}.`, { gap: dateGap });
+
+  // Caixa única para assinatura digital oficial (sem duplicação de nome/CNPJ abaixo)
   const boxX = (W - boxW) / 2;
   const boxY = y;
-  ensureSpace(boxH + 50);
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.5);
   doc.roundedRect(boxX, boxY, boxW, boxH, 4, 4);
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(...CINZA);
   doc.text(
@@ -421,15 +440,6 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     W / 2, boxY + boxH / 2 + 10, { align: "center" }
   );
   y = boxY + boxH + 14;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...PRETO);
-  doc.text(esc.razao, W / 2, y, { align: "center" });
-  y += 12;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text(`CNPJ ${esc.cnpj}`, W / 2, y, { align: "center" });
 
   // Footers em todas as páginas
   const totalPages = doc.getNumberOfPages();

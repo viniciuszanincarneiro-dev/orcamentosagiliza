@@ -154,13 +154,23 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     }
   }
 
-  function writeParagraph(text: string, opts: { bold?: boolean; size?: number; color?: [number, number, number]; align?: "left" | "center" | "right" | "justify"; gap?: number } = {}) {
+  function writeParagraph(text: string, opts: { bold?: boolean; size?: number; color?: [number, number, number]; align?: "left" | "center" | "right" | "justify"; gap?: number; keepTogether?: boolean } = {}) {
     const size = opts.size ?? 10;
     doc.setFont("helvetica", opts.bold ? "bold" : "normal");
     doc.setFontSize(size);
     doc.setTextColor(...(opts.color ?? PRETO));
     const lines = doc.splitTextToSize(text, usableW) as string[];
     const lineH = size + 3;
+    // Mantém parágrafo inteiro junto: se não couber, quebra página antes de iniciar.
+    const keepTogether = opts.keepTogether ?? true;
+    if (keepTogether) {
+      const totalH = lines.length * lineH;
+      if (totalH <= (BOTTOM - TOP) && y + totalH > BOTTOM) {
+        doc.addPage();
+        addHeader();
+        y = TOP;
+      }
+    }
     for (const ln of lines) {
       ensureSpace(lineH);
       const x = opts.align === "center" ? W / 2 : opts.align === "right" ? W - M : M;

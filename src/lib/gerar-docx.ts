@@ -263,11 +263,12 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
         P({ text: "Agradecemos pela oportunidade de apresentar nossa proposta. Estamos confiantes de que podemos atender às suas necessidades com qualidade e eficiência!", spacing: 320 }),
         P({ text: `${esc.cidade}, ${formatDateLong(new Date())}.`, spacing: 600 }),
 
-        // Assinatura
-        P({ text: `Assinado de forma digital por ${esc.razao.toUpperCase()}:${esc.cnpj.replace(/\D/g, "")}`, color: CINZA, size: 16, align: AlignmentType.CENTER }),
-        P({ text: `Dados: ${new Date().toLocaleString("pt-BR")} -03'00'`, color: CINZA, size: 16, align: AlignmentType.CENTER, spacing: 200 }),
-        P({ text: esc.razao, bold: true, align: AlignmentType.CENTER }),
-        P({ text: `CNPJ ${esc.cnpj}`, align: AlignmentType.CENTER, spacing: 400 }),
+        // Assinatura manual (linha em aberto + dados do responsável)
+        P({ text: "_________________________________________", align: AlignmentType.CENTER, spacing: 120 }),
+        P({ text: "Everton de Oliveira Meyer", bold: true, align: AlignmentType.CENTER }),
+        P({ text: "Técnico em Agrimensura", align: AlignmentType.CENTER }),
+        P({ text: "CRT – 0406853290-7", align: AlignmentType.CENTER }),
+        P({ text: "Código INCRA: XAFW", align: AlignmentType.CENTER, spacing: 400 }),
 
         // Rodapé com unidades
         P({ text: "—".repeat(40), color: "C8C8CC", align: AlignmentType.CENTER, size: 14 }),

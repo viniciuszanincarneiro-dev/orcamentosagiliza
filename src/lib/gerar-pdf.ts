@@ -181,7 +181,8 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   }
 
   function writeSectionTitle(text: string) {
-    ensureSpace(22);
+    // Reserva espaço para o título + ao menos 2 linhas seguintes (evita órfão no fim da página)
+    ensureSpace(22 + 26);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(...VERDE);

@@ -161,7 +161,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     doc.setTextColor(...(opts.color ?? PRETO));
     const lines = doc.splitTextToSize(text, usableW) as string[];
     const lineH = size + 3;
-    // Mantém parágrafo inteiro junto: se não couber, quebra página antes de iniciar.
+    const align = opts.align ?? "justify";
     const keepTogether = opts.keepTogether ?? true;
     if (keepTogether) {
       const totalH = lines.length * lineH;
@@ -171,10 +171,30 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
         y = TOP;
       }
     }
-    for (const ln of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
       ensureSpace(lineH);
-      const x = opts.align === "center" ? W / 2 : opts.align === "right" ? W - M : M;
-      doc.text(ln, x, y, { align: opts.align === "justify" ? "left" : (opts.align ?? "left") as "left" | "center" | "right", maxWidth: usableW });
+      const isLast = i === lines.length - 1;
+      if (align === "justify" && !isLast) {
+        const words = ln.split(/\s+/).filter(Boolean);
+        if (words.length > 1) {
+          const naturalW = words.reduce((a, w) => a + doc.getTextWidth(w), 0);
+          const gap = (usableW - naturalW) / (words.length - 1);
+          // Evita gaps absurdos quando a linha é muito curta
+          if (gap >= 0 && gap < size * 1.2) {
+            let x = M;
+            for (let j = 0; j < words.length; j++) {
+              doc.text(words[j], x, y);
+              x += doc.getTextWidth(words[j]) + gap;
+            }
+            y += lineH;
+            continue;
+          }
+        }
+      }
+      const x = align === "center" ? W / 2 : align === "right" ? W - M : M;
+      const drawAlign = align === "justify" ? "left" : align;
+      doc.text(ln, x, y, { align: drawAlign as "left" | "center" | "right", maxWidth: usableW });
       y += lineH;
     }
     y += opts.gap ?? 4;

@@ -339,7 +339,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   if (orc.proprietarios?.length) {
     writeSectionTitle("PROPRIETÁRIOS");
     orc.proprietarios.forEach((p) => {
-      writeParagraph(`• ${p.nome}${p.cpf_cnpj ? ` — ${p.cpf_cnpj}` : ""}`, { gap: 2 });
+      writeParagraph(`• ${p.nome}${p.cpf_cnpj ? ` — ${p.cpf_cnpj}` : ""}`, { gap: 2, align: "left" });
     });
     y += 4;
   }

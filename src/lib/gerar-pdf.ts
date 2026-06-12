@@ -438,7 +438,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     y = TOP;
   }
 
-  writeParagraph(`${esc.cidade}, ${formatDateLong(new Date())}.`, { gap: dateGap });
+  writeParagraph(`${esc.cidade}, ${formatDateLong(new Date())}.`, { gap: dateGap, align: "left" });
 
   // Linha horizontal para assinatura manual (em aberto)
   const lineX = (W - lineW) / 2;

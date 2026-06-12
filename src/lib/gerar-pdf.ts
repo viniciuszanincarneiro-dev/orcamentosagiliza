@@ -350,7 +350,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     const tipoB = bloco.tipo_servico;
     const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
     const desc = DESCRICAO_PADRAO[tipoB] ?? "";
-    writeParagraph(`${bi + 1}. ${tituloB}`, { bold: true, gap: 2 });
+    writeParagraph(`${bi + 1}. ${tituloB}`, { bold: true, gap: 2, align: "left" });
     if (desc) writeParagraph(desc, { gap: 6 });
     if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 6 });
   });

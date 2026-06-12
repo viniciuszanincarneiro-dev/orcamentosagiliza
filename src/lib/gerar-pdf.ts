@@ -291,9 +291,9 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
       "Todos os imóveis rurais possuem a obrigatoriedade em fazer o georreferenciamento até 20 de novembro de 2025, prazo esse definido no Decreto 4.449/02, alterado pelo decreto 9.311/18.",
       { gap: 6 }
     );
-    writeParagraph("• Vigente para imóveis acima de 100 hectares;", { gap: 2 });
-    writeParagraph("• 20/11/2023 para os imóveis com área superior a 25 hectares;", { gap: 2 });
-    writeParagraph("• 20/11/2025 para os imóveis com área inferior a 25 hectares.", { gap: 10 });
+    writeParagraph("• Vigente para imóveis acima de 100 hectares;", { gap: 2, align: "left" });
+    writeParagraph("• 20/11/2023 para os imóveis com área superior a 25 hectares;", { gap: 2, align: "left" });
+    writeParagraph("• 20/11/2025 para os imóveis com área inferior a 25 hectares.", { gap: 10, align: "left" });
   }
 
   // ============ OBJETO DO ORÇAMENTO ============

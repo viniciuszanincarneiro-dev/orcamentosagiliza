@@ -161,7 +161,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     doc.setTextColor(...(opts.color ?? PRETO));
     const lines = doc.splitTextToSize(text, usableW) as string[];
     const lineH = size + 3;
-    // Mantém parágrafo inteiro junto: se não couber, quebra página antes de iniciar.
+    const align = opts.align ?? "justify";
     const keepTogether = opts.keepTogether ?? true;
     if (keepTogether) {
       const totalH = lines.length * lineH;
@@ -171,10 +171,30 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
         y = TOP;
       }
     }
-    for (const ln of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
       ensureSpace(lineH);
-      const x = opts.align === "center" ? W / 2 : opts.align === "right" ? W - M : M;
-      doc.text(ln, x, y, { align: opts.align === "justify" ? "left" : (opts.align ?? "left") as "left" | "center" | "right", maxWidth: usableW });
+      const isLast = i === lines.length - 1;
+      if (align === "justify" && !isLast) {
+        const words = ln.split(/\s+/).filter(Boolean);
+        if (words.length > 1) {
+          const naturalW = words.reduce((a, w) => a + doc.getTextWidth(w), 0);
+          const gap = (usableW - naturalW) / (words.length - 1);
+          // Evita gaps absurdos quando a linha é muito curta
+          if (gap >= 0 && gap < size * 1.2) {
+            let x = M;
+            for (let j = 0; j < words.length; j++) {
+              doc.text(words[j], x, y);
+              x += doc.getTextWidth(words[j]) + gap;
+            }
+            y += lineH;
+            continue;
+          }
+        }
+      }
+      const x = align === "center" ? W / 2 : align === "right" ? W - M : M;
+      const drawAlign = align === "justify" ? "left" : align;
+      doc.text(ln, x, y, { align: drawAlign as "left" | "center" | "right", maxWidth: usableW });
       y += lineH;
     }
     y += opts.gap ?? 4;
@@ -227,7 +247,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   const interessado = `Interessado: ${orc.requerente_nome}${orc.requerente_cpf_cnpj ? ` — ${orc.requerente_cpf_cnpj}` : ""}`;
-  writeParagraph(interessado, { gap: 10 });
+  writeParagraph(interessado, { gap: 10, align: "left" });
 
   // Prestadora
   const prestadora = `PRESTADORA DE SERVIÇO: ${esc.razao}, pessoa jurídica de direito privado, inscrita no CNPJ nº ${esc.cnpj}, com sede em ${esc.endereco}, com endereço eletrônico: ${esc.email}, contato telefônico: ${esc.telefone}.`;
@@ -271,9 +291,9 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
       "Todos os imóveis rurais possuem a obrigatoriedade em fazer o georreferenciamento até 20 de novembro de 2025, prazo esse definido no Decreto 4.449/02, alterado pelo decreto 9.311/18.",
       { gap: 6 }
     );
-    writeParagraph("• Vigente para imóveis acima de 100 hectares;", { gap: 2 });
-    writeParagraph("• 20/11/2023 para os imóveis com área superior a 25 hectares;", { gap: 2 });
-    writeParagraph("• 20/11/2025 para os imóveis com área inferior a 25 hectares.", { gap: 10 });
+    writeParagraph("• Vigente para imóveis acima de 100 hectares;", { gap: 2, align: "left" });
+    writeParagraph("• 20/11/2023 para os imóveis com área superior a 25 hectares;", { gap: 2, align: "left" });
+    writeParagraph("• 20/11/2025 para os imóveis com área inferior a 25 hectares.", { gap: 10, align: "left" });
   }
 
   // ============ OBJETO DO ORÇAMENTO ============
@@ -319,7 +339,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   if (orc.proprietarios?.length) {
     writeSectionTitle("PROPRIETÁRIOS");
     orc.proprietarios.forEach((p) => {
-      writeParagraph(`• ${p.nome}${p.cpf_cnpj ? ` — ${p.cpf_cnpj}` : ""}`, { gap: 2 });
+      writeParagraph(`• ${p.nome}${p.cpf_cnpj ? ` — ${p.cpf_cnpj}` : ""}`, { gap: 2, align: "left" });
     });
     y += 4;
   }
@@ -330,7 +350,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     const tipoB = bloco.tipo_servico;
     const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
     const desc = DESCRICAO_PADRAO[tipoB] ?? "";
-    writeParagraph(`${bi + 1}. ${tituloB}`, { bold: true, gap: 2 });
+    writeParagraph(`${bi + 1}. ${tituloB}`, { bold: true, gap: 2, align: "left" });
     if (desc) writeParagraph(desc, { gap: 6 });
     if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 6 });
   });
@@ -418,7 +438,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     y = TOP;
   }
 
-  writeParagraph(`${esc.cidade}, ${formatDateLong(new Date())}.`, { gap: dateGap });
+  writeParagraph(`${esc.cidade}, ${formatDateLong(new Date())}.`, { gap: dateGap, align: "left" });
 
   // Linha horizontal para assinatura manual (em aberto)
   const lineX = (W - lineW) / 2;

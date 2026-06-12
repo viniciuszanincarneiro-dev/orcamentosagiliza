@@ -247,7 +247,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   const interessado = `Interessado: ${orc.requerente_nome}${orc.requerente_cpf_cnpj ? ` — ${orc.requerente_cpf_cnpj}` : ""}`;
-  writeParagraph(interessado, { gap: 10 });
+  writeParagraph(interessado, { gap: 10, align: "left" });
 
   // Prestadora
   const prestadora = `PRESTADORA DE SERVIÇO: ${esc.razao}, pessoa jurídica de direito privado, inscrita no CNPJ nº ${esc.cnpj}, com sede em ${esc.endereco}, com endereço eletrônico: ${esc.email}, contato telefônico: ${esc.telefone}.`;

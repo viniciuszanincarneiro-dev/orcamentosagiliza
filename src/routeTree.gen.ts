@@ -17,6 +17,7 @@ import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
 import { Route as AppTutorialRouteImport } from './routes/_app.tutorial'
 import { Route as AppLogsRouteImport } from './routes/_app.logs'
 import { Route as AppLixeiraRouteImport } from './routes/_app.lixeira'
+import { Route as AppItbiRouteImport } from './routes/_app.itbi'
 import { Route as AppFollowUpRouteImport } from './routes/_app.follow-up'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppEscritoriosRouteImport } from './routes/_app.escritorios'
@@ -64,6 +65,11 @@ const AppLixeiraRoute = AppLixeiraRouteImport.update({
   path: '/lixeira',
   getParentRoute: () => AppRoute,
 } as any)
+const AppItbiRoute = AppItbiRouteImport.update({
+  id: '/itbi',
+  path: '/itbi',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppFollowUpRoute = AppFollowUpRouteImport.update({
   id: '/follow-up',
   path: '/follow-up',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/escritorios': typeof AppEscritoriosRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/follow-up': typeof AppFollowUpRoute
+  '/itbi': typeof AppItbiRoute
   '/lixeira': typeof AppLixeiraRoute
   '/logs': typeof AppLogsRoute
   '/tutorial': typeof AppTutorialRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/escritorios': typeof AppEscritoriosRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/follow-up': typeof AppFollowUpRoute
+  '/itbi': typeof AppItbiRoute
   '/lixeira': typeof AppLixeiraRoute
   '/logs': typeof AppLogsRoute
   '/tutorial': typeof AppTutorialRoute
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/_app/escritorios': typeof AppEscritoriosRoute
   '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/follow-up': typeof AppFollowUpRoute
+  '/_app/itbi': typeof AppItbiRoute
   '/_app/lixeira': typeof AppLixeiraRoute
   '/_app/logs': typeof AppLogsRoute
   '/_app/tutorial': typeof AppTutorialRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/escritorios'
     | '/financeiro'
     | '/follow-up'
+    | '/itbi'
     | '/lixeira'
     | '/logs'
     | '/tutorial'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/escritorios'
     | '/financeiro'
     | '/follow-up'
+    | '/itbi'
     | '/lixeira'
     | '/logs'
     | '/tutorial'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/_app/escritorios'
     | '/_app/financeiro'
     | '/_app/follow-up'
+    | '/_app/itbi'
     | '/_app/lixeira'
     | '/_app/logs'
     | '/_app/tutorial'
@@ -266,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLixeiraRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/itbi': {
+      id: '/_app/itbi'
+      path: '/itbi'
+      fullPath: '/itbi'
+      preLoaderRoute: typeof AppItbiRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/follow-up': {
       id: '/_app/follow-up'
       path: '/follow-up'
@@ -323,6 +342,7 @@ interface AppRouteChildren {
   AppEscritoriosRoute: typeof AppEscritoriosRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppFollowUpRoute: typeof AppFollowUpRoute
+  AppItbiRoute: typeof AppItbiRoute
   AppLixeiraRoute: typeof AppLixeiraRoute
   AppLogsRoute: typeof AppLogsRoute
   AppTutorialRoute: typeof AppTutorialRoute
@@ -338,6 +358,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppEscritoriosRoute: AppEscritoriosRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppFollowUpRoute: AppFollowUpRoute,
+  AppItbiRoute: AppItbiRoute,
   AppLixeiraRoute: AppLixeiraRoute,
   AppLogsRoute: AppLogsRoute,
   AppTutorialRoute: AppTutorialRoute,

@@ -118,6 +118,18 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     },
   });
 
+  const { data: itbiMunicipios } = useQuery({
+    queryKey: ["itbi-municipios"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("itbi_municipios" as never)
+        .select("id, nome, aliquota")
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; nome: string; aliquota: number }>;
+    },
+  });
+
   // Sincroniza o fator de ajuste interno do RI vindo da configuração (se existir).
   // O usuário pode sobrescrever localmente no card de cálculo.
   const fatorRIConfig = useMemo(() => {
@@ -441,6 +453,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         status,
         validade_dias: data.validade_dias ?? 30,
         ultimo_contato: data.ultimo_contato ?? null,
+        itbi_municipio: data.itbi_municipio ?? null,
+        itbi_valor_declarado: data.itbi_valor_declarado ?? null,
+        itbi_aliquota: data.itbi_aliquota ?? null,
+        itbi_estimado: data.itbi_estimado ?? null,
       };
       // Marca data de envio automaticamente na primeira vez que vai para "enviado"
       if (status === "enviado" && !data.data_envio) {
@@ -814,6 +830,112 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
               </div>
             ) : null}
           </div>
+        </CardContent>
+      </Card>
+
+
+      {/* ============ ITBI (estimativa informativa, não soma ao total) ============ */}
+      <Card>
+        <CardHeader>
+          <CardTitle>ITBI — Estimativa</CardTitle>
+          <CardDescription>
+            Cálculo aproximado do Imposto de Transmissão. Valor informativo, <b>não somado</b> ao orçamento.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <Label>Município do imóvel</Label>
+              <Select
+                value={data.itbi_municipio ?? ""}
+                onValueChange={(v) => {
+                  const m = itbiMunicipios?.find((x) => x.nome === v);
+                  setData((d) => {
+                    const aliquota = m ? Number(m.aliquota) : (d.itbi_aliquota ?? null);
+                    const valorDecl = d.itbi_valor_declarado ?? d.imovel_valor_avaliado ?? null;
+                    const estim = valorDecl != null && aliquota != null
+                      ? Number(((Number(valorDecl) * Number(aliquota)) / 100).toFixed(2))
+                      : null;
+                    return { ...d, itbi_municipio: v, itbi_aliquota: aliquota, itbi_valor_declarado: valorDecl, itbi_estimado: estim };
+                  });
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione o município" /></SelectTrigger>
+                <SelectContent>
+                  {(itbiMunicipios ?? []).map((m) => (
+                    <SelectItem key={m.id} value={m.nome}>{m.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Valor declarado (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={data.itbi_valor_declarado ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value === "" ? null : Number(e.target.value);
+                  setData((d) => {
+                    const estim = v != null && d.itbi_aliquota != null
+                      ? Number(((v * Number(d.itbi_aliquota)) / 100).toFixed(2))
+                      : null;
+                    return { ...d, itbi_valor_declarado: v, itbi_estimado: estim };
+                  });
+                }}
+                placeholder={data.imovel_valor_avaliado ? String(data.imovel_valor_avaliado) : ""}
+              />
+              {data.imovel_valor_avaliado && data.itbi_valor_declarado == null ? (
+                <button
+                  type="button"
+                  className="text-xs text-primary hover:underline mt-1"
+                  onClick={() => {
+                    const v = Number(data.imovel_valor_avaliado);
+                    setData((d) => ({
+                      ...d,
+                      itbi_valor_declarado: v,
+                      itbi_estimado: d.itbi_aliquota != null
+                        ? Number(((v * Number(d.itbi_aliquota)) / 100).toFixed(2))
+                        : null,
+                    }));
+                  }}
+                >
+                  Usar valor do imóvel ({formatBRL(Number(data.imovel_valor_avaliado))})
+                </button>
+              ) : null}
+            </div>
+            <div>
+              <Label>Alíquota (%)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={data.itbi_aliquota ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value === "" ? null : Number(e.target.value);
+                  setData((d) => {
+                    const estim = v != null && d.itbi_valor_declarado != null
+                      ? Number(((Number(d.itbi_valor_declarado) * v) / 100).toFixed(2))
+                      : null;
+                    return { ...d, itbi_aliquota: v, itbi_estimado: estim };
+                  });
+                }}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Preenchida pelo município. Pode ser ajustada.</p>
+            </div>
+          </div>
+
+          {data.itbi_estimado != null ? (
+            <div className="mt-4 rounded-md border bg-muted/40 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-sm">
+                <div className="text-muted-foreground text-xs">ITBI estimado</div>
+                <div className="text-xl font-semibold tabular-nums">{formatBRL(Number(data.itbi_estimado))}</div>
+              </div>
+              <div className="text-xs text-muted-foreground text-right">
+                Estimativa de custo de transferência.<br />
+                Não incluída no valor do orçamento.
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

@@ -48,6 +48,11 @@ export type OrcamentoData = {
   data_envio?: string | null;
   ultimo_contato?: string | null;
   validade_dias?: number | null;
+  /** Estimativa de ITBI (informativo, não soma ao valor_total). */
+  itbi_municipio?: string | null;
+  itbi_valor_declarado?: number | null;
+  itbi_aliquota?: number | null;
+  itbi_estimado?: number | null;
   created_at?: string;
   updated_at?: string;
 };

@@ -563,7 +563,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         import("@/lib/gerar-docx"),
         import("file-saver"),
       ]);
-      const blob = await gerarOrcamentoDOCX(cur, escritorio);
+      const blob = await gerarOrcamentoDOCX(cur, escritorioDoOrcamento(cur));
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.docx`);
       void registrarLog({
         acao: "gerar_docx",

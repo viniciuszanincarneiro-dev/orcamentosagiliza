@@ -105,7 +105,18 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [fatorRI, setFatorRI] = useState<number>(70);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { escritorio, profile } = useProfile();
+  const { escritorio, escritorios, profile } = useProfile();
+
+  // Escritório a usar nos documentos: o vinculado ao orçamento (quando existir);
+  // senão, o do usuário logado. Garante que cada PDF saia com os dados da unidade correta.
+  function escritorioDoOrcamento(orc: { escritorio_id?: string | null }) {
+    const id = orc.escritorio_id ?? null;
+    if (id) {
+      const e = escritorios.find((x) => x.id === id);
+      if (e) return e;
+    }
+    return escritorio;
+  }
 
   const parseFn = useServerFn(parseMatricula);
 

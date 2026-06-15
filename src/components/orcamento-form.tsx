@@ -105,7 +105,18 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [fatorRI, setFatorRI] = useState<number>(70);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { escritorio, profile } = useProfile();
+  const { escritorio, escritorios, profile } = useProfile();
+
+  // Escritório a usar nos documentos: o vinculado ao orçamento (quando existir);
+  // senão, o do usuário logado. Garante que cada PDF saia com os dados da unidade correta.
+  function escritorioDoOrcamento(orc: { escritorio_id?: string | null }) {
+    const id = orc.escritorio_id ?? null;
+    if (id) {
+      const e = escritorios.find((x) => x.id === id);
+      if (e) return e;
+    }
+    return escritorio;
+  }
 
   const parseFn = useServerFn(parseMatricula);
 
@@ -531,7 +542,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         import("@/lib/gerar-pdf"),
         import("file-saver"),
       ]);
-      const blob = await gerarOrcamentoPDF(cur, escritorio);
+      const blob = await gerarOrcamentoPDF(cur, escritorioDoOrcamento(cur));
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.pdf`);
       void registrarLog({
         acao: "gerar_pdf",
@@ -552,7 +563,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         import("@/lib/gerar-docx"),
         import("file-saver"),
       ]);
-      const blob = await gerarOrcamentoDOCX(cur, escritorio);
+      const blob = await gerarOrcamentoDOCX(cur, escritorioDoOrcamento(cur));
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.docx`);
       void registrarLog({
         acao: "gerar_docx",

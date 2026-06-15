@@ -118,6 +118,18 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     },
   });
 
+  const { data: itbiMunicipios } = useQuery({
+    queryKey: ["itbi-municipios"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("itbi_municipios" as never)
+        .select("id, nome, aliquota")
+        .order("nome");
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; nome: string; aliquota: number }>;
+    },
+  });
+
   // Sincroniza o fator de ajuste interno do RI vindo da configuração (se existir).
   // O usuário pode sobrescrever localmente no card de cálculo.
   const fatorRIConfig = useMemo(() => {

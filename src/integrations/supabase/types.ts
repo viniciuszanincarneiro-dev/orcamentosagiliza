@@ -95,6 +95,30 @@ export type Database = {
         }
         Relationships: []
       }
+      itbi_municipios: {
+        Row: {
+          aliquota: number
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          aliquota?: number
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          aliquota?: number
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orcamentos: {
         Row: {
           cliente_telefone: string | null
@@ -114,6 +138,10 @@ export type Database = {
           imovel_matricula: string | null
           imovel_municipio: string | null
           imovel_valor_avaliado: number | null
+          itbi_aliquota: number | null
+          itbi_estimado: number | null
+          itbi_municipio: string | null
+          itbi_valor_declarado: number | null
           itens: Json
           numero: string
           observacoes: string | null
@@ -146,6 +174,10 @@ export type Database = {
           imovel_matricula?: string | null
           imovel_municipio?: string | null
           imovel_valor_avaliado?: number | null
+          itbi_aliquota?: number | null
+          itbi_estimado?: number | null
+          itbi_municipio?: string | null
+          itbi_valor_declarado?: number | null
           itens?: Json
           numero: string
           observacoes?: string | null
@@ -178,6 +210,10 @@ export type Database = {
           imovel_matricula?: string | null
           imovel_municipio?: string | null
           imovel_valor_avaliado?: number | null
+          itbi_aliquota?: number | null
+          itbi_estimado?: number | null
+          itbi_municipio?: string | null
+          itbi_valor_declarado?: number | null
           itens?: Json
           numero?: string
           observacoes?: string | null

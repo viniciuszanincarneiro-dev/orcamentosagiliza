@@ -35,6 +35,7 @@ const baseNav = [
 const adminNav = [
   { to: "/escritorios", label: "Escritórios", icon: Building2 },
   { to: "/usuarios", label: "Usuários", icon: Users },
+  { to: "/itbi", label: "ITBI", icon: Receipt },
 ] as const;
 
 function AppLayout() {

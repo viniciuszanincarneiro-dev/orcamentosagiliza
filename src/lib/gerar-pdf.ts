@@ -97,7 +97,10 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
 
   // ============ HEADER & FOOTER ============
   const HEADER_H = 70;
-  const FOOTER_H = 150;
+  // Rodapé por página é enxuto (apenas linha + numeração);
+  // o bloco completo com a lista de escritórios é renderizado
+  // como conteúdo no final do documento.
+  const FOOTER_H = 36;
 
   const addHeader = () => {
     doc.setFont("helvetica", "bold");
@@ -116,40 +119,15 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     doc.setLineWidth(0.5);
     doc.line(M, yTop, W - M, yTop);
 
-    let cy = yTop + 14;
-    // Nome da empresa (identidade fixa)
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(...VERDE);
-    doc.text("Agiliza Assessoria em Documentos e Topografia", W / 2, cy, { align: "center" });
-    cy += 13;
-
-    // Dados dinâmicos do escritório responsável
     doc.setFontSize(8);
-    const drawLine = (label: string, value: string) => {
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...VERDE);
-      const lw = doc.getTextWidth(label);
-      doc.text(label, M, cy);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(...CINZA);
-      const vLines = doc.splitTextToSize(value, usableW - lw) as string[];
-      vLines.forEach((ln, i) => {
-        doc.text(ln, i === 0 ? M + lw : M, cy);
-        if (i < vLines.length - 1) cy += 10;
-      });
-      cy += 11;
-    };
+    doc.setTextColor(...VERDE);
+    doc.text("Agiliza Assessoria em Documentos e Topografia", W / 2, yTop + 14, { align: "center" });
 
-    drawLine("Unidade: ", esc.cidade);
-    drawLine("CNPJ: ", esc.cnpj);
-    drawLine("Endereço: ", esc.endereco);
-    drawLine("E-mail: ", esc.email);
-    drawLine("Telefone: ", esc.telefone);
-
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(...CINZA);
-    doc.text(`${pageNum} / ${totalPages}`, W - M, H - 12, { align: "right" });
+    doc.text(`Página ${pageNum} de ${totalPages}`, W - M, H - 12, { align: "right" });
   };
 
   // ============ helpers de cursor com quebra automática ============

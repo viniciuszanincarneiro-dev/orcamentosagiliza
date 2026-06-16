@@ -513,93 +513,9 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   doc.text("Código INCRA: XAFW", W / 2, y, { align: "center" });
   y += 10;
 
-  // ============ IDENTIFICAÇÃO + LISTA DE TODOS OS ESCRITÓRIOS ============
-  // Lista de unidades para o rodapé final. Usa o cadastro do banco quando disponível.
-  const listaEsc: Escritorio[] = (todosEscritorios && todosEscritorios.length > 0)
-    ? [...todosEscritorios].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
-    : [];
+  // (A lista de unidades agora é renderizada no rodapé fixo de TODAS as páginas.)
 
-  // Espaço necessário (estimativa segura): bloco "responsável" + grade 2 colunas
-  const colW = (usableW - 16) / 2;
-  const linhasPorBloco = 4; // título + endereço (até 2 linhas) + telefone + email
-  const blocoH = 14 + linhasPorBloco * 11 + 8;
-  const linhasGrade = Math.ceil(Math.max(listaEsc.length, 1) / 2);
-  const grideH = linhasGrade * blocoH;
-  const respH = 14 + 14 + 10;
-  const totalH = respH + 18 + grideH;
 
-  if (y + totalH > BOTTOM) {
-    doc.addPage();
-    addHeader();
-    y = TOP;
-  }
-  y += 14;
-
-  // Identificação do escritório responsável
-  doc.setDrawColor(...VERDE);
-  doc.setLineWidth(0.5);
-  doc.line(M, y - 6, W - M, y - 6);
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...VERDE);
-  doc.text("Orçamento realizado pelo escritório:", M, y);
-  y += 14;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(...PRETO);
-  doc.text(`${esc.cidade}`, M, y);
-  y += 18;
-
-  // Cabeçalho da lista
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(...VERDE);
-  doc.text("Nossas unidades", M, y);
-  y += 12;
-
-  // Render em duas colunas
-  const renderUnidade = (e: Escritorio, x: number, yStart: number): number => {
-    let cy = yStart;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(...VERDE);
-    doc.text(e.cidade || e.nome, x, cy);
-    cy += 11;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(...CINZA);
-    const drawField = (label: string, value: string) => {
-      if (!value) return;
-      const text = `${label}${value}`;
-      const lines = doc.splitTextToSize(text, colW) as string[];
-      lines.forEach((ln) => { doc.text(ln, x, cy); cy += 10; });
-    };
-    drawField("Endereço: ", e.endereco || "");
-    drawField("Telefone: ", e.telefone || "");
-    drawField("E-mail: ", e.email || "");
-    return cy + 4;
-  };
-
-  if (listaEsc.length > 0) {
-    let leftY = y;
-    let rightY = y;
-    listaEsc.forEach((e, idx) => {
-      const isLeft = idx % 2 === 0;
-      const x = isLeft ? M : M + colW + 16;
-      const startY = isLeft ? leftY : rightY;
-      // Se não couber, paginar e redesenhar cabeçalho de unidades
-      if (startY + blocoH > BOTTOM) {
-        doc.addPage();
-        addHeader();
-        leftY = TOP + 4;
-        rightY = TOP + 4;
-      }
-      const useY = isLeft ? leftY : rightY;
-      const endY = renderUnidade(e, x, useY);
-      if (isLeft) leftY = endY; else rightY = endY;
-    });
-  }
 
   // Footers em todas as páginas
   const totalPages = doc.getNumberOfPages();

@@ -304,8 +304,21 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
       doc.text(ln, idx === 0 ? M + labelW : M, y);
       y += 13;
     });
-    y += 12;
+    y += 6;
   }
+  // Unidade responsável pelo orçamento
+  {
+    const label = "UNIDADE RESPONSÁVEL: ";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    const labelW = doc.getTextWidth(label);
+    ensureSpace(13);
+    doc.text(label, M, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(esc.cidade, M + labelW, y);
+    y += 18;
+  }
+
 
   // ============ BLOCOS EXPLICATIVOS DOS SERVIÇOS ============
   // Cada serviço apresenta título próprio + texto explicativo/metodologia completa.

@@ -97,10 +97,18 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
 
   // ============ HEADER & FOOTER ============
   const HEADER_H = 70;
-  // Rodapé por página é enxuto (apenas linha + numeração);
-  // o bloco completo com a lista de escritórios é renderizado
-  // como conteúdo no final do documento.
-  const FOOTER_H = 36;
+  // Rodapé institucional fixo, presente em TODAS as páginas, com a lista
+  // de unidades da Agiliza em duas colunas.
+  const UNIDADES_FIXAS: Array<{ cidade: string; endereco: string; telefone: string; email: string }> = [
+    { cidade: "São Miguel do Oeste - SC", endereco: "Rua Marcilio Dias, 1539 - Centro, São Miguel do Oeste - SC", telefone: "(49) 3197-8160 / (49) 99990-9954 / (49) 99933-2552", email: "agiliza.smo@gmail.com" },
+    { cidade: "Maravilha - SC", endereco: "Avenida Anita Garibaldi, 340 - Centro, Maravilha - SC", telefone: "(49) 99154-1854", email: "agiliza.mh@gmail.com" },
+    { cidade: "Anchieta - SC", endereco: "Av. Anchieta, 330, Sala 01, Centro, 89970-000, Anchieta - SC", telefone: "(49) 9 9911-7869", email: "agiliza.anchieta@gmail.com" },
+    { cidade: "Paraíso - SC", endereco: "Rua Guilherme Schmidt, 834 - Centro, Paraíso - SC", telefone: "(49) 99188-5181", email: "agiliza.paraiso@gmail.com" },
+    { cidade: "Dionísio Cerqueira - SC", endereco: "Avenida Washington Luis, 646 - Centro, Dionísio Cerqueira - SC", telefone: "(49) 99192-2081", email: "agiliza.dc@gmail.com" },
+  ];
+  // 5 unidades em 2 colunas → 3 linhas. Cada bloco: cidade + 3 linhas de dados.
+  const FOOTER_H = 105;
+
 
   const addHeader = () => {
     doc.setFont("helvetica", "bold");
@@ -119,16 +127,57 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     doc.setLineWidth(0.5);
     doc.line(M, yTop, W - M, yTop);
 
+    // Título
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setTextColor(...VERDE);
-    doc.text("Agiliza Assessoria em Documentos e Topografia", W / 2, yTop + 14, { align: "center" });
+    doc.text("Nossas unidades", M, yTop + 10);
+
+    // Grade 2 colunas
+    const colGap = 14;
+    const colW = (W - 2 * M - colGap) / 2;
+    const lineH = 7.5;
+    const blockGap = 3;
+    const startY = yTop + 18;
+
+    const drawUnidade = (u: typeof UNIDADES_FIXAS[number], x: number, yStart: number): number => {
+      let cy = yStart;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.8);
+      doc.setTextColor(...VERDE);
+      doc.text(u.cidade, x, cy);
+      cy += lineH;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.3);
+      doc.setTextColor(...CINZA);
+      const drawField = (label: string, value: string) => {
+        const text = `${label}${value}`;
+        const lines = doc.splitTextToSize(text, colW) as string[];
+        lines.forEach((ln) => { doc.text(ln, x, cy); cy += lineH - 1; });
+      };
+      drawField("End.: ", u.endereco);
+      drawField("Tel.: ", u.telefone);
+      drawField("E-mail: ", u.email);
+      return cy + blockGap;
+    };
+
+    let leftY = startY;
+    let rightY = startY;
+    UNIDADES_FIXAS.forEach((u, idx) => {
+      const isLeft = idx % 2 === 0;
+      if (isLeft) {
+        leftY = drawUnidade(u, M, leftY);
+      } else {
+        rightY = drawUnidade(u, M + colW + colGap, rightY);
+      }
+    });
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.setTextColor(...CINZA);
-    doc.text(`Página ${pageNum} de ${totalPages}`, W - M, H - 12, { align: "right" });
+    doc.text(`Página ${pageNum} de ${totalPages}`, W - M, H - 6, { align: "right" });
   };
+
 
   // ============ helpers de cursor com quebra automática ============
   let y = HEADER_H + 18;
@@ -255,8 +304,21 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
       doc.text(ln, idx === 0 ? M + labelW : M, y);
       y += 13;
     });
-    y += 12;
+    y += 6;
   }
+  // Unidade responsável pelo orçamento
+  {
+    const label = "UNIDADE RESPONSÁVEL: ";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    const labelW = doc.getTextWidth(label);
+    ensureSpace(13);
+    doc.text(label, M, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(esc.cidade, M + labelW, y);
+    y += 18;
+  }
+
 
   // ============ BLOCOS EXPLICATIVOS DOS SERVIÇOS ============
   // Cada serviço apresenta título próprio + texto explicativo/metodologia completa.
@@ -451,93 +513,9 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   doc.text("Código INCRA: XAFW", W / 2, y, { align: "center" });
   y += 10;
 
-  // ============ IDENTIFICAÇÃO + LISTA DE TODOS OS ESCRITÓRIOS ============
-  // Lista de unidades para o rodapé final. Usa o cadastro do banco quando disponível.
-  const listaEsc: Escritorio[] = (todosEscritorios && todosEscritorios.length > 0)
-    ? [...todosEscritorios].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
-    : [];
+  // (A lista de unidades agora é renderizada no rodapé fixo de TODAS as páginas.)
 
-  // Espaço necessário (estimativa segura): bloco "responsável" + grade 2 colunas
-  const colW = (usableW - 16) / 2;
-  const linhasPorBloco = 4; // título + endereço (até 2 linhas) + telefone + email
-  const blocoH = 14 + linhasPorBloco * 11 + 8;
-  const linhasGrade = Math.ceil(Math.max(listaEsc.length, 1) / 2);
-  const grideH = linhasGrade * blocoH;
-  const respH = 14 + 14 + 10;
-  const totalH = respH + 18 + grideH;
 
-  if (y + totalH > BOTTOM) {
-    doc.addPage();
-    addHeader();
-    y = TOP;
-  }
-  y += 14;
-
-  // Identificação do escritório responsável
-  doc.setDrawColor(...VERDE);
-  doc.setLineWidth(0.5);
-  doc.line(M, y - 6, W - M, y - 6);
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(...VERDE);
-  doc.text("Orçamento realizado pelo escritório:", M, y);
-  y += 14;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(...PRETO);
-  doc.text(`${esc.cidade}`, M, y);
-  y += 18;
-
-  // Cabeçalho da lista
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(...VERDE);
-  doc.text("Nossas unidades", M, y);
-  y += 12;
-
-  // Render em duas colunas
-  const renderUnidade = (e: Escritorio, x: number, yStart: number): number => {
-    let cy = yStart;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(...VERDE);
-    doc.text(e.cidade || e.nome, x, cy);
-    cy += 11;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(...CINZA);
-    const drawField = (label: string, value: string) => {
-      if (!value) return;
-      const text = `${label}${value}`;
-      const lines = doc.splitTextToSize(text, colW) as string[];
-      lines.forEach((ln) => { doc.text(ln, x, cy); cy += 10; });
-    };
-    drawField("Endereço: ", e.endereco || "");
-    drawField("Telefone: ", e.telefone || "");
-    drawField("E-mail: ", e.email || "");
-    return cy + 4;
-  };
-
-  if (listaEsc.length > 0) {
-    let leftY = y;
-    let rightY = y;
-    listaEsc.forEach((e, idx) => {
-      const isLeft = idx % 2 === 0;
-      const x = isLeft ? M : M + colW + 16;
-      const startY = isLeft ? leftY : rightY;
-      // Se não couber, paginar e redesenhar cabeçalho de unidades
-      if (startY + blocoH > BOTTOM) {
-        doc.addPage();
-        addHeader();
-        leftY = TOP + 4;
-        rightY = TOP + 4;
-      }
-      const useY = isLeft ? leftY : rightY;
-      const endY = renderUnidade(e, x, useY);
-      if (isLeft) leftY = endY; else rightY = endY;
-    });
-  }
 
   // Footers em todas as páginas
   const totalPages = doc.getNumberOfPages();

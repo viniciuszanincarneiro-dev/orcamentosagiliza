@@ -542,7 +542,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         import("@/lib/gerar-pdf"),
         import("file-saver"),
       ]);
-      const blob = await gerarOrcamentoPDF(cur, escritorioDoOrcamento(cur));
+      const blob = await gerarOrcamentoPDF(cur, escritorioDoOrcamento(cur), escritorios);
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.pdf`);
       void registrarLog({
         acao: "gerar_pdf",

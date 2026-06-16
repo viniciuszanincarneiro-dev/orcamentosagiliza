@@ -127,16 +127,57 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     doc.setLineWidth(0.5);
     doc.line(M, yTop, W - M, yTop);
 
+    // Título
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(7.5);
     doc.setTextColor(...VERDE);
-    doc.text("Agiliza Assessoria em Documentos e Topografia", W / 2, yTop + 14, { align: "center" });
+    doc.text("Nossas unidades", M, yTop + 10);
+
+    // Grade 2 colunas
+    const colGap = 14;
+    const colW = (W - 2 * M - colGap) / 2;
+    const lineH = 7.5;
+    const blockGap = 3;
+    const startY = yTop + 18;
+
+    const drawUnidade = (u: typeof UNIDADES_FIXAS[number], x: number, yStart: number): number => {
+      let cy = yStart;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.8);
+      doc.setTextColor(...VERDE);
+      doc.text(u.cidade, x, cy);
+      cy += lineH;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.3);
+      doc.setTextColor(...CINZA);
+      const drawField = (label: string, value: string) => {
+        const text = `${label}${value}`;
+        const lines = doc.splitTextToSize(text, colW) as string[];
+        lines.forEach((ln) => { doc.text(ln, x, cy); cy += lineH - 1; });
+      };
+      drawField("End.: ", u.endereco);
+      drawField("Tel.: ", u.telefone);
+      drawField("E-mail: ", u.email);
+      return cy + blockGap;
+    };
+
+    let leftY = startY;
+    let rightY = startY;
+    UNIDADES_FIXAS.forEach((u, idx) => {
+      const isLeft = idx % 2 === 0;
+      if (isLeft) {
+        leftY = drawUnidade(u, M, leftY);
+      } else {
+        rightY = drawUnidade(u, M + colW + colGap, rightY);
+      }
+    });
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
+    doc.setFontSize(6.5);
     doc.setTextColor(...CINZA);
-    doc.text(`Página ${pageNum} de ${totalPages}`, W - M, H - 12, { align: "right" });
+    doc.text(`Página ${pageNum} de ${totalPages}`, W - M, H - 6, { align: "right" });
   };
+
 
   // ============ helpers de cursor com quebra automática ============
   let y = HEADER_H + 18;

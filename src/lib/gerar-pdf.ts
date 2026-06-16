@@ -82,7 +82,7 @@ function valorPorExtenso(v: number): string {
   } catch { return formatBRL(v); }
 }
 
-export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escritorio | null): Promise<Blob> {
+export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escritorio | null, todosEscritorios?: Escritorio[]): Promise<Blob> {
   const esc = toInfo(escritorio);
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();

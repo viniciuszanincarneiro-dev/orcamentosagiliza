@@ -97,10 +97,18 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
 
   // ============ HEADER & FOOTER ============
   const HEADER_H = 70;
-  // Rodapé por página é enxuto (apenas linha + numeração);
-  // o bloco completo com a lista de escritórios é renderizado
-  // como conteúdo no final do documento.
-  const FOOTER_H = 36;
+  // Rodapé institucional fixo, presente em TODAS as páginas, com a lista
+  // de unidades da Agiliza em duas colunas.
+  const UNIDADES_FIXAS: Array<{ cidade: string; endereco: string; telefone: string; email: string }> = [
+    { cidade: "São Miguel do Oeste - SC", endereco: "Rua Marcilio Dias, 1539 - Centro, São Miguel do Oeste - SC", telefone: "(49) 3197-8160 / (49) 99990-9954 / (49) 99933-2552", email: "agiliza.smo@gmail.com" },
+    { cidade: "Maravilha - SC", endereco: "Avenida Anita Garibaldi, 340 - Centro, Maravilha - SC", telefone: "(49) 99154-1854", email: "agiliza.mh@gmail.com" },
+    { cidade: "Anchieta - SC", endereco: "Av. Anchieta, 330, Sala 01, Centro, 89970-000, Anchieta - SC", telefone: "(49) 9 9911-7869", email: "agiliza.anchieta@gmail.com" },
+    { cidade: "Paraíso - SC", endereco: "Rua Guilherme Schmidt, 834 - Centro, Paraíso - SC", telefone: "(49) 99188-5181", email: "agiliza.paraiso@gmail.com" },
+    { cidade: "Dionísio Cerqueira - SC", endereco: "Avenida Washington Luis, 646 - Centro, Dionísio Cerqueira - SC", telefone: "(49) 99192-2081", email: "agiliza.dc@gmail.com" },
+  ];
+  // 5 unidades em 2 colunas → 3 linhas. Cada bloco: cidade + 3 linhas de dados.
+  const FOOTER_H = 105;
+
 
   const addHeader = () => {
     doc.setFont("helvetica", "bold");

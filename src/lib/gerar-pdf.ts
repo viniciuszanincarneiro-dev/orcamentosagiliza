@@ -97,47 +97,59 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
 
   // ============ HEADER & FOOTER ============
   const HEADER_H = 70;
-  const FOOTER_H = 110;
+  const FOOTER_H = 150;
 
   const addHeader = () => {
-    // Faixa de texto de identificação
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...VERDE);
     doc.text("AGILIZA ASSESSORIA EM DOCUMENTOS | TOPOGRAFIA | AMBIENTAL", W / 2, 30, { align: "center" });
-    // Logo discreto à esquerda
     try { doc.addImage(logo, "PNG", M, 38, 90, 30); } catch { /* noop */ }
-    // Linha
     doc.setDrawColor(...VERDE);
     doc.setLineWidth(0.7);
     doc.line(M, HEADER_H, W - M, HEADER_H);
   };
 
   const addFooter = (pageNum: number, totalPages: number) => {
-    const y = H - FOOTER_H;
+    const yTop = H - FOOTER_H;
     doc.setDrawColor(...VERDE);
     doc.setLineWidth(0.5);
-    doc.line(M, y, W - M, y);
+    doc.line(M, yTop, W - M, yTop);
+
+    let cy = yTop + 14;
+    // Nome da empresa (identidade fixa)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...VERDE);
+    doc.text("Agiliza Assessoria em Documentos e Topografia", W / 2, cy, { align: "center" });
+    cy += 13;
+
+    // Dados dinâmicos do escritório responsável
     doc.setFontSize(8);
-    let cy = y + 14;
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...VERDE);
-    doc.text(esc.cidade, M, cy);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...CINZA);
-    doc.text(` - ${esc.endereco}`, M + doc.getTextWidth(esc.cidade), cy);
-    cy += 11;
-    doc.text(`${esc.telefone}   ${esc.email}`, M, cy);
-    cy += 11;
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...VERDE);
-    doc.text(esc.razao, M, cy);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...CINZA);
-    doc.text(` · CNPJ ${esc.cnpj}`, M + doc.getTextWidth(esc.razao), cy);
+    const drawLine = (label: string, value: string) => {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...VERDE);
+      const lw = doc.getTextWidth(label);
+      doc.text(label, M, cy);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...CINZA);
+      const vLines = doc.splitTextToSize(value, usableW - lw) as string[];
+      vLines.forEach((ln, i) => {
+        doc.text(ln, i === 0 ? M + lw : M, cy);
+        if (i < vLines.length - 1) cy += 10;
+      });
+      cy += 11;
+    };
+
+    drawLine("Unidade: ", esc.cidade);
+    drawLine("CNPJ: ", esc.cnpj);
+    drawLine("Endereço: ", esc.endereco);
+    drawLine("E-mail: ", esc.email);
+    drawLine("Telefone: ", esc.telefone);
+
     doc.setFontSize(7);
     doc.setTextColor(...CINZA);
-    doc.text(`${pageNum} / ${totalPages}`, W - M, H - 18, { align: "right" });
+    doc.text(`${pageNum} / ${totalPages}`, W - M, H - 12, { align: "right" });
   };
 
   // ============ helpers de cursor com quebra automática ============

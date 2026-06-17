@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect, Link, useRouter, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, FilePlus2, History, Settings, LogOut, Menu, AlertTriangle, BookOpen, TrendingUp, Trash2, Activity, Building2, Users, Receipt } from "lucide-react";
+import { LayoutDashboard, FilePlus2, History, Settings, LogOut, Menu, AlertTriangle, BookOpen, TrendingUp, Trash2, Activity, Building2, Users, Receipt, Settings2 } from "lucide-react";
 import { useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +36,7 @@ const adminNav = [
   { to: "/escritorios", label: "Escritórios", icon: Building2 },
   { to: "/usuarios", label: "Usuários", icon: Users },
   { to: "/itbi", label: "ITBI", icon: Receipt },
+  { to: "/admin-tabelas", label: "Tabelas e Valores", icon: Settings2 },
 ] as const;
 
 function AppLayout() {

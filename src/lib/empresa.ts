@@ -163,9 +163,9 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "ASSESSORIA DOCUMENTAL E PROTOCOLO MUNICIPAL", valor_base: 1200 },
   ],
   remembramento: [
-    { descricao: "LEVANTAMENTO TOPOGRÁFICO E UNIFICAÇÃO", auto: "topografia" },
-    { descricao: "REGISTRO DE IMÓVEIS (REMEMBRAMENTO)", auto: "registro" },
-    { descricao: "ASSESSORIA DOCUMENTAL", valor_base: 900 },
+    { descricao: "REMEMBRAMENTO", valor_base: 1800 },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", valor_base: 200 },
   ],
   usucapiao_extrajudicial: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO E MEMORIAL DESCRITIVO", auto: "topografia" },

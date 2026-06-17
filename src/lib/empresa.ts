@@ -66,7 +66,7 @@ export const DESCRICAO_PADRAO: Record<string, string> = {
   desmembramento:
     "Inclui levantamento topográfico, elaboração de mapas e memoriais descritivos, assessoria documental e encaminhamento ao Registro de Imóveis para o desmembramento do imóvel em duas ou mais partes.",
   remembramento:
-    "Inclui levantamento topográfico, elaboração de mapas e memoriais descritivos, assessoria documental e encaminhamento ao Registro de Imóveis para a unificação (remembramento) de dois ou mais imóveis em um único.",
+    "Remembramento urbano é a unificação de dois ou mais lotes para formar um único lote maior.\n\nÉ o processo inverso ao desmembramento, onde um lote é dividido em vários.\n\nO remembramento permite a criação de áreas maiores para construções ou melhor aproveitamento de espaços urbanos.",
   usucapiao_extrajudicial:
     "Inclui levantamento topográfico, elaboração de memorial descritivo, coleta de assinaturas de confrontantes, assessoria documental e encaminhamento ao tabelionato e Registro de Imóveis.",
   inventario_extrajudicial:

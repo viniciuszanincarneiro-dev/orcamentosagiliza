@@ -77,9 +77,9 @@ export const DESCRICAO_PADRAO: Record<string, string> = {
     "Assessoria completa em processo de compra e venda de imóvel, incluindo elaboração de contrato, levantamento de certidões, conferência documental e encaminhamento ao Registro de Imóveis para lavratura da escritura e registro da transmissão.",
   outros: "Serviços conforme descrição abaixo.",
   desdobro:
-    "Inclui levantamento topográfico, elaboração de planta e memoriais descritivos, assessoria documental e protocolo municipal e no Registro de Imóveis para o desdobro do lote.",
+    "O Desdobro de Imóvel Urbano é realizado com intuito de dividir um único terreno em lotes menores, desde que sejam edificáveis, permitindo assim a venda, doação ou construção de novas edificações.\n\nEntretanto, o parcelamento do solo para fins de Desdobro de Imóvel Urbano, deverá respeitar os seguintes quesitos:\n\n• Metragem mínima conforme zona pertencente e de acordo com o Plano Diretor de cada município;\n• Viabilidade de fornecimento de água potável e energia elétrica;\n• Acesso à via pública.",
   desmembramento_incra:
-    "Inclui levantamento topográfico georreferenciado, locação de marcos, certificação INCRA, elaboração de planta e memoriais descritivos das parcelas e encaminhamento ao Registro de Imóveis.",
+    "O desmembramento de um imóvel com autorização do INCRA é um procedimento técnico que permite subdividir uma propriedade rural em frações menores.\n\nA autorização pelo INCRA é necessária nas seguintes hipóteses:\n\na) Empreendimentos imobiliários rurais;\nb) Desmembramento de parcela de imóvel rural sem que haja título de transmissão que justifique o parcelamento;\nc) Desmembramento que resulte em área inferior à fração mínima de parcelamento.",
   estremacao:
     "Inclui levantamento topográfico, elaboração de planta e memorial descritivo, assessoria documental e encaminhamento ao Registro de Imóveis para a estremação da fração ideal em área certa e determinada.",
   doacao:

@@ -185,15 +185,15 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
   ],
   outros: [],
   desdobro: [
-    { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },
-    { descricao: "REGISTRO DE IMÓVEIS (DESDOBRO)", auto: "registro" },
-    { descricao: "ASSESSORIA DOCUMENTAL E PROTOCOLO MUNICIPAL", valor_base: 1200 },
+    { descricao: "DESDOBRO URBANO", valor_base: 3200 },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "ASSINATURAS, CERTIDÕES E NEGATIVAS", valor_base: 420 },
   ],
   desmembramento_incra: [
-    { descricao: "LEVANTAMENTO TOPOGRÁFICO GEORREFERENCIADO", auto: "topografia" },
-    { descricao: "LOCAÇÃO DE MARCOS E CERTIFICAÇÃO INCRA", valor_base: 1800 },
-    { descricao: "REGISTRO DE IMÓVEIS (DESMEMBRAMENTO)", auto: "registro" },
-    { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", auto: "ccir" },
+    { descricao: "DESMEMBRAMENTO INCRA", valor_base: 3400 },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", valor_base: 450 },
+    { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", valor_base: 250 },
   ],
   estremacao: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO", auto: "topografia" },

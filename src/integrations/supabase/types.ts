@@ -119,6 +119,45 @@ export type Database = {
         }
         Relationships: []
       }
+      itcmd_aliquotas: {
+        Row: {
+          aliquota: number
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          faixa_max: number | null
+          faixa_min: number
+          id: string
+          tipo: string
+          uf: string
+          updated_at: string
+        }
+        Insert: {
+          aliquota: number
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          faixa_max?: number | null
+          faixa_min?: number
+          id?: string
+          tipo: string
+          uf?: string
+          updated_at?: string
+        }
+        Update: {
+          aliquota?: number
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          faixa_max?: number | null
+          faixa_min?: number
+          id?: string
+          tipo?: string
+          uf?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orcamentos: {
         Row: {
           cliente_telefone: string | null
@@ -275,6 +314,108 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tabela_honorarios: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string
+          descricao: string
+          id: string
+          ordem: number
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string
+          descricao: string
+          id?: string
+          ordem?: number
+          updated_at?: string
+          valor?: number
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string
+          descricao?: string
+          id?: string
+          ordem?: number
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
+      }
+      tabela_registro_imoveis: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          faixa_max: number | null
+          faixa_min: number
+          id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          faixa_max?: number | null
+          faixa_min?: number
+          id?: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          faixa_max?: number | null
+          faixa_min?: number
+          id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
+      }
+      tabela_tabelionato: {
+        Row: {
+          ativo: boolean
+          ato: string
+          created_at: string
+          descricao: string | null
+          faixa_max: number | null
+          faixa_min: number
+          id: string
+          updated_at: string
+          valor: number
+        }
+        Insert: {
+          ativo?: boolean
+          ato: string
+          created_at?: string
+          descricao?: string | null
+          faixa_max?: number | null
+          faixa_min?: number
+          id?: string
+          updated_at?: string
+          valor: number
+        }
+        Update: {
+          ativo?: boolean
+          ato?: string
+          created_at?: string
+          descricao?: string | null
+          faixa_max?: number | null
+          faixa_min?: number
+          id?: string
+          updated_at?: string
+          valor?: number
+        }
+        Relationships: []
       }
       tabela_valores: {
         Row: {

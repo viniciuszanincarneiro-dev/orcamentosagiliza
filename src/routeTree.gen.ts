@@ -22,6 +22,7 @@ import { Route as AppFollowUpRouteImport } from './routes/_app.follow-up'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppEscritoriosRouteImport } from './routes/_app.escritorios'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppAdminTabelasRouteImport } from './routes/_app.admin-tabelas'
 import { Route as AppOrcamentosIndexRouteImport } from './routes/_app.orcamentos.index'
 import { Route as AppOrcamentosNovoRouteImport } from './routes/_app.orcamentos.novo'
 import { Route as AppOrcamentosIdRouteImport } from './routes/_app.orcamentos.$id'
@@ -90,6 +91,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminTabelasRoute = AppAdminTabelasRouteImport.update({
+  id: '/admin-tabelas',
+  path: '/admin-tabelas',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOrcamentosIndexRoute = AppOrcamentosIndexRouteImport.update({
   id: '/orcamentos/',
   path: '/orcamentos/',
@@ -109,6 +115,7 @@ const AppOrcamentosIdRoute = AppOrcamentosIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin-tabelas': typeof AppAdminTabelasRoute
   '/dashboard': typeof AppDashboardRoute
   '/escritorios': typeof AppEscritoriosRoute
   '/financeiro': typeof AppFinanceiroRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin-tabelas': typeof AppAdminTabelasRoute
   '/dashboard': typeof AppDashboardRoute
   '/escritorios': typeof AppEscritoriosRoute
   '/financeiro': typeof AppFinanceiroRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/_app/admin-tabelas': typeof AppAdminTabelasRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/escritorios': typeof AppEscritoriosRoute
   '/_app/financeiro': typeof AppFinanceiroRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/admin-tabelas'
     | '/dashboard'
     | '/escritorios'
     | '/financeiro'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/admin-tabelas'
     | '/dashboard'
     | '/escritorios'
     | '/financeiro'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/login'
+    | '/_app/admin-tabelas'
     | '/_app/dashboard'
     | '/_app/escritorios'
     | '/_app/financeiro'
@@ -313,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin-tabelas': {
+      id: '/_app/admin-tabelas'
+      path: '/admin-tabelas'
+      fullPath: '/admin-tabelas'
+      preLoaderRoute: typeof AppAdminTabelasRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/orcamentos/': {
       id: '/_app/orcamentos/'
       path: '/orcamentos'
@@ -338,6 +357,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAdminTabelasRoute: typeof AppAdminTabelasRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppEscritoriosRoute: typeof AppEscritoriosRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
@@ -354,6 +374,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminTabelasRoute: AppAdminTabelasRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppEscritoriosRoute: AppEscritoriosRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,

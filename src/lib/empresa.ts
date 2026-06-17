@@ -45,8 +45,8 @@ export const TIPO_TITULOS: Record<string, string> = {
   inventario_extrajudicial: "INVENTÁRIO EXTRAJUDICIAL",
   compra_venda: "COMPRA E VENDA",
   outros: "PRESTAÇÃO DE SERVIÇOS",
-  desdobro: "DESDOBRO DE IMÓVEL",
-  desmembramento_incra: "DESMEMBRAMENTO COM CERTIFICAÇÃO INCRA",
+  desdobro: "DESDOBRO URBANO",
+  desmembramento_incra: "DESMEMBRAMENTO COM AUTORIZAÇÃO INCRA",
   estremacao: "ESTREMAÇÃO DE IMÓVEL",
   doacao: "DOAÇÃO DE IMÓVEL",
   doacao_usufruto: "DOAÇÃO DE IMÓVEL COM RESERVA DE USUFRUTO",
@@ -66,7 +66,7 @@ export const DESCRICAO_PADRAO: Record<string, string> = {
   desmembramento:
     "Inclui levantamento topográfico, elaboração de mapas e memoriais descritivos, assessoria documental e encaminhamento ao Registro de Imóveis para o desmembramento do imóvel em duas ou mais partes.",
   remembramento:
-    "Inclui levantamento topográfico, elaboração de mapas e memoriais descritivos, assessoria documental e encaminhamento ao Registro de Imóveis para a unificação (remembramento) de dois ou mais imóveis em um único.",
+    "Remembramento urbano é a unificação de dois ou mais lotes para formar um único lote maior.\n\nÉ o processo inverso ao desmembramento, onde um lote é dividido em vários.\n\nO remembramento permite a criação de áreas maiores para construções ou melhor aproveitamento de espaços urbanos.",
   usucapiao_extrajudicial:
     "Inclui levantamento topográfico, elaboração de memorial descritivo, coleta de assinaturas de confrontantes, assessoria documental e encaminhamento ao tabelionato e Registro de Imóveis.",
   inventario_extrajudicial:
@@ -77,9 +77,9 @@ export const DESCRICAO_PADRAO: Record<string, string> = {
     "Assessoria completa em processo de compra e venda de imóvel, incluindo elaboração de contrato, levantamento de certidões, conferência documental e encaminhamento ao Registro de Imóveis para lavratura da escritura e registro da transmissão.",
   outros: "Serviços conforme descrição abaixo.",
   desdobro:
-    "Inclui levantamento topográfico, elaboração de planta e memoriais descritivos, assessoria documental e protocolo municipal e no Registro de Imóveis para o desdobro do lote.",
+    "O Desdobro de Imóvel Urbano é realizado com intuito de dividir um único terreno em lotes menores, desde que sejam edificáveis, permitindo assim a venda, doação ou construção de novas edificações.\n\nEntretanto, o parcelamento do solo para fins de Desdobro de Imóvel Urbano, deverá respeitar os seguintes quesitos:\n\n• Metragem mínima conforme zona pertencente e de acordo com o Plano Diretor de cada município;\n• Viabilidade de fornecimento de água potável e energia elétrica;\n• Acesso à via pública.",
   desmembramento_incra:
-    "Inclui levantamento topográfico georreferenciado, locação de marcos, certificação INCRA, elaboração de planta e memoriais descritivos das parcelas e encaminhamento ao Registro de Imóveis.",
+    "O desmembramento de um imóvel com autorização do INCRA é um procedimento técnico que permite subdividir uma propriedade rural em frações menores.\n\nA autorização pelo INCRA é necessária nas seguintes hipóteses:\n\na) Empreendimentos imobiliários rurais;\nb) Desmembramento de parcela de imóvel rural sem que haja título de transmissão que justifique o parcelamento;\nc) Desmembramento que resulte em área inferior à fração mínima de parcelamento.",
   estremacao:
     "Inclui levantamento topográfico, elaboração de planta e memorial descritivo, assessoria documental e encaminhamento ao Registro de Imóveis para a estremação da fração ideal em área certa e determinada.",
   doacao:
@@ -111,7 +111,11 @@ export const METODOLOGIA_SERVICO: Record<string, string> = {
   desmembramento:
     "O desmembramento é o procedimento pelo qual um imóvel é dividido em duas ou mais partes autônomas, cada uma com matrícula própria. A metodologia compreende: (i) levantamento topográfico da gleba originária e definição técnica das novas divisões; (ii) elaboração de planta de desmembramento, memoriais descritivos individualizados das parcelas resultantes e da área remanescente; (iii) assessoria documental e protocolo municipal (quando exigido); (iv) certificação no INCRA quando se tratar de imóvel rural; (v) encaminhamento e acompanhamento do registro junto ao Cartório de Registro de Imóveis para abertura das novas matrículas.",
   remembramento:
-    "O remembramento (ou unificação) é o procedimento técnico-jurídico pelo qual dois ou mais imóveis contíguos, pertencentes ao mesmo proprietário, são unificados em um único imóvel com matrícula única. A metodologia compreende: (i) análise documental das matrículas originárias e levantamento topográfico do perímetro unificado; (ii) elaboração de planta e memorial descritivo do imóvel resultante; (iii) certificação no INCRA quando se tratar de imóvel rural; (iv) assessoria documental e protocolo municipal (quando exigido); (v) encaminhamento e acompanhamento do registro junto ao Cartório de Registro de Imóveis para abertura da nova matrícula unificada.",
+    "No presente orçamento está incluso os seguintes serviços:\n\nLevantamento Topográfico, Locação, Assessoria Documental (elaboração de mapas, memoriais descritivos, TRT, requerimentos organização dos documentos pessoais das partes e demais documentos que compõe o processo), Coleta de Assinaturas (proprietários e confrontantes), requerimento de viabilidade junto ao Prefeitura, CASAN e CELESC, encaminhamento dos documentos ao Cartório de Registro de Imóveis.",
+  desdobro:
+    "No presente orçamento está incluso os seguintes serviços:\n\nEncaminhamento de Viabilidade para Desdobro do Lote junto à Prefeitura Municipal, CASAN e CELESC;\n\nSendo viável o desdobro, realiza-se o Levantamento Topográfico, Locação, Assessoria Documental (elaboração de mapas, memoriais descritivos, TRT, requerimentos e demais documentos que compõe o processo), Coleta de Assinaturas dos proprietários;\n\nProtocolo do Projeto na Prefeitura Municipal e, por fim, Protocolo junto ao Registro de Imóveis.",
+  desmembramento_incra:
+    "No presente orçamento está incluso os seguintes serviços:\n\nLevantamento Topográfico, Locação, Assessoria Documental (elaboração de mapas, memoriais descritivos, TRT, requerimentos e demais documentos que compõe o processo), Coleta de Assinaturas (proprietários e confrontantes), encaminhamento dos documentos ao Tabelionato de Notas e ao Cartório de Registro de Imóveis e atualização dos cadastros rurais CCIR, ITR e CAR.",
   levantamento_topografico:
     "O levantamento topográfico planimétrico/altimétrico consiste na coleta de dados em campo destinada à representação gráfica e analítica do imóvel, suas medidas, limites, acidentes naturais e benfeitorias. A metodologia compreende: (i) reconhecimento da área e implantação de poligonal de apoio; (ii) coleta de pontos planimétricos e altimétricos com estação total e/ou GNSS; (iii) processamento dos dados; (iv) elaboração de planta topográfica e memorial descritivo, com emissão da ART/TRT correspondente.",
   usucapiao_extrajudicial:
@@ -159,9 +163,9 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "ASSESSORIA DOCUMENTAL E PROTOCOLO MUNICIPAL", valor_base: 1200 },
   ],
   remembramento: [
-    { descricao: "LEVANTAMENTO TOPOGRÁFICO E UNIFICAÇÃO", auto: "topografia" },
-    { descricao: "REGISTRO DE IMÓVEIS (REMEMBRAMENTO)", auto: "registro" },
-    { descricao: "ASSESSORIA DOCUMENTAL", valor_base: 900 },
+    { descricao: "REMEMBRAMENTO", valor_base: 1800 },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", valor_base: 200 },
   ],
   usucapiao_extrajudicial: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO E MEMORIAL DESCRITIVO", auto: "topografia" },
@@ -181,15 +185,15 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
   ],
   outros: [],
   desdobro: [
-    { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },
-    { descricao: "REGISTRO DE IMÓVEIS (DESDOBRO)", auto: "registro" },
-    { descricao: "ASSESSORIA DOCUMENTAL E PROTOCOLO MUNICIPAL", valor_base: 1200 },
+    { descricao: "DESDOBRO URBANO", valor_base: 3200 },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "ASSINATURAS, CERTIDÕES E NEGATIVAS", valor_base: 420 },
   ],
   desmembramento_incra: [
-    { descricao: "LEVANTAMENTO TOPOGRÁFICO GEORREFERENCIADO", auto: "topografia" },
-    { descricao: "LOCAÇÃO DE MARCOS E CERTIFICAÇÃO INCRA", valor_base: 1800 },
-    { descricao: "REGISTRO DE IMÓVEIS (DESMEMBRAMENTO)", auto: "registro" },
-    { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", auto: "ccir" },
+    { descricao: "DESMEMBRAMENTO INCRA", valor_base: 3400 },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", valor_base: 450 },
+    { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", valor_base: 250 },
   ],
   estremacao: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO", auto: "topografia" },

@@ -443,6 +443,28 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
   });
 
+  // ITBI — incluído apenas quando o orçamento tem serviço com incidência
+  const temITBI = blocos.some((b) => servicoTemITBI(b.tipo_servico));
+  const itbiValor = temITBI ? Number(orc.itbi_estimado ?? 0) || 0 : 0;
+  if (temITBI && itbiValor > 0) {
+    ensureSpace(36);
+    autoTable(doc, {
+      startY: y,
+      body: [[
+        { content: "ITBI:", styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO } },
+        { content: formatBRL(itbiValor), styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO, halign: "right" } },
+      ]],
+      theme: "grid",
+      margin: { left: M, right: M, top: HEADER_H + 18, bottom: FOOTER_H + 14 },
+      rowPageBreak: "avoid",
+      styles: { font: "helvetica", fontSize: 10, cellPadding: 6, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
+      columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },
+      tableWidth: "auto",
+      didDrawPage: (d) => { if (d.pageNumber > 1) addHeader(); },
+    });
+    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+  }
+
   // VALOR TOTAL DO ORÇAMENTO
   ensureSpace(36);
   autoTable(doc, {

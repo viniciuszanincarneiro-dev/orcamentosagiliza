@@ -471,10 +471,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         status,
         validade_dias: data.validade_dias ?? 30,
         ultimo_contato: data.ultimo_contato ?? null,
-        itbi_municipio: data.itbi_municipio ?? null,
-        itbi_valor_declarado: data.itbi_valor_declarado ?? null,
-        itbi_aliquota: data.itbi_aliquota ?? null,
-        itbi_estimado: data.itbi_estimado ?? null,
+        itbi_municipio: temITBI ? (data.itbi_municipio ?? null) : null,
+        itbi_valor_declarado: temITBI ? (data.itbi_valor_declarado ?? null) : null,
+        itbi_aliquota: temITBI ? (data.itbi_aliquota ?? null) : null,
+        itbi_estimado: temITBI ? (data.itbi_estimado ?? null) : null,
       };
       // Marca data de envio automaticamente na primeira vez que vai para "enviado"
       if (status === "enviado" && !data.data_envio) {

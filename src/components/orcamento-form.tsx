@@ -374,7 +374,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     () => servicos.map((s) => s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0)),
     [servicos],
   );
-  const total = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
+  // ITBI só se aplica quando algum serviço do orçamento exige (ex.: compra e venda, doação, permuta…)
+  const temITBI = useMemo(
+    () => servicos.some((s) => servicoTemITBI(s.tipo_servico)),
+    [servicos],
+  );
+  const itbiNoTotal = temITBI ? Number(data.itbi_estimado ?? 0) || 0 : 0;
+  const totalServicos = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
+  const total = totalServicos + itbiNoTotal;
 
   // Explicação do RI baseado no valor declarado do imóvel e no fator interno
   const explicacaoRI = useMemo(

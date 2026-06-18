@@ -34,6 +34,26 @@ export const TIPOS_SERVICO = [
   { value: "usucapiao_extrajudicial", label: "Usucapião" },
 ] as const;
 
+/**
+ * Serviços nos quais há incidência de ITBI (Imposto de Transmissão de Bens Imóveis).
+ * Para esses tipos, o ITBI é exibido no formulário, calculado pela alíquota do município
+ * e SOMADO ao valor total do orçamento.
+ * Para os demais tipos, o ITBI é completamente ignorado (não exibido, não calculado).
+ */
+export const SERVICOS_COM_ITBI: ReadonlySet<string> = new Set([
+  "compra_venda",
+  "doacao",
+  "doacao_usufruto",
+  "permuta",
+  "divisao_amigavel",
+  "inventario_extrajudicial",
+  "usucapiao_extrajudicial",
+]);
+
+export function servicoTemITBI(tipo: string): boolean {
+  return SERVICOS_COM_ITBI.has(tipo);
+}
+
 export const TIPO_TITULOS: Record<string, string> = {
   retificacao_geo: "RETIFICAÇÃO ADMINISTRATIVA COM GEORREFERENCIAMENTO CERTIFICADO PELO INCRA",
   retificacao_urbana: "RETIFICAÇÃO ADMINISTRATIVA DE IMÓVEL URBANO",

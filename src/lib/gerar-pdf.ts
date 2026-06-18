@@ -443,36 +443,27 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
   });
 
-  // ITBI — incluído apenas quando o orçamento tem serviço com incidência
+  // ITBI + VALOR TOTAL — tabela financeira única. ITBI entra como linha
+  // (nunca em tabela separada) e apenas quando o serviço tem incidência.
   const temITBI = blocos.some((b) => servicoTemITBI(b.tipo_servico));
   const itbiValor = temITBI ? Number(orc.itbi_estimado ?? 0) || 0 : 0;
-  if (temITBI && itbiValor > 0) {
-    ensureSpace(36);
-    autoTable(doc, {
-      startY: y,
-      body: [[
-        { content: "ITBI:", styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO } },
-        { content: formatBRL(itbiValor), styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO, halign: "right" } },
-      ]],
-      theme: "grid",
-      margin: { left: M, right: M, top: HEADER_H + 18, bottom: FOOTER_H + 14 },
-      rowPageBreak: "avoid",
-      styles: { font: "helvetica", fontSize: 10, cellPadding: 6, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
-      columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },
-      tableWidth: "auto",
-      didDrawPage: (d) => { if (d.pageNumber > 1) addHeader(); },
-    });
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
-  }
 
-  // VALOR TOTAL DO ORÇAMENTO
-  ensureSpace(36);
+  const totalBody: RowInput[] = [];
+  if (temITBI && itbiValor > 0) {
+    totalBody.push([
+      { content: "ITBI:", styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO, fontSize: 10, cellPadding: 6 } },
+      { content: formatBRL(itbiValor), styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO, halign: "right", fontSize: 10, cellPadding: 6 } },
+    ]);
+  }
+  totalBody.push([
+    { content: "VALOR TOTAL DO ORÇAMENTO:", styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255] } },
+    { content: formatBRL(orc.valor_total), styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], halign: "right" } },
+  ]);
+
+  ensureSpace(36 + (temITBI && itbiValor > 0 ? 24 : 0));
   autoTable(doc, {
     startY: y,
-    body: [[
-      { content: "VALOR TOTAL DO ORÇAMENTO:", styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255] } },
-      { content: formatBRL(orc.valor_total), styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], halign: "right" } },
-    ]],
+    body: totalBody,
     theme: "grid",
     margin: { left: M, right: M, top: HEADER_H + 18, bottom: FOOTER_H + 14 },
     rowPageBreak: "avoid",

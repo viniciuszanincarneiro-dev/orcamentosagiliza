@@ -16,7 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
-import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO } from "@/lib/empresa";
+import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO, servicoTemITBI } from "@/lib/empresa";
 import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
 // gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";

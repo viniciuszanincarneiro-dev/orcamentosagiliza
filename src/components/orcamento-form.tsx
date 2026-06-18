@@ -436,7 +436,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       const statusMudou = status !== data.status;
       // Aglutina itens de todos os blocos (mantém compat com lucro/financeiro)
       const itensFlat: ItemOrcamento[] = servicos.flatMap((s) => s.itens);
-      const totalAtual = itensFlat.reduce((a, b) => a + (Number(b.valor) || 0), 0);
+      const totalServicosAtual = itensFlat.reduce((a, b) => a + (Number(b.valor) || 0), 0);
+      const totalAtual = totalServicosAtual + (temITBI ? Number(data.itbi_estimado ?? 0) || 0 : 0);
       // Observações: concatena observações de cada bloco quando houver mais de uma
       const obsFromBlocos = servicos
         .map((s, i) => s.observacoes?.trim() ? `[${i + 1}] ${s.observacoes.trim()}` : "")

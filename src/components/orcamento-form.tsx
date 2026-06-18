@@ -853,12 +853,13 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       </Card>
 
 
-      {/* ============ ITBI (estimativa informativa, não soma ao total) ============ */}
+      {/* ============ ITBI (somente para serviços com incidência; somado ao total) ============ */}
+      {temITBI ? (
       <Card>
         <CardHeader>
-          <CardTitle>ITBI — Estimativa</CardTitle>
+          <CardTitle>ITBI — Imposto de Transmissão</CardTitle>
           <CardDescription>
-            Cálculo aproximado do Imposto de Transmissão. Valor informativo, <b>não somado</b> ao orçamento.
+            Calculado pela alíquota do município. O valor é <b>somado ao total do orçamento</b>.
           </CardDescription>
         </CardHeader>
         <CardContent>

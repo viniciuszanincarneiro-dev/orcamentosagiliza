@@ -951,13 +951,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                 <div className="text-xl font-semibold tabular-nums">{formatBRL(Number(data.itbi_estimado))}</div>
               </div>
               <div className="text-xs text-muted-foreground text-right">
-                Estimativa de custo de transferência.<br />
-                Não incluída no valor do orçamento.
+                Imposto de Transmissão de Bens Imóveis.<br />
+                Incluído no valor total do orçamento.
               </div>
             </div>
           ) : null}
         </CardContent>
       </Card>
+      ) : null}
 
 
       {/* ============ SERVIÇOS DO ORÇAMENTO (multisserviço) ============ */}

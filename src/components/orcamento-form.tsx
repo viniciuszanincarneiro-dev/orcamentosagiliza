@@ -16,7 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
-import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO } from "@/lib/empresa";
+import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO, servicoTemITBI } from "@/lib/empresa";
 import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
 // gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
@@ -374,7 +374,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     () => servicos.map((s) => s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0)),
     [servicos],
   );
-  const total = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
+  // ITBI só se aplica quando algum serviço do orçamento exige (ex.: compra e venda, doação, permuta…)
+  const temITBI = useMemo(
+    () => servicos.some((s) => servicoTemITBI(s.tipo_servico)),
+    [servicos],
+  );
+  const itbiNoTotal = temITBI ? Number(data.itbi_estimado ?? 0) || 0 : 0;
+  const totalServicos = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
+  const total = totalServicos + itbiNoTotal;
 
   // Explicação do RI baseado no valor declarado do imóvel e no fator interno
   const explicacaoRI = useMemo(
@@ -429,7 +436,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       const statusMudou = status !== data.status;
       // Aglutina itens de todos os blocos (mantém compat com lucro/financeiro)
       const itensFlat: ItemOrcamento[] = servicos.flatMap((s) => s.itens);
-      const totalAtual = itensFlat.reduce((a, b) => a + (Number(b.valor) || 0), 0);
+      const totalServicosAtual = itensFlat.reduce((a, b) => a + (Number(b.valor) || 0), 0);
+      const totalAtual = totalServicosAtual + (temITBI ? Number(data.itbi_estimado ?? 0) || 0 : 0);
       // Observações: concatena observações de cada bloco quando houver mais de uma
       const obsFromBlocos = servicos
         .map((s, i) => s.observacoes?.trim() ? `[${i + 1}] ${s.observacoes.trim()}` : "")
@@ -464,10 +472,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         status,
         validade_dias: data.validade_dias ?? 30,
         ultimo_contato: data.ultimo_contato ?? null,
-        itbi_municipio: data.itbi_municipio ?? null,
-        itbi_valor_declarado: data.itbi_valor_declarado ?? null,
-        itbi_aliquota: data.itbi_aliquota ?? null,
-        itbi_estimado: data.itbi_estimado ?? null,
+        itbi_municipio: temITBI ? (data.itbi_municipio ?? null) : null,
+        itbi_valor_declarado: temITBI ? (data.itbi_valor_declarado ?? null) : null,
+        itbi_aliquota: temITBI ? (data.itbi_aliquota ?? null) : null,
+        itbi_estimado: temITBI ? (data.itbi_estimado ?? null) : null,
       };
       // Marca data de envio automaticamente na primeira vez que vai para "enviado"
       if (status === "enviado" && !data.data_envio) {
@@ -845,12 +853,13 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       </Card>
 
 
-      {/* ============ ITBI (estimativa informativa, não soma ao total) ============ */}
+      {/* ============ ITBI (somente para serviços com incidência; somado ao total) ============ */}
+      {temITBI ? (
       <Card>
         <CardHeader>
-          <CardTitle>ITBI — Estimativa</CardTitle>
+          <CardTitle>ITBI — Imposto de Transmissão</CardTitle>
           <CardDescription>
-            Cálculo aproximado do Imposto de Transmissão. Valor informativo, <b>não somado</b> ao orçamento.
+            Calculado pela alíquota do município. O valor é <b>somado ao total do orçamento</b>.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -942,13 +951,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                 <div className="text-xl font-semibold tabular-nums">{formatBRL(Number(data.itbi_estimado))}</div>
               </div>
               <div className="text-xs text-muted-foreground text-right">
-                Estimativa de custo de transferência.<br />
-                Não incluída no valor do orçamento.
+                Imposto de Transmissão de Bens Imóveis.<br />
+                Incluído no valor total do orçamento.
               </div>
             </div>
           ) : null}
         </CardContent>
       </Card>
+      ) : null}
 
 
       {/* ============ SERVIÇOS DO ORÇAMENTO (multisserviço) ============ */}
@@ -1050,6 +1060,18 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           })}
 
           <Separator className="my-2" />
+          {temITBI && itbiNoTotal > 0 ? (
+            <div className="flex justify-end items-baseline gap-4 pr-2">
+              <span className="text-sm uppercase text-muted-foreground tracking-wider">Subtotal serviços</span>
+              <span className="text-base font-medium tabular-nums">{formatBRL(totalServicos)}</span>
+            </div>
+          ) : null}
+          {temITBI && itbiNoTotal > 0 ? (
+            <div className="flex justify-end items-baseline gap-4 pr-2">
+              <span className="text-sm uppercase text-muted-foreground tracking-wider">ITBI</span>
+              <span className="text-base font-medium tabular-nums">{formatBRL(itbiNoTotal)}</span>
+            </div>
+          ) : null}
           <div className="flex justify-end items-baseline gap-4 pr-2">
             <span className="text-sm uppercase text-muted-foreground tracking-wider">Total geral</span>
             <span className="text-2xl font-bold text-primary tabular-nums">{formatBRL(total)}</span>

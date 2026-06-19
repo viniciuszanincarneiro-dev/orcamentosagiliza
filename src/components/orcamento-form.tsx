@@ -885,7 +885,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         <CardHeader>
           <CardTitle>ITBI — Imposto de Transmissão</CardTitle>
           <CardDescription>
-            Calculado pela alíquota do município. O valor é <b>somado ao total do orçamento</b>.
+            Calculado sobre a <b>parte transmitida</b> do imóvel (área ideal / fração).
+            O valor é somado ao total do orçamento.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -896,14 +897,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                 value={data.itbi_municipio ?? ""}
                 onValueChange={(v) => {
                   const m = itbiMunicipios?.find((x) => x.nome === v);
-                  setData((d) => {
-                    const aliquota = m ? Number(m.aliquota) : (d.itbi_aliquota ?? null);
-                    const valorDecl = d.itbi_valor_declarado ?? d.imovel_valor_avaliado ?? null;
-                    const estim = valorDecl != null && aliquota != null
-                      ? Number(((Number(valorDecl) * Number(aliquota)) / 100).toFixed(2))
-                      : null;
-                    return { ...d, itbi_municipio: v, itbi_aliquota: aliquota, itbi_valor_declarado: valorDecl, itbi_estimado: estim };
-                  });
+                  setData((d) => ({
+                    ...d,
+                    itbi_municipio: v,
+                    itbi_aliquota: m ? Number(m.aliquota) : (d.itbi_aliquota ?? null),
+                    itbi_valor_declarado: d.itbi_valor_declarado ?? d.imovel_valor_avaliado ?? null,
+                  }));
                 }}
               >
                 <SelectTrigger><SelectValue placeholder="Selecione o município" /></SelectTrigger>
@@ -915,19 +914,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
               </Select>
             </div>
             <div>
-              <Label>Valor declarado (R$)</Label>
+              <Label>Valor total do imóvel (R$)</Label>
               <Input
                 type="number"
                 step="0.01"
                 value={data.itbi_valor_declarado ?? ""}
                 onChange={(e) => {
                   const v = e.target.value === "" ? null : Number(e.target.value);
-                  setData((d) => {
-                    const estim = v != null && d.itbi_aliquota != null
-                      ? Number(((v * Number(d.itbi_aliquota)) / 100).toFixed(2))
-                      : null;
-                    return { ...d, itbi_valor_declarado: v, itbi_estimado: estim };
-                  });
+                  setData((d) => ({ ...d, itbi_valor_declarado: v }));
                 }}
                 placeholder={data.imovel_valor_avaliado ? String(data.imovel_valor_avaliado) : ""}
               />
@@ -935,16 +929,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                 <button
                   type="button"
                   className="text-xs text-primary hover:underline mt-1"
-                  onClick={() => {
-                    const v = Number(data.imovel_valor_avaliado);
-                    setData((d) => ({
-                      ...d,
-                      itbi_valor_declarado: v,
-                      itbi_estimado: d.itbi_aliquota != null
-                        ? Number(((v * Number(d.itbi_aliquota)) / 100).toFixed(2))
-                        : null,
-                    }));
-                  }}
+                  onClick={() => setData((d) => ({ ...d, itbi_valor_declarado: Number(data.imovel_valor_avaliado) }))}
                 >
                   Usar valor do imóvel ({formatBRL(Number(data.imovel_valor_avaliado))})
                 </button>
@@ -958,30 +943,75 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                 value={data.itbi_aliquota ?? ""}
                 onChange={(e) => {
                   const v = e.target.value === "" ? null : Number(e.target.value);
-                  setData((d) => {
-                    const estim = v != null && d.itbi_valor_declarado != null
-                      ? Number(((Number(d.itbi_valor_declarado) * v) / 100).toFixed(2))
-                      : null;
-                    return { ...d, itbi_aliquota: v, itbi_estimado: estim };
-                  });
+                  setData((d) => ({ ...d, itbi_aliquota: v }));
                 }}
               />
               <p className="text-xs text-muted-foreground mt-1">Preenchida pelo município. Pode ser ajustada.</p>
             </div>
           </div>
 
-          {data.itbi_estimado != null ? (
-            <div className="mt-4 rounded-md border bg-muted/40 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-              <div className="text-sm">
-                <div className="text-muted-foreground text-xs">ITBI estimado</div>
-                <div className="text-xl font-semibold tabular-nums">{formatBRL(Number(data.itbi_estimado))}</div>
+          <Separator className="my-4" />
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <Label>Área total do imóvel (m²)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={data.imovel_area_m2 ?? ""}
+                onChange={(e) => set("imovel_area_m2", e.target.value === "" ? undefined : Number(e.target.value))}
+              />
+              <p className="text-xs text-muted-foreground mt-1">Vem dos dados do imóvel.</p>
+            </div>
+            <div>
+              <Label>Área transmitida (m²)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={data.itbi_area_transmitida ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value === "" ? null : Number(e.target.value);
+                  setData((d) => ({ ...d, itbi_area_transmitida: v, itbi_fracao_ideal: v != null ? null : d.itbi_fracao_ideal }));
+                }}
+                placeholder="Vazio = imóvel inteiro"
+              />
+            </div>
+            <div>
+              <Label>ou Fração ideal (%)</Label>
+              <Input
+                type="number"
+                step="0.0001"
+                value={data.itbi_fracao_ideal ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value === "" ? null : Number(e.target.value);
+                  setData((d) => ({ ...d, itbi_fracao_ideal: v, itbi_area_transmitida: v != null ? null : d.itbi_area_transmitida }));
+                }}
+                placeholder="Ex.: 50"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-md border bg-muted/40 px-4 py-3 grid gap-2 sm:grid-cols-2">
+            <div className="text-sm space-y-1">
+              <div className="text-muted-foreground text-xs">Base utilizada</div>
+              <div className="tabular-nums">
+                {itbiCalc.origem === "area"
+                  ? `${itbiCalc.areaTrans.toLocaleString("pt-BR")} m² de ${itbiCalc.areaTotal.toLocaleString("pt-BR")} m² (${itbiCalc.fracaoPct.toFixed(2)}%)`
+                  : itbiCalc.origem === "fracao"
+                    ? `Fração ideal ${itbiCalc.fracaoPct.toFixed(2)}%`
+                    : "Imóvel inteiro (100%)"}
               </div>
-              <div className="text-xs text-muted-foreground text-right">
-                Imposto de Transmissão de Bens Imóveis.<br />
-                Incluído no valor total do orçamento.
+              <div className="text-muted-foreground text-xs mt-2">Valor base × alíquota</div>
+              <div className="tabular-nums">
+                {formatBRL(itbiCalc.base)} × {itbiCalc.aliquota}%
               </div>
             </div>
-          ) : null}
+            <div className="text-right">
+              <div className="text-muted-foreground text-xs">ITBI estimado</div>
+              <div className="text-2xl font-semibold tabular-nums">{formatBRL(itbiCalc.valor)}</div>
+              <div className="text-xs text-muted-foreground">Somado ao total do orçamento.</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
       ) : null}

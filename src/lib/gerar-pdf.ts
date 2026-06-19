@@ -447,6 +447,22 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   // (nunca em tabela separada) e apenas quando o serviço tem incidência.
   const temITBI = blocos.some((b) => servicoTemITBI(b.tipo_servico));
   const itbiValor = temITBI ? Number(orc.itbi_estimado ?? 0) || 0 : 0;
+  const itbiBase = temITBI ? Number(orc.itbi_base_calculo ?? 0) || 0 : 0;
+  const itbiAliq = temITBI ? Number(orc.itbi_aliquota ?? 0) || 0 : 0;
+  const areaTotal = Number(orc.imovel_area_m2 ?? 0) || 0;
+  const areaTrans = Number(orc.itbi_area_transmitida ?? 0) || 0;
+  const fracaoInf = Number(orc.itbi_fracao_ideal ?? 0) || 0;
+  let baseTexto = "";
+  if (temITBI && itbiValor > 0) {
+    if (areaTrans > 0 && areaTotal > 0) {
+      const pct = (areaTrans / areaTotal) * 100;
+      baseTexto = `Base: área ideal de ${areaTrans.toLocaleString("pt-BR")} m² de ${areaTotal.toLocaleString("pt-BR")} m² (${pct.toFixed(2)}%) — Valor base: ${formatBRL(itbiBase)} — Alíquota: ${itbiAliq}%`;
+    } else if (fracaoInf > 0) {
+      baseTexto = `Base: fração ideal de ${fracaoInf.toFixed(2)}% — Valor base: ${formatBRL(itbiBase)} — Alíquota: ${itbiAliq}%`;
+    } else {
+      baseTexto = `Base: imóvel inteiro (100%) — Valor base: ${formatBRL(itbiBase)} — Alíquota: ${itbiAliq}%`;
+    }
+  }
 
   const totalBody: RowInput[] = [];
   if (temITBI && itbiValor > 0) {
@@ -454,13 +470,16 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
       { content: "ITBI:", styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO, fontSize: 10, cellPadding: 6 } },
       { content: formatBRL(itbiValor), styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO, halign: "right", fontSize: 10, cellPadding: 6 } },
     ]);
+    totalBody.push([
+      { content: baseTexto, colSpan: 2, styles: { fontStyle: "italic", fillColor: VERDE_CLARO, textColor: PRETO, fontSize: 8, cellPadding: { top: 2, bottom: 5, left: 6, right: 6 } } },
+    ] as RowInput);
   }
   totalBody.push([
     { content: "VALOR TOTAL DO ORÇAMENTO:", styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255] } },
     { content: formatBRL(orc.valor_total), styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], halign: "right" } },
   ]);
 
-  ensureSpace(36 + (temITBI && itbiValor > 0 ? 24 : 0));
+  ensureSpace(36 + (temITBI && itbiValor > 0 ? 48 : 0));
   autoTable(doc, {
     startY: y,
     body: totalBody,

@@ -379,7 +379,30 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     () => servicos.some((s) => servicoTemITBI(s.tipo_servico)),
     [servicos],
   );
-  const itbiNoTotal = temITBI ? Number(data.itbi_estimado ?? 0) || 0 : 0;
+
+  // Cálculo do ITBI considerando área transmitida / fração ideal.
+  // Prioridade da fração: área transmitida ÷ área total → fração ideal informada → 100%.
+  const itbiCalc = useMemo(() => {
+    const valorDecl = Number(data.itbi_valor_declarado ?? data.imovel_valor_avaliado ?? 0) || 0;
+    const aliquota = Number(data.itbi_aliquota ?? 0) || 0;
+    const areaTotal = Number(data.imovel_area_m2 ?? 0) || 0;
+    const areaTrans = Number(data.itbi_area_transmitida ?? 0) || 0;
+    const fracInf = Number(data.itbi_fracao_ideal ?? 0) || 0;
+    let fracaoPct = 100;
+    let origem: "area" | "fracao" | "total" = "total";
+    if (areaTrans > 0 && areaTotal > 0) {
+      fracaoPct = Math.min(100, (areaTrans / areaTotal) * 100);
+      origem = "area";
+    } else if (fracInf > 0) {
+      fracaoPct = Math.min(100, fracInf);
+      origem = "fracao";
+    }
+    const base = Number(((valorDecl * fracaoPct) / 100).toFixed(2));
+    const valor = Number(((base * aliquota) / 100).toFixed(2));
+    return { valorDecl, aliquota, areaTotal, areaTrans, fracaoPct, origem, base, valor };
+  }, [data.itbi_valor_declarado, data.imovel_valor_avaliado, data.itbi_aliquota, data.imovel_area_m2, data.itbi_area_transmitida, data.itbi_fracao_ideal]);
+
+  const itbiNoTotal = temITBI ? itbiCalc.valor : 0;
   const totalServicos = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
   const total = totalServicos + itbiNoTotal;
 

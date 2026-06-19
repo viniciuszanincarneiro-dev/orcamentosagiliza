@@ -178,7 +178,10 @@ export type Database = {
           imovel_municipio: string | null
           imovel_valor_avaliado: number | null
           itbi_aliquota: number | null
+          itbi_area_transmitida: number | null
+          itbi_base_calculo: number | null
           itbi_estimado: number | null
+          itbi_fracao_ideal: number | null
           itbi_municipio: string | null
           itbi_valor_declarado: number | null
           itens: Json
@@ -214,7 +217,10 @@ export type Database = {
           imovel_municipio?: string | null
           imovel_valor_avaliado?: number | null
           itbi_aliquota?: number | null
+          itbi_area_transmitida?: number | null
+          itbi_base_calculo?: number | null
           itbi_estimado?: number | null
+          itbi_fracao_ideal?: number | null
           itbi_municipio?: string | null
           itbi_valor_declarado?: number | null
           itens?: Json
@@ -250,7 +256,10 @@ export type Database = {
           imovel_municipio?: string | null
           imovel_valor_avaliado?: number | null
           itbi_aliquota?: number | null
+          itbi_area_transmitida?: number | null
+          itbi_base_calculo?: number | null
           itbi_estimado?: number | null
+          itbi_fracao_ideal?: number | null
           itbi_municipio?: string | null
           itbi_valor_declarado?: number | null
           itens?: Json

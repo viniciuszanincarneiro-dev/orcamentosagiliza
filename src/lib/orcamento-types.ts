@@ -48,11 +48,17 @@ export type OrcamentoData = {
   data_envio?: string | null;
   ultimo_contato?: string | null;
   validade_dias?: number | null;
-  /** Estimativa de ITBI (informativo, não soma ao valor_total). */
+  /** Estimativa de ITBI — integrado ao total quando o serviço exigir. */
   itbi_municipio?: string | null;
   itbi_valor_declarado?: number | null;
   itbi_aliquota?: number | null;
   itbi_estimado?: number | null;
+  /** Área transmitida em m² (parte ideal). Quando vazia, considera 100%. */
+  itbi_area_transmitida?: number | null;
+  /** Fração ideal transmitida em % (alternativa à área). */
+  itbi_fracao_ideal?: number | null;
+  /** Base de cálculo aplicada ao ITBI (valor_declarado × fração). */
+  itbi_base_calculo?: number | null;
   created_at?: string;
   updated_at?: string;
 };

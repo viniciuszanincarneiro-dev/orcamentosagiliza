@@ -407,44 +407,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 6 });
   });
 
-  // ============ DOS VALORES — uma tabela por serviço ============
-  writeSectionTitle("DOS VALORES");
-
-  blocos.forEach((bloco, bi) => {
-    const tipoB = bloco.tipo_servico;
-    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
-    const subtotal = bloco.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0);
-    const cabecalho = blocos.length > 1 ? `${bi + 1}. ${tituloB}` : tituloB;
-
-    ensureSpace(60);
-    autoTable(doc, {
-      startY: y,
-      head: [
-        [{ content: cabecalho, colSpan: 2, styles: { halign: "center", fillColor: CINZA_TAB, textColor: [255, 255, 255], fontStyle: "bold" } }],
-        [
-          { content: "SERVIÇOS:", styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold" } },
-          { content: "VALORES:", styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold", halign: "right" } },
-        ],
-      ],
-      body: bloco.itens.map((i) => [i.descricao, formatBRL(i.valor)]),
-      foot: [[
-        { content: "SUBTOTAL:", styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold" } },
-        { content: formatBRL(subtotal), styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold", halign: "right" } },
-      ]],
-      theme: "grid",
-      margin: { left: M, right: M, top: HEADER_H + 18, bottom: FOOTER_H + 14 },
-      showHead: "everyPage",
-      rowPageBreak: "avoid",
-      styles: { font: "helvetica", fontSize: 10, cellPadding: 6, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
-      columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },
-      tableWidth: "auto",
-      didDrawPage: (d) => { if (d.pageNumber > 1) addHeader(); },
-    });
-    y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
-  });
-
-  // ITBI + VALOR TOTAL — tabela financeira única. ITBI entra como linha
-  // (nunca em tabela separada) e apenas quando o serviço tem incidência.
+  // ============ Pré-cálculo do ITBI ============
   const temITBI = blocos.some((b) => servicoTemITBI(b.tipo_servico));
   const itbiValor = temITBI ? Number(orc.itbi_estimado ?? 0) || 0 : 0;
   const itbiBase = temITBI ? Number(orc.itbi_base_calculo ?? 0) || 0 : 0;
@@ -452,46 +415,87 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   const areaTotal = Number(orc.imovel_area_m2 ?? 0) || 0;
   const areaTrans = Number(orc.itbi_area_transmitida ?? 0) || 0;
   const fracaoInf = Number(orc.itbi_fracao_ideal ?? 0) || 0;
-  let baseTexto = "";
-  if (temITBI && itbiValor > 0) {
+  const mostraITBI = temITBI && itbiValor > 0;
+
+  // Detalhes do cálculo do ITBI — exibidos na parte descritiva.
+  if (mostraITBI) {
+    writeSectionTitle("INFORMAÇÕES DO CÁLCULO DO ITBI");
+    if (orc.itbi_municipio) writeParagraph(`Município: ${orc.itbi_municipio}`, { gap: 2, align: "left" });
+    if (areaTotal > 0) writeParagraph(`Área total do imóvel: ${formatNumberBR(areaTotal)} m²`, { gap: 2, align: "left" });
+    if (areaTrans > 0) writeParagraph(`Área transmitida: ${formatNumberBR(areaTrans)} m²`, { gap: 2, align: "left" });
     if (areaTrans > 0 && areaTotal > 0) {
-      const pct = (areaTrans / areaTotal) * 100;
-      baseTexto = `Base: área ideal de ${areaTrans.toLocaleString("pt-BR")} m² de ${areaTotal.toLocaleString("pt-BR")} m² (${pct.toFixed(2)}%) — Valor base: ${formatBRL(itbiBase)} — Alíquota: ${itbiAliq}%`;
+      writeParagraph(`Percentual transmitido: ${((areaTrans / areaTotal) * 100).toFixed(2)}%`, { gap: 2, align: "left" });
     } else if (fracaoInf > 0) {
-      baseTexto = `Base: fração ideal de ${fracaoInf.toFixed(2)}% — Valor base: ${formatBRL(itbiBase)} — Alíquota: ${itbiAliq}%`;
+      writeParagraph(`Fração ideal transmitida: ${fracaoInf.toFixed(2)}%`, { gap: 2, align: "left" });
     } else {
-      baseTexto = `Base: imóvel inteiro (100%) — Valor base: ${formatBRL(itbiBase)} — Alíquota: ${itbiAliq}%`;
+      writeParagraph(`Percentual transmitido: 100% (imóvel inteiro)`, { gap: 2, align: "left" });
     }
+    writeParagraph(`Valor base utilizado: ${formatBRL(itbiBase)}`, { gap: 2, align: "left" });
+    writeParagraph(`Alíquota: ${itbiAliq}%`, { gap: 2, align: "left" });
+    writeParagraph(`ITBI calculado: ${formatBRL(itbiValor)}`, { bold: true, gap: 8, align: "left" });
   }
 
-  const totalBody: RowInput[] = [];
-  if (temITBI && itbiValor > 0) {
-    totalBody.push([
-      { content: "ITBI:", styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO, fontSize: 10, cellPadding: 6 } },
-      { content: formatBRL(itbiValor), styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO, halign: "right", fontSize: 10, cellPadding: 6 } },
+  // ============ DOS VALORES — TABELA FINANCEIRA ÚNICA ============
+  // Cabeçalho + linhas de serviços + ITBI (quando aplicável) + TOTAL
+  // são renderizados como uma ÚNICA tabela que permanece sempre na mesma página.
+  writeSectionTitle("DOS VALORES");
+
+  const tabelaBody: RowInput[] = [];
+  blocos.forEach((bloco, bi) => {
+    const tipoB = bloco.tipo_servico;
+    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
+    if (blocos.length > 1) {
+      tabelaBody.push([
+        {
+          content: `${bi + 1}. ${tituloB}`,
+          colSpan: 2,
+          styles: { fillColor: CINZA_TAB, textColor: [255, 255, 255], fontStyle: "bold", halign: "left" },
+        },
+      ] as RowInput);
+    }
+    bloco.itens.forEach((i) => {
+      tabelaBody.push([i.descricao, formatBRL(i.valor)]);
+    });
+  });
+
+  if (mostraITBI) {
+    tabelaBody.push([
+      { content: "ITBI", styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO } },
+      { content: formatBRL(itbiValor), styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO, halign: "right" } },
     ]);
-    totalBody.push([
-      { content: baseTexto, colSpan: 2, styles: { fontStyle: "italic", fillColor: VERDE_CLARO, textColor: PRETO, fontSize: 8, cellPadding: { top: 2, bottom: 5, left: 6, right: 6 } } },
-    ] as RowInput);
   }
-  totalBody.push([
-    { content: "VALOR TOTAL DO ORÇAMENTO:", styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255] } },
-    { content: formatBRL(orc.valor_total), styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], halign: "right" } },
+
+  tabelaBody.push([
+    { content: "VALOR TOTAL DO ORÇAMENTO", styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], fontSize: 11 } },
+    { content: formatBRL(orc.valor_total), styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], halign: "right", fontSize: 11 } },
   ]);
 
-  ensureSpace(36 + (temITBI && itbiValor > 0 ? 48 : 0));
+  // Garante que a tabela inteira caiba na página corrente; senão, nova página.
+  const alturaEstim = 30 + tabelaBody.length * 22;
+  if (y + alturaEstim > BOTTOM) {
+    doc.addPage();
+    addHeader();
+    y = TOP;
+  }
+
   autoTable(doc, {
     startY: y,
-    body: totalBody,
+    head: [[
+      { content: "SERVIÇO", styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold" } },
+      { content: "VALOR", styles: { fillColor: VERDE_CLARO, textColor: PRETO, fontStyle: "bold", halign: "right" } },
+    ]],
+    body: tabelaBody,
     theme: "grid",
     margin: { left: M, right: M, top: HEADER_H + 18, bottom: FOOTER_H + 14 },
+    showHead: "firstPage",
     rowPageBreak: "avoid",
-    styles: { font: "helvetica", fontSize: 11, cellPadding: 7, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
+    pageBreak: "avoid",
+    styles: { font: "helvetica", fontSize: 10, cellPadding: 5, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
     columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },
     tableWidth: "auto",
     didDrawPage: (d) => { if (d.pageNumber > 1) addHeader(); },
   });
-  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
 
 
   // OBSERVAÇÕES

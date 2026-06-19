@@ -498,7 +498,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         itbi_municipio: temITBI ? (data.itbi_municipio ?? null) : null,
         itbi_valor_declarado: temITBI ? (data.itbi_valor_declarado ?? null) : null,
         itbi_aliquota: temITBI ? (data.itbi_aliquota ?? null) : null,
-        itbi_estimado: temITBI ? (data.itbi_estimado ?? null) : null,
+        itbi_estimado: temITBI ? itbiCalc.valor : null,
+        itbi_area_transmitida: temITBI ? (data.itbi_area_transmitida ?? null) : null,
+        itbi_fracao_ideal: temITBI ? (data.itbi_fracao_ideal ?? null) : null,
+        itbi_base_calculo: temITBI ? itbiCalc.base : null,
       };
       // Marca data de envio automaticamente na primeira vez que vai para "enviado"
       if (status === "enviado" && !data.data_envio) {

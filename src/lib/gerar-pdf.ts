@@ -271,11 +271,24 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   if (blocos.length === 1) {
     const tituloLines = doc.splitTextToSize(titulo, usableW) as string[];
     tituloLines.forEach((ln) => { doc.text(ln, W / 2, y, { align: "center" }); y += 14; });
+    y += 10;
   } else {
-    doc.text("ORÇAMENTO MULTISSERVIÇO", W / 2, y, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...VERDE);
+    doc.text("Serviços realizados:", M, y);
     y += 14;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...PRETO);
+    blocos.forEach((b) => {
+      const t = TIPO_TITULOS[b.tipo_servico] ?? "Prestação de serviços";
+      ensureSpace(13);
+      doc.text(`• ${t}`, M + 8, y);
+      y += 13;
+    });
+    y += 8;
   }
-  y += 10;
 
   // Interessado
   doc.setFont("helvetica", "normal");

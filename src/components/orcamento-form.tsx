@@ -417,10 +417,27 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const totalServicos = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
   const total = totalServicos + itbiNoTotal;
 
-  // Explicação do RI baseado no valor declarado do imóvel e no fator interno
+  // Base proporcional para TODOS os emolumentos (RI, Tabelionato etc.).
+  // Quando há transmissão parcial (área transmitida, fração ideal informada ou
+  // valor de contrato), o valor do imóvel usado nos cálculos passa a ser a
+  // base reduzida, nunca o valor cheio da matrícula.
+  const valorBaseProporcional = useMemo(() => {
+    const valorCheio = Number(data.imovel_valor_avaliado ?? 0) || 0;
+    if (!temITBI) return valorCheio;
+    if (itbiCalc.origem === "total") return valorCheio;
+    return itbiCalc.base || valorCheio;
+  }, [temITBI, itbiCalc.base, itbiCalc.origem, data.imovel_valor_avaliado]);
+
+  const transmissaoParcial =
+    temITBI &&
+    itbiCalc.origem !== "total" &&
+    valorBaseProporcional > 0 &&
+    valorBaseProporcional !== (Number(data.imovel_valor_avaliado ?? 0) || 0);
+
+  // Explicação do RI baseado na BASE PROPORCIONAL quando houver transmissão parcial.
   const explicacaoRI = useMemo(
-    () => explicarRegistroImoveis(Number(data.imovel_valor_avaliado) || 0, fatorRI),
-    [data.imovel_valor_avaliado, fatorRI],
+    () => explicarRegistroImoveis(valorBaseProporcional, fatorRI),
+    [valorBaseProporcional, fatorRI],
   );
 
   async function salvarFatorPadrao() {

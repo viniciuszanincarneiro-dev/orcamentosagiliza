@@ -415,17 +415,15 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 6 });
   });
 
-  // ============ Pré-cálculo do ITBI ============
+  // ============ Pré-cálculo do ITBI (100% manual) ============
   const temITBI = blocos.some((b) => servicoTemITBI(b.tipo_servico));
   const itbiValor = temITBI ? Number(orc.itbi_estimado ?? 0) || 0 : 0;
-  const itbiBase = temITBI ? Number(orc.itbi_base_calculo ?? 0) || 0 : 0;
-  const itbiAliq = temITBI ? Number(orc.itbi_aliquota ?? 0) || 0 : 0;
+  const baseProporcional = temITBI ? Number(orc.itbi_base_calculo ?? 0) || 0 : 0;
   const areaTotal = Number(orc.imovel_area_m2 ?? 0) || 0;
   const areaTrans = Number(orc.itbi_area_transmitida ?? 0) || 0;
   const fracaoInf = Number(orc.itbi_fracao_ideal ?? 0) || 0;
   const mostraITBI = temITBI;
 
-  // Detalhes do cálculo do ITBI — exibidos na parte descritiva.
   if (mostraITBI) {
     const usarContrato = !!orc.itbi_usar_contrato && Number(orc.itbi_valor_contrato ?? 0) > 0;
     const percent = areaTrans > 0 && areaTotal > 0
@@ -440,26 +438,16 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
       if (areaTrans > 0) writeParagraph(`Área transmitida: ${formatNumberBR(areaTrans)} m²`, { gap: 2, align: "left" });
       writeParagraph(`Percentual transmitido: ${percent.toFixed(2)}%`, { gap: 2, align: "left" });
       if (valorCheio > 0) writeParagraph(`Valor total do imóvel: ${formatBRL(valorCheio)}`, { gap: 2, align: "left" });
-      writeParagraph(`Valor base considerado: ${formatBRL(itbiBase)}`, { bold: true, gap: 2, align: "left" });
+      if (usarContrato) writeParagraph(`Valor do contrato: ${formatBRL(Number(orc.itbi_valor_contrato ?? 0))}`, { gap: 2, align: "left" });
+      writeParagraph(`Valor base considerado: ${formatBRL(baseProporcional || valorCheio)}`, { bold: true, gap: 2, align: "left" });
       writeParagraph(
-        "Esta base proporcional é utilizada como referência para ITBI, Registro de Imóveis, Tabelionato e demais emolumentos vinculados ao valor do imóvel. Não se aplica o valor cheio da matrícula em casos de transmissão parcial.",
+        "Esta base proporcional é utilizada como referência para Registro de Imóveis, Tabelionato e demais emolumentos vinculados ao valor do imóvel. O ITBI é informado manualmente.",
         { gap: 8 },
       );
     }
 
-    writeSectionTitle("INFORMAÇÕES DO CÁLCULO DO ITBI");
+    writeSectionTitle("ITBI");
     if (orc.itbi_municipio) writeParagraph(`Município: ${orc.itbi_municipio}`, { gap: 2, align: "left" });
-    if (usarContrato) {
-      writeParagraph(`Base utilizada: valor de contrato`, { gap: 2, align: "left" });
-      writeParagraph(`Valor do contrato: ${formatBRL(Number(orc.itbi_valor_contrato ?? 0))}`, { gap: 2, align: "left" });
-    } else {
-      if (areaTotal > 0) writeParagraph(`Área total do imóvel: ${formatNumberBR(areaTotal)} m²`, { gap: 2, align: "left" });
-      if (areaTrans > 0) writeParagraph(`Área considerada (transmitida): ${formatNumberBR(areaTrans)} m²`, { gap: 2, align: "left" });
-      writeParagraph(`Percentual transmitido: ${percent.toFixed(2)}%`, { gap: 2, align: "left" });
-      if (orc.itbi_valor_declarado) writeParagraph(`Valor total do imóvel: ${formatBRL(Number(orc.itbi_valor_declarado))}`, { gap: 2, align: "left" });
-    }
-    writeParagraph(`Base de cálculo: ${formatBRL(itbiBase)}`, { gap: 2, align: "left" });
-    writeParagraph(`Alíquota: ${itbiAliq}%`, { gap: 2, align: "left" });
     writeParagraph(`Valor do ITBI: ${formatBRL(itbiValor)}`, { bold: true, gap: 8, align: "left" });
   }
 

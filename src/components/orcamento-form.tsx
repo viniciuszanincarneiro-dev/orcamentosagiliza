@@ -383,12 +383,18 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     [servicos],
   );
 
-  // Cálculo do ITBI:
-  // - Se "usar valor de contrato" estiver ativo e houver valor informado, a base = valor do contrato.
-  // - Caso contrário, base = valor total do imóvel × fração (área transmitida ÷ área total, ou fração ideal informada, ou 100%).
-  const itbiCalc = useMemo(() => {
-    const valorDecl = Number(data.itbi_valor_declarado ?? data.imovel_valor_avaliado ?? 0) || 0;
-    const aliquota = Number(data.itbi_aliquota ?? 0) || 0;
+  // ITBI agora é 100% MANUAL — o usuário informa o valor diretamente.
+  // Mantemos os campos de "transmissão parcial" (área/fração/contrato) que
+  // continuam alimentando a base proporcional do RI/Tabelionato.
+  const itbiValorManual = Number(data.itbi_estimado ?? 0) || 0;
+  const itbiNoTotal = temITBI ? itbiValorManual : 0;
+  const totalServicos = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
+  const total = totalServicos + itbiNoTotal;
+
+  // Base proporcional para emolumentos (RI, Tabelionato etc.) — calculada a
+  // partir da transmissão parcial informada, independentemente do ITBI.
+  const baseTransmissao = useMemo(() => {
+    const valorCheio = Number(data.imovel_valor_avaliado ?? 0) || 0;
     const areaTotal = Number(data.imovel_area_m2 ?? 0) || 0;
     const areaTrans = Number(data.itbi_area_transmitida ?? 0) || 0;
     const fracInf = Number(data.itbi_fracao_ideal ?? 0) || 0;
@@ -396,46 +402,29 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     const valorContrato = Number(data.itbi_valor_contrato ?? 0) || 0;
     let fracaoPct = 100;
     let origem: "area" | "fracao" | "total" | "contrato" = "total";
-    let base = 0;
+    let base = valorCheio;
     if (usarContrato && valorContrato > 0) {
       base = Number(valorContrato.toFixed(2));
       origem = "contrato";
       if (areaTrans > 0 && areaTotal > 0) fracaoPct = Math.min(100, (areaTrans / areaTotal) * 100);
       else if (fracInf > 0) fracaoPct = Math.min(100, fracInf);
-    } else {
-      if (areaTrans > 0 && areaTotal > 0) {
-        fracaoPct = Math.min(100, (areaTrans / areaTotal) * 100);
-        origem = "area";
-      } else if (fracInf > 0) {
-        fracaoPct = Math.min(100, fracInf);
-        origem = "fracao";
-      }
-      base = Number(((valorDecl * fracaoPct) / 100).toFixed(2));
+    } else if (areaTrans > 0 && areaTotal > 0) {
+      fracaoPct = Math.min(100, (areaTrans / areaTotal) * 100);
+      origem = "area";
+      base = Number(((valorCheio * fracaoPct) / 100).toFixed(2));
+    } else if (fracInf > 0) {
+      fracaoPct = Math.min(100, fracInf);
+      origem = "fracao";
+      base = Number(((valorCheio * fracaoPct) / 100).toFixed(2));
     }
-    const valor = Number(((base * aliquota) / 100).toFixed(2));
-    return { valorDecl, aliquota, areaTotal, areaTrans, fracaoPct, origem, base, valor, usarContrato, valorContrato };
-  }, [data.itbi_valor_declarado, data.imovel_valor_avaliado, data.itbi_aliquota, data.imovel_area_m2, data.itbi_area_transmitida, data.itbi_fracao_ideal, data.itbi_usar_contrato, data.itbi_valor_contrato]);
+    return { valorCheio, fracaoPct, origem, base };
+  }, [data.imovel_valor_avaliado, data.imovel_area_m2, data.itbi_area_transmitida, data.itbi_fracao_ideal, data.itbi_usar_contrato, data.itbi_valor_contrato]);
 
-  const itbiNoTotal = temITBI ? itbiCalc.valor : 0;
-  const totalServicos = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
-  const total = totalServicos + itbiNoTotal;
-
-  // Base proporcional para TODOS os emolumentos (RI, Tabelionato etc.).
-  // Quando há transmissão parcial (área transmitida, fração ideal informada ou
-  // valor de contrato), o valor do imóvel usado nos cálculos passa a ser a
-  // base reduzida, nunca o valor cheio da matrícula.
-  const valorBaseProporcional = useMemo(() => {
-    const valorCheio = Number(data.imovel_valor_avaliado ?? 0) || 0;
-    if (!temITBI) return valorCheio;
-    if (itbiCalc.origem === "total") return valorCheio;
-    return itbiCalc.base || valorCheio;
-  }, [temITBI, itbiCalc.base, itbiCalc.origem, data.imovel_valor_avaliado]);
-
+  const valorBaseProporcional = baseTransmissao.base;
   const transmissaoParcial =
-    temITBI &&
-    itbiCalc.origem !== "total" &&
+    baseTransmissao.origem !== "total" &&
     valorBaseProporcional > 0 &&
-    valorBaseProporcional !== (Number(data.imovel_valor_avaliado ?? 0) || 0);
+    valorBaseProporcional !== baseTransmissao.valorCheio;
 
   // Explicação do RI baseado na BASE PROPORCIONAL quando houver transmissão parcial.
   const explicacaoRI = useMemo(
@@ -512,7 +501,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       // Aglutina itens de todos os blocos (mantém compat com lucro/financeiro)
       const itensFlat: ItemOrcamento[] = servicos.flatMap((s) => s.itens);
       const totalServicosAtual = itensFlat.reduce((a, b) => a + (Number(b.valor) || 0), 0);
-      const totalAtual = totalServicosAtual + (temITBI ? itbiCalc.valor : 0);
+      const totalAtual = totalServicosAtual + (temITBI ? itbiValorManual : 0);
       // Observações: concatena observações de cada bloco quando houver mais de uma
       const obsFromBlocos = servicos
         .map((s, i) => s.observacoes?.trim() ? `[${i + 1}] ${s.observacoes.trim()}` : "")
@@ -550,10 +539,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         itbi_municipio: temITBI ? (data.itbi_municipio ?? null) : null,
         itbi_valor_declarado: temITBI ? (data.itbi_valor_declarado ?? null) : null,
         itbi_aliquota: temITBI ? (data.itbi_aliquota ?? null) : null,
-        itbi_estimado: temITBI ? itbiCalc.valor : null,
+        itbi_estimado: temITBI ? itbiValorManual : null,
         itbi_area_transmitida: temITBI ? (data.itbi_area_transmitida ?? null) : null,
         itbi_fracao_ideal: temITBI ? (data.itbi_fracao_ideal ?? null) : null,
-        itbi_base_calculo: temITBI ? itbiCalc.base : null,
+        itbi_base_calculo: temITBI ? valorBaseProporcional : null,
         itbi_usar_contrato: temITBI ? !!data.itbi_usar_contrato : null,
         itbi_valor_contrato: temITBI ? (data.itbi_valor_contrato ?? null) : null,
       };
@@ -933,31 +922,22 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       </Card>
 
 
-      {/* ============ ITBI (somente para serviços com incidência; somado ao total) ============ */}
+      {/* ============ ITBI 100% MANUAL (somado ao total) ============ */}
       {temITBI ? (
       <Card>
         <CardHeader>
           <CardTitle>ITBI — Imposto de Transmissão</CardTitle>
           <CardDescription>
-            Calculado sobre a <b>parte transmitida</b> do imóvel (área ideal / fração).
-            O valor é somado ao total do orçamento.
+            Informe o valor do ITBI <b>manualmente</b>. O valor digitado é somado ao total do orçamento.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label>Município do imóvel</Label>
+              <Label>Município do imóvel (opcional)</Label>
               <Select
                 value={data.itbi_municipio ?? ""}
-                onValueChange={(v) => {
-                  const m = itbiMunicipios?.find((x) => x.nome === v);
-                  setData((d) => ({
-                    ...d,
-                    itbi_municipio: v,
-                    itbi_aliquota: m ? Number(m.aliquota) : (d.itbi_aliquota ?? null),
-                    itbi_valor_declarado: d.itbi_valor_declarado ?? d.imovel_valor_avaliado ?? null,
-                  }));
-                }}
+                onValueChange={(v) => setData((d) => ({ ...d, itbi_municipio: v }))}
               >
                 <SelectTrigger><SelectValue placeholder="Selecione o município" /></SelectTrigger>
                 <SelectContent>
@@ -966,45 +946,31 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">Apenas referência — não calcula o ITBI.</p>
             </div>
             <div>
-              <Label>Valor total do imóvel (R$)</Label>
+              <Label>Valor do ITBI (R$)</Label>
               <Input
                 type="number"
                 step="0.01"
-                value={data.itbi_valor_declarado ?? ""}
+                value={data.itbi_estimado ?? ""}
                 onChange={(e) => {
                   const v = e.target.value === "" ? null : Number(e.target.value);
-                  setData((d) => ({ ...d, itbi_valor_declarado: v }));
+                  setData((d) => ({ ...d, itbi_estimado: v }));
                 }}
-                placeholder={data.imovel_valor_avaliado ? String(data.imovel_valor_avaliado) : ""}
+                placeholder="Digite o valor do ITBI"
               />
-              {data.imovel_valor_avaliado && data.itbi_valor_declarado == null ? (
-                <button
-                  type="button"
-                  className="text-xs text-primary hover:underline mt-1"
-                  onClick={() => setData((d) => ({ ...d, itbi_valor_declarado: Number(data.imovel_valor_avaliado) }))}
-                >
-                  Usar valor do imóvel ({formatBRL(Number(data.imovel_valor_avaliado))})
-                </button>
-              ) : null}
-            </div>
-            <div>
-              <Label>Alíquota (%)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={data.itbi_aliquota ?? ""}
-                onChange={(e) => {
-                  const v = e.target.value === "" ? null : Number(e.target.value);
-                  setData((d) => ({ ...d, itbi_aliquota: v }));
-                }}
-              />
-              <p className="text-xs text-muted-foreground mt-1">Preenchida pelo município. Pode ser ajustada.</p>
+              <p className="text-xs text-muted-foreground mt-1">Campo 100% manual. Será somado ao total.</p>
             </div>
           </div>
 
           <Separator className="my-4" />
+
+          <div className="text-sm font-medium mb-2">Transmissão parcial (opcional)</div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Usado apenas para calcular a <b>base proporcional</b> do Registro de Imóveis e Tabelionato.
+            Não afeta o valor do ITBI (que é manual).
+          </p>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
@@ -1015,7 +981,6 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                 value={data.imovel_area_m2 ?? ""}
                 onChange={(e) => set("imovel_area_m2", e.target.value === "" ? undefined : Number(e.target.value))}
               />
-              <p className="text-xs text-muted-foreground mt-1">Vem dos dados do imóvel.</p>
             </div>
             <div>
               <Label>Área transmitida (m²)</Label>
@@ -1045,9 +1010,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             </div>
           </div>
 
-          <Separator className="my-4" />
-
-          <div className="rounded-md border bg-muted/20 px-4 py-3 space-y-3">
+          <div className="mt-4 rounded-md border bg-muted/20 px-4 py-3 space-y-3">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -1055,10 +1018,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                 checked={!!data.itbi_usar_contrato}
                 onChange={(e) => setData((d) => ({ ...d, itbi_usar_contrato: e.target.checked }))}
               />
-              <span className="text-sm font-medium">Usar valor de contrato?</span>
-              <span className="text-xs text-muted-foreground">
-                Quando marcado, o ITBI é calculado sobre o valor do contrato (ignora cálculo proporcional).
-              </span>
+              <span className="text-sm font-medium">Usar valor de contrato como base proporcional?</span>
             </label>
             {data.itbi_usar_contrato ? (
               <div className="grid gap-4 sm:grid-cols-2">
@@ -1074,48 +1034,28 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                     }}
                     placeholder="Ex.: 50000"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    ITBI = valor do contrato × alíquota.
-                  </p>
                 </div>
               </div>
             ) : null}
           </div>
 
-          <div className="mt-4 rounded-md border bg-muted/40 px-4 py-3 grid gap-2 sm:grid-cols-2">
-            <div className="text-sm space-y-1">
-              <div className="text-muted-foreground text-xs">Base utilizada</div>
-              <div className="tabular-nums">
-                {itbiCalc.origem === "contrato"
-                  ? `Valor de contrato — ${formatBRL(itbiCalc.base)}`
-                  : itbiCalc.origem === "area"
-                  ? `${itbiCalc.areaTrans.toLocaleString("pt-BR")} m² de ${itbiCalc.areaTotal.toLocaleString("pt-BR")} m² (${itbiCalc.fracaoPct.toFixed(2)}%)`
-                  : itbiCalc.origem === "fracao"
-                    ? `Fração ideal ${itbiCalc.fracaoPct.toFixed(2)}%`
-                    : "Imóvel inteiro (100%)"}
-              </div>
-              <div className="text-muted-foreground text-xs mt-2">Valor base × alíquota</div>
-              <div className="tabular-nums">
-                {formatBRL(itbiCalc.base)} × {itbiCalc.aliquota}%
-              </div>
+          <div className="mt-4 rounded-md border bg-muted/40 px-4 py-3 flex items-baseline justify-between">
+            <div className="text-sm">
+              <div className="text-muted-foreground text-xs">Valor do ITBI (manual)</div>
             </div>
-            <div className="text-right">
-              <div className="text-muted-foreground text-xs">ITBI estimado</div>
-              <div className="text-2xl font-semibold tabular-nums">{formatBRL(itbiCalc.valor)}</div>
-              <div className="text-xs text-muted-foreground">Somado ao total do orçamento.</div>
-            </div>
+            <div className="text-2xl font-semibold tabular-nums">{formatBRL(itbiValorManual)}</div>
           </div>
 
           {transmissaoParcial ? (
             <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 dark:border-amber-800">
-              <div className="font-medium mb-1">Base proporcional aplicada a todos os emolumentos</div>
+              <div className="font-medium mb-1">Base proporcional aplicada ao RI/Tabelionato</div>
               <div className="text-xs">
-                Valor cheio da matrícula: <b>{formatBRL(Number(data.imovel_valor_avaliado ?? 0))}</b><br />
-                Percentual transmitido: <b>{itbiCalc.fracaoPct.toFixed(2)}%</b><br />
+                Valor cheio da matrícula: <b>{formatBRL(baseTransmissao.valorCheio)}</b><br />
+                Percentual transmitido: <b>{baseTransmissao.fracaoPct.toFixed(2)}%</b><br />
                 Valor base considerado: <b className="tabular-nums">{formatBRL(valorBaseProporcional)}</b>
               </div>
               <div className="text-xs mt-2 opacity-90">
-                Esta base é usada no cálculo de ITBI, Registro de Imóveis, Tabelionato e demais emolumentos vinculados ao valor do imóvel — nunca o valor cheio da matrícula.
+                Esta base é usada no Registro de Imóveis e Tabelionato. O ITBI permanece com valor manual.
               </div>
             </div>
           ) : null}

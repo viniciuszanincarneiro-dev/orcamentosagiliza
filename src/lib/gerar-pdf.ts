@@ -170,7 +170,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     doc.setTextColor(...CINZA);
-    doc.text(`Página ${pageNum} de ${totalPages}`, W - M, H - 6, { align: "right" });
+    doc.text(`Página ${pageNum} de ${totalPages}`, W - M, H - 14, { align: "right" });
   };
 
 
@@ -271,11 +271,24 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   if (blocos.length === 1) {
     const tituloLines = doc.splitTextToSize(titulo, usableW) as string[];
     tituloLines.forEach((ln) => { doc.text(ln, W / 2, y, { align: "center" }); y += 14; });
+    y += 10;
   } else {
-    doc.text("ORÇAMENTO MULTISSERVIÇO", W / 2, y, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...VERDE);
+    doc.text("Serviços realizados:", M, y);
     y += 14;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...PRETO);
+    blocos.forEach((b) => {
+      const t = TIPO_TITULOS[b.tipo_servico] ?? "Prestação de serviços";
+      ensureSpace(13);
+      doc.text(`• ${t}`, M + 8, y);
+      y += 13;
+    });
+    y += 8;
   }
-  y += 10;
 
   // Interessado
   doc.setFont("helvetica", "normal");
@@ -410,7 +423,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   const areaTotal = Number(orc.imovel_area_m2 ?? 0) || 0;
   const areaTrans = Number(orc.itbi_area_transmitida ?? 0) || 0;
   const fracaoInf = Number(orc.itbi_fracao_ideal ?? 0) || 0;
-  const mostraITBI = temITBI && itbiValor > 0;
+  const mostraITBI = temITBI;
 
   // Detalhes do cálculo do ITBI — exibidos na parte descritiva.
   if (mostraITBI) {
@@ -465,13 +478,33 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     { content: formatBRL(orc.valor_total), styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], halign: "right", fontSize: 11 } },
   ]);
 
-  // Garante que a tabela inteira caiba na página corrente; senão, nova página.
-  const alturaEstim = 30 + tabelaBody.length * 22;
-  if (y + alturaEstim > BOTTOM) {
+  // Tabela financeira deve caber INTEIRA (cabeçalho + linhas + total) em uma
+  // única página. Calculamos o espaço disponível e ajustamos fonte/padding
+  // para garantir que nunca quebre entre páginas.
+  const rowsCount = tabelaBody.length + 1; // +1 cabeçalho
+  let available = BOTTOM - y;
+  const minNeededForObs = 90; // reserva mínima para observações abaixo
+  // Se não cabe nada razoável, vai para próxima página
+  if (available < 140) {
     doc.addPage();
     addHeader();
     y = TOP;
+    available = BOTTOM - y;
   }
+  const espacoTabela = Math.max(140, available - minNeededForObs);
+  // Calcula altura por linha que cabe; estilos básicos com fallback compactado
+  const alturaPorLinhaIdeal = 24;
+  const alturaPorLinhaMin = 14;
+  const alturaPorLinha = Math.max(
+    alturaPorLinhaMin,
+    Math.min(alturaPorLinhaIdeal, Math.floor(espacoTabela / rowsCount))
+  );
+  // Mapeia altura→fonte/padding
+  let fontSize = 10;
+  let cellPadding = 5;
+  if (alturaPorLinha < 22) { fontSize = 9; cellPadding = 4; }
+  if (alturaPorLinha < 18) { fontSize = 8; cellPadding = 3; }
+  if (alturaPorLinha < 15) { fontSize = 7.5; cellPadding = 2; }
 
   autoTable(doc, {
     startY: y,
@@ -485,7 +518,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     showHead: "firstPage",
     rowPageBreak: "avoid",
     pageBreak: "avoid",
-    styles: { font: "helvetica", fontSize: 10, cellPadding: 5, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
+    styles: { font: "helvetica", fontSize, cellPadding, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
     columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },
     tableWidth: "auto",
     didDrawPage: (d) => { if (d.pageNumber > 1) addHeader(); },

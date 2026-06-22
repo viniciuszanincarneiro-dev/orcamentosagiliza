@@ -331,16 +331,16 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   if (anyRural) {
     writeSectionTitle("GEORREFERENCIAMENTO");
     writeParagraph(
-      "A Lei nº 10.267/2001, a qual foi regulamentada pelo Decreto nº 4.449/2002, demonstra algumas alterações e determina que sejam cumpridas. Estas alterações estão relacionadas ao cadastramento de imóveis rurais, tornando obrigatório o georreferenciamento, o qual deverá conter as coordenadas dos vértices definidores dos limites dos imóveis rurais, com precisão posicional, nos casos de desmembramento, remembramento ou mudança de titularidade entre outras modalidades. Tais exigências representam uma mudança paradigmática nas formas de levantamento e cadastro imobiliário até então vigentes no Brasil.",
+      "A Lei nº 10.267/2001, regulamentada pelo Decreto nº 4.449/2002, demonstra algumas alterações e determina que sejam cumpridas. Estas alterações estão relacionadas ao cadastramento de imóveis rurais, tornando obrigatório o georreferenciamento, o qual deverá conter as coordenadas dos vértices definidores dos limites dos imóveis rurais, com precisão posicional, nos casos de desmembramento, remembramento ou mudança de titularidade entre outras modalidades. Tais exigências representam uma mudança paradigmática nas formas de levantamento e cadastro imobiliário até então vigentes no Brasil.",
       { gap: 6 }
     );
     writeParagraph(
-      "Todos os imóveis rurais possuem a obrigatoriedade em fazer o georreferenciamento até 20 de novembro de 2025, prazo esse definido no Decreto 4.449/02, alterado pelo decreto 9.311/18.",
+      "Todos os imóveis rurais possuem a obrigatoriedade em fazer o georreferenciamento conforme os prazos definidos no Decreto nº 4.449/02, alterado pelo Decreto nº 9.311/18.",
       { gap: 6 }
     );
     writeParagraph("• Vigente para imóveis acima de 100 hectares;", { gap: 2, align: "left" });
-    writeParagraph("• 20/11/2023 para os imóveis com área superior a 25 hectares;", { gap: 2, align: "left" });
-    writeParagraph("• 20/11/2025 para os imóveis com área inferior a 25 hectares.", { gap: 10, align: "left" });
+    writeParagraph("• 20/11/2023 para imóveis superiores a 25 hectares;", { gap: 2, align: "left" });
+    writeParagraph("• 20/11/2025 para imóveis inferiores a 25 hectares.", { gap: 10, align: "left" });
   }
 
   // ============ OBJETO DO ORÇAMENTO ============

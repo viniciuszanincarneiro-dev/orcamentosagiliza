@@ -380,27 +380,38 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     [servicos],
   );
 
-  // Cálculo do ITBI considerando área transmitida / fração ideal.
-  // Prioridade da fração: área transmitida ÷ área total → fração ideal informada → 100%.
+  // Cálculo do ITBI:
+  // - Se "usar valor de contrato" estiver ativo e houver valor informado, a base = valor do contrato.
+  // - Caso contrário, base = valor total do imóvel × fração (área transmitida ÷ área total, ou fração ideal informada, ou 100%).
   const itbiCalc = useMemo(() => {
     const valorDecl = Number(data.itbi_valor_declarado ?? data.imovel_valor_avaliado ?? 0) || 0;
     const aliquota = Number(data.itbi_aliquota ?? 0) || 0;
     const areaTotal = Number(data.imovel_area_m2 ?? 0) || 0;
     const areaTrans = Number(data.itbi_area_transmitida ?? 0) || 0;
     const fracInf = Number(data.itbi_fracao_ideal ?? 0) || 0;
+    const usarContrato = !!data.itbi_usar_contrato;
+    const valorContrato = Number(data.itbi_valor_contrato ?? 0) || 0;
     let fracaoPct = 100;
-    let origem: "area" | "fracao" | "total" = "total";
-    if (areaTrans > 0 && areaTotal > 0) {
-      fracaoPct = Math.min(100, (areaTrans / areaTotal) * 100);
-      origem = "area";
-    } else if (fracInf > 0) {
-      fracaoPct = Math.min(100, fracInf);
-      origem = "fracao";
+    let origem: "area" | "fracao" | "total" | "contrato" = "total";
+    let base = 0;
+    if (usarContrato && valorContrato > 0) {
+      base = Number(valorContrato.toFixed(2));
+      origem = "contrato";
+      if (areaTrans > 0 && areaTotal > 0) fracaoPct = Math.min(100, (areaTrans / areaTotal) * 100);
+      else if (fracInf > 0) fracaoPct = Math.min(100, fracInf);
+    } else {
+      if (areaTrans > 0 && areaTotal > 0) {
+        fracaoPct = Math.min(100, (areaTrans / areaTotal) * 100);
+        origem = "area";
+      } else if (fracInf > 0) {
+        fracaoPct = Math.min(100, fracInf);
+        origem = "fracao";
+      }
+      base = Number(((valorDecl * fracaoPct) / 100).toFixed(2));
     }
-    const base = Number(((valorDecl * fracaoPct) / 100).toFixed(2));
     const valor = Number(((base * aliquota) / 100).toFixed(2));
-    return { valorDecl, aliquota, areaTotal, areaTrans, fracaoPct, origem, base, valor };
-  }, [data.itbi_valor_declarado, data.imovel_valor_avaliado, data.itbi_aliquota, data.imovel_area_m2, data.itbi_area_transmitida, data.itbi_fracao_ideal]);
+    return { valorDecl, aliquota, areaTotal, areaTrans, fracaoPct, origem, base, valor, usarContrato, valorContrato };
+  }, [data.itbi_valor_declarado, data.imovel_valor_avaliado, data.itbi_aliquota, data.imovel_area_m2, data.itbi_area_transmitida, data.itbi_fracao_ideal, data.itbi_usar_contrato, data.itbi_valor_contrato]);
 
   const itbiNoTotal = temITBI ? itbiCalc.valor : 0;
   const totalServicos = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
@@ -502,6 +513,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         itbi_area_transmitida: temITBI ? (data.itbi_area_transmitida ?? null) : null,
         itbi_fracao_ideal: temITBI ? (data.itbi_fracao_ideal ?? null) : null,
         itbi_base_calculo: temITBI ? itbiCalc.base : null,
+        itbi_usar_contrato: temITBI ? !!data.itbi_usar_contrato : null,
+        itbi_valor_contrato: temITBI ? (data.itbi_valor_contrato ?? null) : null,
       };
       // Marca data de envio automaticamente na primeira vez que vai para "enviado"
       if (status === "enviado" && !data.data_envio) {
@@ -991,11 +1004,50 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             </div>
           </div>
 
+          <Separator className="my-4" />
+
+          <div className="rounded-md border bg-muted/20 px-4 py-3 space-y-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={!!data.itbi_usar_contrato}
+                onChange={(e) => setData((d) => ({ ...d, itbi_usar_contrato: e.target.checked }))}
+              />
+              <span className="text-sm font-medium">Usar valor de contrato?</span>
+              <span className="text-xs text-muted-foreground">
+                Quando marcado, o ITBI é calculado sobre o valor do contrato (ignora cálculo proporcional).
+              </span>
+            </label>
+            {data.itbi_usar_contrato ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label>Valor do contrato (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={data.itbi_valor_contrato ?? ""}
+                    onChange={(e) => {
+                      const v = e.target.value === "" ? null : Number(e.target.value);
+                      setData((d) => ({ ...d, itbi_valor_contrato: v }));
+                    }}
+                    placeholder="Ex.: 50000"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ITBI = valor do contrato × alíquota.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
           <div className="mt-4 rounded-md border bg-muted/40 px-4 py-3 grid gap-2 sm:grid-cols-2">
             <div className="text-sm space-y-1">
               <div className="text-muted-foreground text-xs">Base utilizada</div>
               <div className="tabular-nums">
-                {itbiCalc.origem === "area"
+                {itbiCalc.origem === "contrato"
+                  ? `Valor de contrato — ${formatBRL(itbiCalc.base)}`
+                  : itbiCalc.origem === "area"
                   ? `${itbiCalc.areaTrans.toLocaleString("pt-BR")} m² de ${itbiCalc.areaTotal.toLocaleString("pt-BR")} m² (${itbiCalc.fracaoPct.toFixed(2)}%)`
                   : itbiCalc.origem === "fracao"
                     ? `Fração ideal ${itbiCalc.fracaoPct.toFixed(2)}%`

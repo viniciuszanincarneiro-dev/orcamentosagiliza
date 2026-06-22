@@ -57,8 +57,12 @@ export type OrcamentoData = {
   itbi_area_transmitida?: number | null;
   /** Fração ideal transmitida em % (alternativa à área). */
   itbi_fracao_ideal?: number | null;
-  /** Base de cálculo aplicada ao ITBI (valor_declarado × fração). */
+  /** Base de cálculo aplicada ao ITBI (valor_declarado × fração ou valor do contrato). */
   itbi_base_calculo?: number | null;
+  /** Quando true, usa o valor de contrato como base do ITBI (ignora fração ideal). */
+  itbi_usar_contrato?: boolean | null;
+  /** Valor do contrato (R$) usado como base do ITBI quando itbi_usar_contrato = true. */
+  itbi_valor_contrato?: number | null;
   created_at?: string;
   updated_at?: string;
 };

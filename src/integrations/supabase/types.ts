@@ -183,6 +183,8 @@ export type Database = {
           itbi_estimado: number | null
           itbi_fracao_ideal: number | null
           itbi_municipio: string | null
+          itbi_usar_contrato: boolean | null
+          itbi_valor_contrato: number | null
           itbi_valor_declarado: number | null
           itens: Json
           numero: string
@@ -222,6 +224,8 @@ export type Database = {
           itbi_estimado?: number | null
           itbi_fracao_ideal?: number | null
           itbi_municipio?: string | null
+          itbi_usar_contrato?: boolean | null
+          itbi_valor_contrato?: number | null
           itbi_valor_declarado?: number | null
           itens?: Json
           numero: string
@@ -261,6 +265,8 @@ export type Database = {
           itbi_estimado?: number | null
           itbi_fracao_ideal?: number | null
           itbi_municipio?: string | null
+          itbi_usar_contrato?: boolean | null
+          itbi_valor_contrato?: number | null
           itbi_valor_declarado?: number | null
           itens?: Json
           numero?: string

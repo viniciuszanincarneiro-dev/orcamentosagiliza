@@ -47,17 +47,12 @@ const VERDE: [number, number, number] = [114, 28, 36];          // bordô princi
 const VERDE_CLARO: [number, number, number] = [248, 232, 234];  // fundo claro de cabeçalho de coluna
 const CINZA_TAB: [number, number, number] = [114, 28, 36];      // faixa de cabeçalho de tabela
 
+// Serviços que exigem georreferenciamento (renderiza o bloco legal no PDF).
+// Apenas serviços que efetivamente envolvem georreferenciamento — NÃO incluir
+// todos os serviços rurais, apenas os que realmente exigem o procedimento.
 const TIPOS_RURAIS = new Set([
   "retificacao_geo",
-  "georreferenciamento",
-  "desmembramento",
   "desmembramento_incra",
-  "remembramento",
-  "estremacao",
-  "divisao_amigavel",
-  "usucapiao_extrajudicial",
-  "levantamento_topografico",
-  "levantamento_planialtimetrico",
 ]);
 
 let _logoCache: string | undefined;

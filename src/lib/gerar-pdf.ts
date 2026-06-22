@@ -170,7 +170,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     doc.setTextColor(...CINZA);
-    doc.text(`Página ${pageNum} de ${totalPages}`, W - M, H - 6, { align: "right" });
+    doc.text(`Página ${pageNum} de ${totalPages}`, W - M, H - 14, { align: "right" });
   };
 
 

@@ -380,27 +380,38 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     [servicos],
   );
 
-  // Cálculo do ITBI considerando área transmitida / fração ideal.
-  // Prioridade da fração: área transmitida ÷ área total → fração ideal informada → 100%.
+  // Cálculo do ITBI:
+  // - Se "usar valor de contrato" estiver ativo e houver valor informado, a base = valor do contrato.
+  // - Caso contrário, base = valor total do imóvel × fração (área transmitida ÷ área total, ou fração ideal informada, ou 100%).
   const itbiCalc = useMemo(() => {
     const valorDecl = Number(data.itbi_valor_declarado ?? data.imovel_valor_avaliado ?? 0) || 0;
     const aliquota = Number(data.itbi_aliquota ?? 0) || 0;
     const areaTotal = Number(data.imovel_area_m2 ?? 0) || 0;
     const areaTrans = Number(data.itbi_area_transmitida ?? 0) || 0;
     const fracInf = Number(data.itbi_fracao_ideal ?? 0) || 0;
+    const usarContrato = !!data.itbi_usar_contrato;
+    const valorContrato = Number(data.itbi_valor_contrato ?? 0) || 0;
     let fracaoPct = 100;
-    let origem: "area" | "fracao" | "total" = "total";
-    if (areaTrans > 0 && areaTotal > 0) {
-      fracaoPct = Math.min(100, (areaTrans / areaTotal) * 100);
-      origem = "area";
-    } else if (fracInf > 0) {
-      fracaoPct = Math.min(100, fracInf);
-      origem = "fracao";
+    let origem: "area" | "fracao" | "total" | "contrato" = "total";
+    let base = 0;
+    if (usarContrato && valorContrato > 0) {
+      base = Number(valorContrato.toFixed(2));
+      origem = "contrato";
+      if (areaTrans > 0 && areaTotal > 0) fracaoPct = Math.min(100, (areaTrans / areaTotal) * 100);
+      else if (fracInf > 0) fracaoPct = Math.min(100, fracInf);
+    } else {
+      if (areaTrans > 0 && areaTotal > 0) {
+        fracaoPct = Math.min(100, (areaTrans / areaTotal) * 100);
+        origem = "area";
+      } else if (fracInf > 0) {
+        fracaoPct = Math.min(100, fracInf);
+        origem = "fracao";
+      }
+      base = Number(((valorDecl * fracaoPct) / 100).toFixed(2));
     }
-    const base = Number(((valorDecl * fracaoPct) / 100).toFixed(2));
     const valor = Number(((base * aliquota) / 100).toFixed(2));
-    return { valorDecl, aliquota, areaTotal, areaTrans, fracaoPct, origem, base, valor };
-  }, [data.itbi_valor_declarado, data.imovel_valor_avaliado, data.itbi_aliquota, data.imovel_area_m2, data.itbi_area_transmitida, data.itbi_fracao_ideal]);
+    return { valorDecl, aliquota, areaTotal, areaTrans, fracaoPct, origem, base, valor, usarContrato, valorContrato };
+  }, [data.itbi_valor_declarado, data.imovel_valor_avaliado, data.itbi_aliquota, data.imovel_area_m2, data.itbi_area_transmitida, data.itbi_fracao_ideal, data.itbi_usar_contrato, data.itbi_valor_contrato]);
 
   const itbiNoTotal = temITBI ? itbiCalc.valor : 0;
   const totalServicos = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);

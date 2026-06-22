@@ -1105,6 +1105,20 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
               <div className="text-xs text-muted-foreground">Somado ao total do orçamento.</div>
             </div>
           </div>
+
+          {transmissaoParcial ? (
+            <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 dark:border-amber-800">
+              <div className="font-medium mb-1">Base proporcional aplicada a todos os emolumentos</div>
+              <div className="text-xs">
+                Valor cheio da matrícula: <b>{formatBRL(Number(data.imovel_valor_avaliado ?? 0))}</b><br />
+                Percentual transmitido: <b>{itbiCalc.fracaoPct.toFixed(2)}%</b><br />
+                Valor base considerado: <b className="tabular-nums">{formatBRL(valorBaseProporcional)}</b>
+              </div>
+              <div className="text-xs mt-2 opacity-90">
+                Esta base é usada no cálculo de ITBI, Registro de Imóveis, Tabelionato e demais emolumentos vinculados ao valor do imóvel — nunca o valor cheio da matrícula.
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
       ) : null}

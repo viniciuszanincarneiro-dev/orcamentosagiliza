@@ -30,17 +30,11 @@ const CINZA = "5A5A5A";
 const CINZA_TAB = "721C24";   // faixa de cabeçalho da tabela (bordô)
 const CINZA_CLARO = "F8E8EA"; // fundo claro de coluna (bordô bem claro)
 
+// Serviços que exigem georreferenciamento (renderiza o bloco legal no DOCX).
+// Apenas serviços que efetivamente envolvem georreferenciamento.
 const TIPOS_RURAIS = new Set([
   "retificacao_geo",
-  "georreferenciamento",
-  "desmembramento",
   "desmembramento_incra",
-  "remembramento",
-  "estremacao",
-  "divisao_amigavel",
-  "usucapiao_extrajudicial",
-  "levantamento_topografico",
-  "levantamento_planialtimetrico",
 ]);
 
 let _logoBytesCache: Uint8Array | undefined;

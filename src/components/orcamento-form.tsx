@@ -1004,11 +1004,50 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             </div>
           </div>
 
+          <Separator className="my-4" />
+
+          <div className="rounded-md border bg-muted/20 px-4 py-3 space-y-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={!!data.itbi_usar_contrato}
+                onChange={(e) => setData((d) => ({ ...d, itbi_usar_contrato: e.target.checked }))}
+              />
+              <span className="text-sm font-medium">Usar valor de contrato?</span>
+              <span className="text-xs text-muted-foreground">
+                Quando marcado, o ITBI é calculado sobre o valor do contrato (ignora cálculo proporcional).
+              </span>
+            </label>
+            {data.itbi_usar_contrato ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label>Valor do contrato (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={data.itbi_valor_contrato ?? ""}
+                    onChange={(e) => {
+                      const v = e.target.value === "" ? null : Number(e.target.value);
+                      setData((d) => ({ ...d, itbi_valor_contrato: v }));
+                    }}
+                    placeholder="Ex.: 50000"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    ITBI = valor do contrato × alíquota.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
           <div className="mt-4 rounded-md border bg-muted/40 px-4 py-3 grid gap-2 sm:grid-cols-2">
             <div className="text-sm space-y-1">
               <div className="text-muted-foreground text-xs">Base utilizada</div>
               <div className="tabular-nums">
-                {itbiCalc.origem === "area"
+                {itbiCalc.origem === "contrato"
+                  ? `Valor de contrato — ${formatBRL(itbiCalc.base)}`
+                  : itbiCalc.origem === "area"
                   ? `${itbiCalc.areaTrans.toLocaleString("pt-BR")} m² de ${itbiCalc.areaTotal.toLocaleString("pt-BR")} m² (${itbiCalc.fracaoPct.toFixed(2)}%)`
                   : itbiCalc.origem === "fracao"
                     ? `Fração ideal ${itbiCalc.fracaoPct.toFixed(2)}%`

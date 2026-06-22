@@ -317,7 +317,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
   // ============ Helpers de blocos de serviço (multisserviço) ============
   function addServico() {
-    setServicos((arr) => [...arr, blocoVazio("georreferenciamento")]);
+    setServicos((arr) => [...arr, blocoVazio("retificacao_geo")]);
   }
   function removeServico(idx: number) {
     setServicos((arr) => arr.length <= 1 ? arr : arr.filter((_, i) => i !== idx));

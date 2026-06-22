@@ -14,7 +14,6 @@ export const EMPRESA = {
 };
 
 export const TIPOS_SERVICO = [
-  { value: "georreferenciamento", label: "Georreferenciamento Rural" },
   { value: "retificacao_geo", label: "Retificação Administrativa Rural" },
   { value: "retificacao_urbana", label: "Retificação Administrativa Urbana" },
   { value: "desdobro", label: "Desdobro" },

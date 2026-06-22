@@ -25,6 +25,13 @@ export type ModeloServico = {
  * NÃO editar estes textos sem autorização — eles foram aprovados pela Agiliza.
  */
 const OFICIAIS: Record<string, ModeloServico> = {
+  compra_venda: {
+    titulo: "ESCRITURA PÚBLICA DE COMPRA E VENDA",
+    descricao:
+      "A Escritura Pública de Compra e Venda é um documento essencial para garantir a segurança jurídica, autenticidade e validade ao negócio jurídico na aquisição de imóveis, sendo esta lavrada em um Tabelionato de Notas e finalizada mediante o registro no Cartório de Registro de Imóveis, formalizando a transação entre comprador e vendedor e conferindo a propriedade plena. O ato de Compra e Venda está previsto no ordenamento jurídico brasileiro, especialmente no Código Civil e na Lei de Registros Públicos (Lei nº 6.015/1973). Art. 108 – “Não dispondo a lei em contrário, a escritura pública é essencial à validade dos negócios jurídicos que visem à constituição, transferência, modificação ou renúncia de direitos reais sobre imóveis de valor superior a 30 vezes o maior salário mínimo vigente no país.” Art. 167 - No Registro de Imóveis, além da matrícula, serão feitos. (Renumerado do art. 168 com nova redação pela Lei nº 6.216, de 1975). I -o registro: [...] 29) da compra e venda pura e da condicional;",
+    metodologia:
+      "No presente orçamento está incluso os seguintes serviços:\n\nAssessoria técnica na análise documental do imóvel e das partes; elaboração/revisão da minuta de escritura pública; acompanhamento da lavratura no Tabelionato de Notas; protocolo e acompanhamento do registro da transmissão no Cartório de Registro de Imóveis até a averbação em nome do adquirente.",
+  },
   desdobro: {
     titulo: "DESDOBRO URBANO",
     descricao:

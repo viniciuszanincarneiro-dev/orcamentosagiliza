@@ -475,6 +475,27 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     toast.success(`RI recalculado: ${formatBRL(novo)}`);
   }
 
+  // Mantém o item de "REGISTRO DE IMÓVEIS" sincronizado com a base proporcional.
+  // Quando o usuário altera área transmitida / fração ideal / valor de contrato,
+  // o RI é recalculado automaticamente nos blocos que já o possuem.
+  const novoValorRI = explicacaoRI.valor;
+  useEffect(() => {
+    if (!Number.isFinite(novoValorRI) || novoValorRI <= 0) return;
+    setServicos((arr) => {
+      let mudou = false;
+      const next = arr.map((s) => {
+        const idx = s.itens.findIndex((it) => /registro\s+de\s+im[oó]veis/i.test(it.descricao));
+        if (idx === -1) return s;
+        if (Math.abs((Number(s.itens[idx].valor) || 0) - novoValorRI) < 0.005) return s;
+        mudou = true;
+        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: novoValorRI } : it);
+        return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
+      });
+      return mudou ? next : arr;
+    });
+  }, [novoValorRI]);
+
+
   async function save(status: string = data.status ?? "rascunho"): Promise<OrcamentoData | null> {
     if (!data.requerente_nome.trim()) {
       toast.error("Informe o nome do cliente");

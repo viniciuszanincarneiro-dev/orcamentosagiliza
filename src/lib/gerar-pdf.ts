@@ -423,7 +423,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   const areaTotal = Number(orc.imovel_area_m2 ?? 0) || 0;
   const areaTrans = Number(orc.itbi_area_transmitida ?? 0) || 0;
   const fracaoInf = Number(orc.itbi_fracao_ideal ?? 0) || 0;
-  const mostraITBI = temITBI && itbiValor > 0;
+  const mostraITBI = temITBI;
 
   // Detalhes do cálculo do ITBI — exibidos na parte descritiva.
   if (mostraITBI) {

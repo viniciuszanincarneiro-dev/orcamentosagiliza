@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2, Calculator, Loader2, FileDown, FileText as FileTextIcon, Save, Sparkles, Upload, X, AlertTriangle, CheckCircle2, AlertCircle, Eraser, PencilLine, ChevronUp, ChevronDown, Copy as CopyIcon } from "lucide-react";
@@ -178,11 +178,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     }
   }
 
-  function aplicarTemplate(tipo: string, blocoIdx = 0, area_m2 = data.imovel_area_m2, valor = data.imovel_valor_avaliado) {
+  function aplicarTemplate(tipo: string, blocoIdx = 0, area_m2 = data.imovel_area_m2, valor?: number) {
+    // Por padrão usa a base proporcional (quando houver transmissão parcial),
+    // caindo para o valor avaliado do imóvel quando nada for informado.
+    const valorBase = valor ?? (valorBaseProporcional || data.imovel_valor_avaliado || 0);
     const template = TEMPLATES_ITENS[tipo] ?? [];
     const itens: ItemOrcamento[] = template.map((t) =>
       "auto" in t
-        ? { descricao: t.descricao, valor: calcValorAuto(t.auto, area_m2, valor) }
+        ? { descricao: t.descricao, valor: calcValorAuto(t.auto, area_m2, valorBase) }
         : { descricao: t.descricao, valor: t.valor_base }
     );
     setServicos((arr) => arr.map((s, i) => i === blocoIdx ? { ...s, tipo_servico: tipo, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) } : s));
@@ -417,10 +420,27 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const totalServicos = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
   const total = totalServicos + itbiNoTotal;
 
-  // Explicação do RI baseado no valor declarado do imóvel e no fator interno
+  // Base proporcional para TODOS os emolumentos (RI, Tabelionato etc.).
+  // Quando há transmissão parcial (área transmitida, fração ideal informada ou
+  // valor de contrato), o valor do imóvel usado nos cálculos passa a ser a
+  // base reduzida, nunca o valor cheio da matrícula.
+  const valorBaseProporcional = useMemo(() => {
+    const valorCheio = Number(data.imovel_valor_avaliado ?? 0) || 0;
+    if (!temITBI) return valorCheio;
+    if (itbiCalc.origem === "total") return valorCheio;
+    return itbiCalc.base || valorCheio;
+  }, [temITBI, itbiCalc.base, itbiCalc.origem, data.imovel_valor_avaliado]);
+
+  const transmissaoParcial =
+    temITBI &&
+    itbiCalc.origem !== "total" &&
+    valorBaseProporcional > 0 &&
+    valorBaseProporcional !== (Number(data.imovel_valor_avaliado ?? 0) || 0);
+
+  // Explicação do RI baseado na BASE PROPORCIONAL quando houver transmissão parcial.
   const explicacaoRI = useMemo(
-    () => explicarRegistroImoveis(Number(data.imovel_valor_avaliado) || 0, fatorRI),
-    [data.imovel_valor_avaliado, fatorRI],
+    () => explicarRegistroImoveis(valorBaseProporcional, fatorRI),
+    [valorBaseProporcional, fatorRI],
   );
 
   async function salvarFatorPadrao() {
@@ -454,6 +474,27 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     });
     toast.success(`RI recalculado: ${formatBRL(novo)}`);
   }
+
+  // Mantém o item de "REGISTRO DE IMÓVEIS" sincronizado com a base proporcional.
+  // Quando o usuário altera área transmitida / fração ideal / valor de contrato,
+  // o RI é recalculado automaticamente nos blocos que já o possuem.
+  const novoValorRI = explicacaoRI.valor;
+  useEffect(() => {
+    if (!Number.isFinite(novoValorRI) || novoValorRI <= 0) return;
+    setServicos((arr) => {
+      let mudou = false;
+      const next = arr.map((s) => {
+        const idx = s.itens.findIndex((it) => /registro\s+de\s+im[oó]veis/i.test(it.descricao));
+        if (idx === -1) return s;
+        if (Math.abs((Number(s.itens[idx].valor) || 0) - novoValorRI) < 0.005) return s;
+        mudou = true;
+        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: novoValorRI } : it);
+        return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
+      });
+      return mudou ? next : arr;
+    });
+  }, [novoValorRI]);
+
 
   async function save(status: string = data.status ?? "rascunho"): Promise<OrcamentoData | null> {
     if (!data.requerente_nome.trim()) {
@@ -1064,6 +1105,20 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
               <div className="text-xs text-muted-foreground">Somado ao total do orçamento.</div>
             </div>
           </div>
+
+          {transmissaoParcial ? (
+            <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 dark:border-amber-800">
+              <div className="font-medium mb-1">Base proporcional aplicada a todos os emolumentos</div>
+              <div className="text-xs">
+                Valor cheio da matrícula: <b>{formatBRL(Number(data.imovel_valor_avaliado ?? 0))}</b><br />
+                Percentual transmitido: <b>{itbiCalc.fracaoPct.toFixed(2)}%</b><br />
+                Valor base considerado: <b className="tabular-nums">{formatBRL(valorBaseProporcional)}</b>
+              </div>
+              <div className="text-xs mt-2 opacity-90">
+                Esta base é usada no cálculo de ITBI, Registro de Imóveis, Tabelionato e demais emolumentos vinculados ao valor do imóvel — nunca o valor cheio da matrícula.
+              </div>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
       ) : null}

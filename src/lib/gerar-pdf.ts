@@ -431,6 +431,22 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     const percent = areaTrans > 0 && areaTotal > 0
       ? (areaTrans / areaTotal) * 100
       : (fracaoInf > 0 ? fracaoInf : 100);
+    const valorCheio = Number(orc.imovel_valor_avaliado ?? 0) || 0;
+    const transmissaoParcial = usarContrato || (percent > 0 && percent < 100);
+
+    if (transmissaoParcial) {
+      writeSectionTitle("BASE PROPORCIONAL — TRANSMISSÃO PARCIAL");
+      if (areaTotal > 0) writeParagraph(`Área total do imóvel: ${formatNumberBR(areaTotal)} m²`, { gap: 2, align: "left" });
+      if (areaTrans > 0) writeParagraph(`Área transmitida: ${formatNumberBR(areaTrans)} m²`, { gap: 2, align: "left" });
+      writeParagraph(`Percentual transmitido: ${percent.toFixed(2)}%`, { gap: 2, align: "left" });
+      if (valorCheio > 0) writeParagraph(`Valor total do imóvel: ${formatBRL(valorCheio)}`, { gap: 2, align: "left" });
+      writeParagraph(`Valor base considerado: ${formatBRL(itbiBase)}`, { bold: true, gap: 2, align: "left" });
+      writeParagraph(
+        "Esta base proporcional é utilizada como referência para ITBI, Registro de Imóveis, Tabelionato e demais emolumentos vinculados ao valor do imóvel. Não se aplica o valor cheio da matrícula em casos de transmissão parcial.",
+        { gap: 8 },
+      );
+    }
+
     writeSectionTitle("INFORMAÇÕES DO CÁLCULO DO ITBI");
     if (orc.itbi_municipio) writeParagraph(`Município: ${orc.itbi_municipio}`, { gap: 2, align: "left" });
     if (usarContrato) {

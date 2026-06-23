@@ -437,6 +437,20 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     writeParagraph(`Valor do ITBI: ${formatBRL(itbiValor)}`, { bold: true, gap: 8, align: "left" });
   }
 
+  // ============ Pré-cálculo do ITCMD (100% manual) ============
+  const temITCMD = blocos.some((b) => servicoTemITCMD(b.tipo_servico));
+  const itcmdValor = temITCMD ? Number(orc.itcmd_estimado ?? 0) || 0 : 0;
+  const mostraITCMD = temITCMD;
+
+  if (mostraITCMD) {
+    writeSectionTitle("ITCMD");
+    writeParagraph(
+      "O ITCMD (Imposto de Transmissão Causa Mortis e Doação) não é calculado pelo sistema. O valor informado abaixo foi fornecido pelo órgão fazendário competente e está incluso no total do orçamento.",
+      { gap: 4 },
+    );
+    writeParagraph(`Valor do ITCMD: ${formatBRL(itcmdValor)}`, { bold: true, gap: 8, align: "left" });
+  }
+
   // ============ DOS VALORES — TABELA FINANCEIRA ÚNICA ============
   // Cabeçalho + linhas de serviços + ITBI (quando aplicável) + TOTAL
   // são renderizados como uma ÚNICA tabela que permanece sempre na mesma página.

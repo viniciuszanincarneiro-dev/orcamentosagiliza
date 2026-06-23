@@ -63,6 +63,8 @@ export type OrcamentoData = {
   itbi_usar_contrato?: boolean | null;
   /** Valor do contrato (R$) usado como base do ITBI quando itbi_usar_contrato = true. */
   itbi_valor_contrato?: number | null;
+  /** Valor do ITCMD — informado manualmente (recebido pronto do órgão fazendário). */
+  itcmd_estimado?: number | null;
   created_at?: string;
   updated_at?: string;
 };

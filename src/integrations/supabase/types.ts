@@ -186,6 +186,7 @@ export type Database = {
           itbi_usar_contrato: boolean | null
           itbi_valor_contrato: number | null
           itbi_valor_declarado: number | null
+          itcmd_estimado: number | null
           itens: Json
           numero: string
           observacoes: string | null
@@ -227,6 +228,7 @@ export type Database = {
           itbi_usar_contrato?: boolean | null
           itbi_valor_contrato?: number | null
           itbi_valor_declarado?: number | null
+          itcmd_estimado?: number | null
           itens?: Json
           numero: string
           observacoes?: string | null
@@ -268,6 +270,7 @@ export type Database = {
           itbi_usar_contrato?: boolean | null
           itbi_valor_contrato?: number | null
           itbi_valor_declarado?: number | null
+          itcmd_estimado?: number | null
           itens?: Json
           numero?: string
           observacoes?: string | null

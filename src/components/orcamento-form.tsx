@@ -16,7 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
-import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO, servicoTemITBI } from "@/lib/empresa";
+import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO, servicoTemITBI, servicoTemITCMD } from "@/lib/empresa";
 import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
 // gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
@@ -388,8 +388,15 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   // continuam alimentando a base proporcional do RI/Tabelionato.
   const itbiValorManual = Number(data.itbi_estimado ?? 0) || 0;
   const itbiNoTotal = temITBI ? itbiValorManual : 0;
+  // ITCMD — também 100% MANUAL (recebido pronto do órgão fazendário).
+  const temITCMD = useMemo(
+    () => servicos.some((s) => servicoTemITCMD(s.tipo_servico)),
+    [servicos],
+  );
+  const itcmdValorManual = Number(data.itcmd_estimado ?? 0) || 0;
+  const itcmdNoTotal = temITCMD ? itcmdValorManual : 0;
   const totalServicos = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
-  const total = totalServicos + itbiNoTotal;
+  const total = totalServicos + itbiNoTotal + itcmdNoTotal;
 
   // Base proporcional para emolumentos (RI, Tabelionato etc.) — calculada a
   // partir da transmissão parcial informada, independentemente do ITBI.
@@ -501,7 +508,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       // Aglutina itens de todos os blocos (mantém compat com lucro/financeiro)
       const itensFlat: ItemOrcamento[] = servicos.flatMap((s) => s.itens);
       const totalServicosAtual = itensFlat.reduce((a, b) => a + (Number(b.valor) || 0), 0);
-      const totalAtual = totalServicosAtual + (temITBI ? itbiValorManual : 0);
+      const totalAtual = totalServicosAtual + (temITBI ? itbiValorManual : 0) + (temITCMD ? itcmdValorManual : 0);
       // Observações: concatena observações de cada bloco quando houver mais de uma
       const obsFromBlocos = servicos
         .map((s, i) => s.observacoes?.trim() ? `[${i + 1}] ${s.observacoes.trim()}` : "")
@@ -545,6 +552,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         itbi_base_calculo: temITBI ? valorBaseProporcional : null,
         itbi_usar_contrato: temITBI ? !!data.itbi_usar_contrato : null,
         itbi_valor_contrato: temITBI ? (data.itbi_valor_contrato ?? null) : null,
+        itcmd_estimado: temITCMD ? itcmdValorManual : null,
       };
       // Marca data de envio automaticamente na primeira vez que vai para "enviado"
       if (status === "enviado" && !data.data_envio) {
@@ -1064,6 +1072,47 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       ) : null}
 
 
+      {/* ============ ITCMD 100% MANUAL (somado ao total) ============ */}
+      {temITCMD ? (
+      <Card>
+        <CardHeader>
+          <CardTitle>ITCMD — Imposto de Transmissão Causa Mortis e Doação</CardTitle>
+          <CardDescription>
+            Informe o valor do ITCMD <b>manualmente</b>. O sistema não calcula o ITCMD — o valor é recebido pronto do órgão fazendário e somado ao total do orçamento.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label>Valor do ITCMD (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={data.itcmd_estimado ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value === "" ? null : Number(e.target.value);
+                  setData((d) => ({ ...d, itcmd_estimado: v }));
+                }}
+                placeholder="Digite o valor do ITCMD"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Campo 100% manual. Será somado ao total.</p>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-md border bg-muted/40 px-4 py-3 flex items-baseline justify-between">
+            <div className="text-sm">
+              <div className="text-muted-foreground text-xs">Valor do ITCMD (manual)</div>
+            </div>
+            <div className="text-2xl font-semibold tabular-nums">{formatBRL(itcmdValorManual)}</div>
+          </div>
+        </CardContent>
+      </Card>
+      ) : null}
+
+
+
+
+
       {/* ============ SERVIÇOS DO ORÇAMENTO (multisserviço) ============ */}
       <Card>
         <CardHeader>
@@ -1163,7 +1212,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           })}
 
           <Separator className="my-2" />
-          {temITBI && itbiNoTotal > 0 ? (
+          {(itbiNoTotal > 0 || itcmdNoTotal > 0) ? (
             <div className="flex justify-end items-baseline gap-4 pr-2">
               <span className="text-sm uppercase text-muted-foreground tracking-wider">Subtotal serviços</span>
               <span className="text-base font-medium tabular-nums">{formatBRL(totalServicos)}</span>
@@ -1173,6 +1222,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             <div className="flex justify-end items-baseline gap-4 pr-2">
               <span className="text-sm uppercase text-muted-foreground tracking-wider">ITBI</span>
               <span className="text-base font-medium tabular-nums">{formatBRL(itbiNoTotal)}</span>
+            </div>
+          ) : null}
+          {temITCMD && itcmdNoTotal > 0 ? (
+            <div className="flex justify-end items-baseline gap-4 pr-2">
+              <span className="text-sm uppercase text-muted-foreground tracking-wider">ITCMD</span>
+              <span className="text-base font-medium tabular-nums">{formatBRL(itcmdNoTotal)}</span>
             </div>
           ) : null}
           <div className="flex justify-end items-baseline gap-4 pr-2">

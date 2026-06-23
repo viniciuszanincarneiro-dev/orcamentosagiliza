@@ -481,6 +481,13 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     ]);
   }
 
+  if (mostraITCMD) {
+    tabelaBody.push([
+      { content: "ITCMD", styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO } },
+      { content: formatBRL(itcmdValor), styles: { fontStyle: "bold", fillColor: VERDE_CLARO, textColor: PRETO, halign: "right" } },
+    ]);
+  }
+
   tabelaBody.push([
     { content: "VALOR TOTAL DO ORÇAMENTO", styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], fontSize: 11 } },
     { content: formatBRL(orc.valor_total), styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], halign: "right", fontSize: 11 } },

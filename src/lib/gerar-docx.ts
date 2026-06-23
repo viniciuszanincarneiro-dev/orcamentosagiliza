@@ -253,10 +253,10 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
 
         // Assinatura manual (linha em aberto + dados do responsável)
         P({ text: "_________________________________________", align: AlignmentType.CENTER, spacing: 120 }),
-        P({ text: "Everton de Oliveira Meyer", bold: true, align: AlignmentType.CENTER }),
-        P({ text: "Técnico em Agrimensura", align: AlignmentType.CENTER }),
-        P({ text: "CRT – 0406853290-7", align: AlignmentType.CENTER }),
-        P({ text: "Código INCRA: XAFW", align: AlignmentType.CENTER, spacing: 400 }),
+        P({ text: "AGILIZA ASSESSORIA EM DOCUMENTOS", bold: true, align: AlignmentType.CENTER }),
+        P({ text: "E TOPOGRAFIA", bold: true, align: AlignmentType.CENTER }),
+        P({ text: "Everton de Oliveira Meyer Ltda", align: AlignmentType.CENTER }),
+        P({ text: "CNPJ 36.172.008/0001-82", align: AlignmentType.CENTER, spacing: 400 }),
 
         // Rodapé com unidades
         P({ text: "—".repeat(40), color: "C8C8CC", align: AlignmentType.CENTER, size: 14 }),

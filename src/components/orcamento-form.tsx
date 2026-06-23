@@ -1072,6 +1072,47 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       ) : null}
 
 
+      {/* ============ ITCMD 100% MANUAL (somado ao total) ============ */}
+      {temITCMD ? (
+      <Card>
+        <CardHeader>
+          <CardTitle>ITCMD — Imposto de Transmissão Causa Mortis e Doação</CardTitle>
+          <CardDescription>
+            Informe o valor do ITCMD <b>manualmente</b>. O sistema não calcula o ITCMD — o valor é recebido pronto do órgão fazendário e somado ao total do orçamento.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label>Valor do ITCMD (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={data.itcmd_estimado ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value === "" ? null : Number(e.target.value);
+                  setData((d) => ({ ...d, itcmd_estimado: v }));
+                }}
+                placeholder="Digite o valor do ITCMD"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Campo 100% manual. Será somado ao total.</p>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-md border bg-muted/40 px-4 py-3 flex items-baseline justify-between">
+            <div className="text-sm">
+              <div className="text-muted-foreground text-xs">Valor do ITCMD (manual)</div>
+            </div>
+            <div className="text-2xl font-semibold tabular-nums">{formatBRL(itcmdValorManual)}</div>
+          </div>
+        </CardContent>
+      </Card>
+      ) : null}
+
+
+
+
+
       {/* ============ SERVIÇOS DO ORÇAMENTO (multisserviço) ============ */}
       <Card>
         <CardHeader>

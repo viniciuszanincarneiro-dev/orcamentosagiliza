@@ -552,6 +552,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         itbi_base_calculo: temITBI ? valorBaseProporcional : null,
         itbi_usar_contrato: temITBI ? !!data.itbi_usar_contrato : null,
         itbi_valor_contrato: temITBI ? (data.itbi_valor_contrato ?? null) : null,
+        itcmd_estimado: temITCMD ? itcmdValorManual : null,
       };
       // Marca data de envio automaticamente na primeira vez que vai para "enviado"
       if (status === "enviado" && !data.data_envio) {

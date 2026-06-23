@@ -1212,7 +1212,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           })}
 
           <Separator className="my-2" />
-          {temITBI && itbiNoTotal > 0 ? (
+          {(itbiNoTotal > 0 || itcmdNoTotal > 0) ? (
             <div className="flex justify-end items-baseline gap-4 pr-2">
               <span className="text-sm uppercase text-muted-foreground tracking-wider">Subtotal serviços</span>
               <span className="text-base font-medium tabular-nums">{formatBRL(totalServicos)}</span>
@@ -1222,6 +1222,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             <div className="flex justify-end items-baseline gap-4 pr-2">
               <span className="text-sm uppercase text-muted-foreground tracking-wider">ITBI</span>
               <span className="text-base font-medium tabular-nums">{formatBRL(itbiNoTotal)}</span>
+            </div>
+          ) : null}
+          {temITCMD && itcmdNoTotal > 0 ? (
+            <div className="flex justify-end items-baseline gap-4 pr-2">
+              <span className="text-sm uppercase text-muted-foreground tracking-wider">ITCMD</span>
+              <span className="text-base font-medium tabular-nums">{formatBRL(itcmdNoTotal)}</span>
             </div>
           ) : null}
           <div className="flex justify-end items-baseline gap-4 pr-2">

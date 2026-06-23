@@ -388,8 +388,15 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   // continuam alimentando a base proporcional do RI/Tabelionato.
   const itbiValorManual = Number(data.itbi_estimado ?? 0) || 0;
   const itbiNoTotal = temITBI ? itbiValorManual : 0;
+  // ITCMD — também 100% MANUAL (recebido pronto do órgão fazendário).
+  const temITCMD = useMemo(
+    () => servicos.some((s) => servicoTemITCMD(s.tipo_servico)),
+    [servicos],
+  );
+  const itcmdValorManual = Number(data.itcmd_estimado ?? 0) || 0;
+  const itcmdNoTotal = temITCMD ? itcmdValorManual : 0;
   const totalServicos = useMemo(() => subtotais.reduce((a, b) => a + b, 0), [subtotais]);
-  const total = totalServicos + itbiNoTotal;
+  const total = totalServicos + itbiNoTotal + itcmdNoTotal;
 
   // Base proporcional para emolumentos (RI, Tabelionato etc.) — calculada a
   // partir da transmissão parcial informada, independentemente do ITBI.

@@ -157,14 +157,8 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
 
   const tabelaAdicional = null;
 
-  const blocoLegal = anyRural ? [
-    P({ text: "GEORREFERENCIAMENTO", bold: true, size: 22 }),
-    P({ text: "A Lei nº 10.267/2001, regulamentada pelo Decreto nº 4.449/2002, demonstra algumas alterações e determina que sejam cumpridas. Estas alterações estão relacionadas ao cadastramento de imóveis rurais, tornando obrigatório o georreferenciamento, o qual deverá conter as coordenadas dos vértices definidores dos limites dos imóveis rurais, com precisão posicional, nos casos de desmembramento, remembramento ou mudança de titularidade entre outras modalidades. Tais exigências representam uma mudança paradigmática nas formas de levantamento e cadastro imobiliário até então vigentes no Brasil." }),
-    P({ text: "Todos os imóveis rurais possuem a obrigatoriedade em fazer o georreferenciamento conforme os prazos definidos no Decreto nº 4.449/02, alterado pelo Decreto nº 9.311/18." }),
-    P({ text: "• Vigente para imóveis acima de 100 hectares;" }),
-    P({ text: "• 20/11/2023 para imóveis superiores a 25 hectares;" }),
-    P({ text: "• 20/11/2025 para imóveis inferiores a 25 hectares.", spacing: 200 }),
-  ] : [];
+  // Bloco legal de GEORREFERENCIAMENTO removido — mantido apenas na fundamentação do serviço
+  const blocoLegal: never[] = [];
 
   const proprietariosBlock = orc.proprietarios?.length ? [
     P({ text: "PROPRIETÁRIOS", bold: true, size: 22 }),
@@ -259,10 +253,10 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
 
         // Assinatura manual (linha em aberto + dados do responsável)
         P({ text: "_________________________________________", align: AlignmentType.CENTER, spacing: 120 }),
-        P({ text: "Everton de Oliveira Meyer", bold: true, align: AlignmentType.CENTER }),
-        P({ text: "Técnico em Agrimensura", align: AlignmentType.CENTER }),
-        P({ text: "CRT – 0406853290-7", align: AlignmentType.CENTER }),
-        P({ text: "Código INCRA: XAFW", align: AlignmentType.CENTER, spacing: 400 }),
+        P({ text: "AGILIZA ASSESSORIA EM DOCUMENTOS", bold: true, align: AlignmentType.CENTER }),
+        P({ text: "E TOPOGRAFIA", bold: true, align: AlignmentType.CENTER }),
+        P({ text: "Everton de Oliveira Meyer Ltda", align: AlignmentType.CENTER }),
+        P({ text: "CNPJ 36.172.008/0001-82", align: AlignmentType.CENTER, spacing: 400 }),
 
         // Rodapé com unidades
         P({ text: "—".repeat(40), color: "C8C8CC", align: AlignmentType.CENTER, size: 14 }),

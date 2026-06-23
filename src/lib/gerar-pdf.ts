@@ -560,15 +560,15 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(...PRETO);
-  doc.text("Everton de Oliveira Meyer", W / 2, y, { align: "center" });
+  doc.text("AGILIZA ASSESSORIA EM DOCUMENTOS", W / 2, y, { align: "center" });
+  y += 12;
+  doc.text("E TOPOGRAFIA", W / 2, y, { align: "center" });
   y += 12;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Técnico em Agrimensura", W / 2, y, { align: "center" });
+  doc.text("Everton de Oliveira Meyer Ltda", W / 2, y, { align: "center" });
   y += 11;
-  doc.text("CRT – 0406853290-7", W / 2, y, { align: "center" });
-  y += 11;
-  doc.text("Código INCRA: XAFW", W / 2, y, { align: "center" });
+  doc.text("CNPJ 36.172.008/0001-82", W / 2, y, { align: "center" });
   y += 10;
 
   // (A lista de unidades agora é renderizada no rodapé fixo de TODAS as páginas.)

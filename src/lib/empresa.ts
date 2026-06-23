@@ -53,6 +53,21 @@ export function servicoTemITBI(tipo: string): boolean {
   return SERVICOS_COM_ITBI.has(tipo);
 }
 
+/**
+ * Serviços nos quais há incidência de ITCMD (transmissão gratuita — doação / causa mortis).
+ * O ITCMD NÃO é calculado pelo sistema: o valor é informado manualmente pelo usuário
+ * (recebido pronto do órgão fazendário) e somado ao total do orçamento.
+ */
+export const SERVICOS_COM_ITCMD: ReadonlySet<string> = new Set([
+  "doacao",
+  "doacao_usufruto",
+  "inventario_extrajudicial",
+]);
+
+export function servicoTemITCMD(tipo: string): boolean {
+  return SERVICOS_COM_ITCMD.has(tipo);
+}
+
 export const TIPO_TITULOS: Record<string, string> = {
   retificacao_geo: "RETIFICAÇÃO ADMINISTRATIVA COM GEORREFERENCIAMENTO CERTIFICADO PELO INCRA",
   retificacao_urbana: "RETIFICAÇÃO ADMINISTRATIVA DE IMÓVEL URBANO",

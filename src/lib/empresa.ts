@@ -167,7 +167,7 @@ export const METODOLOGIA_SERVICO: Record<string, string> = {
  * Itens sem `auto` usam um valor base sugerido (editável).
  */
 export type TemplateItem =
-  | { descricao: string; auto: "topografia" | "registro" | "certidoes" | "ccir" }
+  | { descricao: string; auto: "topografia" | "registro" | "certidoes" | "ccir" | "tabelionato" | "assessoria" }
   | { descricao: string; valor_base: number };
 
 export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {

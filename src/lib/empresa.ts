@@ -167,7 +167,7 @@ export const METODOLOGIA_SERVICO: Record<string, string> = {
  * Itens sem `auto` usam um valor base sugerido (editável).
  */
 export type TemplateItem =
-  | { descricao: string; auto: "topografia" | "registro" | "certidoes" | "ccir" }
+  | { descricao: string; auto: "topografia" | "registro" | "certidoes" | "ccir" | "tabelionato" | "assessoria" }
   | { descricao: string; valor_base: number };
 
 export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
@@ -213,9 +213,10 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "ENCAMINHAMENTO AO TABELIONATO", valor_base: 600 },
   ],
   compra_venda: [
-    { descricao: "ASSESSORIA DOCUMENTAL (CONTRATO/ESCRITURA)", valor_base: 1500 },
+    { descricao: "ASSESSORIA DOCUMENTAL", auto: "assessoria" },
     { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
     { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", auto: "registro" },
+    { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
   ],
   outros: [],
   desdobro: [

@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
 import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO, servicoTemITBI, servicoTemITCMD } from "@/lib/empresa";
 import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
+import { calcularTabelionato } from "@/lib/calculo-tabelionato";
 // gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento, ServicoBloco } from "@/lib/orcamento-types";

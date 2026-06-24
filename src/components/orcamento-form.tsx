@@ -156,7 +156,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
   const set = <K extends keyof OrcamentoData>(k: K, v: OrcamentoData[K]) => setData((d) => ({ ...d, [k]: v }));
 
-  type AutoKind = "topografia" | "registro" | "certidoes" | "ccir";
+  type AutoKind = "topografia" | "registro" | "certidoes" | "ccir" | "tabelionato" | "assessoria";
   function calcValorAuto(kind: AutoKind, area_m2?: number, valor?: number): number {
     if (!tabelaValores) return 0;
     const v = Object.fromEntries(tabelaValores.map((x) => [x.chave, Number(x.valor)]));
@@ -174,6 +174,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       case "registro": return calcularRegistroImoveis(valor ?? 0, fatorRI);
       case "certidoes": return v.certidoes_assinaturas ?? 450;
       case "ccir": return v.atualizacao_ccir ?? 250;
+      case "tabelionato": return calcularTabelionato(valor ?? 0);
+      case "assessoria": return v.assessoria_documental ?? 580;
       default: return 0;
     }
   }

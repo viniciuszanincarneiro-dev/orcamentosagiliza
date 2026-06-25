@@ -32,6 +32,20 @@ const OFICIAIS: Record<string, ModeloServico> = {
     metodologia:
       "DESCRIÇÃO DOS SERVIÇOS:\n\nNo presente orçamento está incluso os seguintes serviços:\n\nAssessoria Documental (organização dos documentos pessoais dos vendedores e compradores, matrícula imobiliária do bem e demais documentos necessários);\n\nEncaminhamento ao Tabelionato de Notas (incluindo organização para assinatura da escritura pública);\n\nProtocolo da Escritura Pública de Compra e Venda no Registro de Imóveis.",
   },
+  doacao: {
+    titulo: "ESCRITURA PÚBLICA DE DOAÇÃO",
+    descricao:
+      "A Escritura Pública de Doação é o documento formal e obrigatório para a transferência voluntária e gratuita de um ou mais bens, entre doador e donatário. Essa escritura deve ser lavrada no Tabelionato de Notas e registrada no Ofício de Registro de Imóveis para garantir a efetiva transferência da propriedade.\n\nConforme dispõe os artigos 538 e 541 do Código Civil Brasileiro:\n\nArt. 538. Considera-se doação o contrato em que uma pessoa, por liberalidade, transfere do seu patrimônio bens ou vantagens para o de outra.\n\nArt. 541. A doação far-se-á por escritura pública ou instrumento particular.",
+    metodologia:
+      "DESCRIÇÃO DOS SERVIÇOS:\n\nNo presente orçamento está incluso os seguintes serviços:\n\nAssessoria Documental (organização dos documentos pessoais dos doadores e donatários, matrícula imobiliária do bem e demais documentos necessários);\n\nITCMD;\n\nEncaminhamento ao Tabelionato de Notas (incluindo organização para assinatura da escritura pública);\n\nProtocolo da Escritura Pública de Doação no Registro de Imóveis.",
+  },
+  doacao_usufruto: {
+    titulo: "ESCRITURA PÚBLICA DE DOAÇÃO COM USUFRUTO",
+    descricao:
+      "A Escritura Pública de Doação é o documento formal e obrigatório para a transferência voluntária e gratuita de um ou mais bens, entre doador e donatário. Essa escritura deve ser lavrada no Tabelionato de Notas e registrada no Ofício de Registro de Imóveis para garantir a efetiva transferência da propriedade.\n\nConforme dispõe os artigos 538 e 541 do Código Civil Brasileiro:\n\nArt. 538. Considera-se doação o contrato em que uma pessoa, por liberalidade, transfere do seu patrimônio bens ou vantagens para o de outra.\n\nArt. 541. A doação far-se-á por escritura pública ou instrumento particular.",
+    metodologia:
+      "DESCRIÇÃO DOS SERVIÇOS:\n\nNo presente orçamento está incluso os seguintes serviços:\n\nAssessoria Documental (organização dos documentos pessoais dos doadores e donatários, matrícula imobiliária do bem e demais documentos necessários);\n\nITCMD;\n\nEncaminhamento ao Tabelionato de Notas (incluindo organização para assinatura da escritura pública);\n\nProtocolo da Escritura Pública de Doação com Usufruto no Registro de Imóveis.",
+  },
   desdobro: {
     titulo: "DESDOBRO URBANO",
     descricao:

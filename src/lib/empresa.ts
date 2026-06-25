@@ -236,14 +236,16 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "ASSESSORIA DOCUMENTAL", valor_base: 1500 },
   ],
   doacao: [
-    { descricao: "ASSESSORIA DOCUMENTAL (ESCRITURA DE DOAÇÃO)", valor_base: 1500 },
-    { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
-    { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", auto: "registro" },
+    { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "ASSESSORIA DOCUMENTAL", auto: "assessoria" },
+    { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", auto: "certidoes" },
   ],
   doacao_usufruto: [
-    { descricao: "ASSESSORIA DOCUMENTAL (DOAÇÃO COM USUFRUTO)", valor_base: 1800 },
-    { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
-    { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO E USUFRUTO)", auto: "registro" },
+    { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "ASSESSORIA DOCUMENTAL", auto: "assessoria" },
+    { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", auto: "certidoes" },
   ],
   divisao_amigavel: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },

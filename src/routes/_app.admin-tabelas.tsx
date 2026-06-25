@@ -42,15 +42,13 @@ function AdminTabelasPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="honorarios">
+      <Tabs defaultValue="itcmd">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="honorarios">Honorários Agiliza</TabsTrigger>
           <TabsTrigger value="itcmd">ITCMD</TabsTrigger>
           <TabsTrigger value="tabelionato">Tabelionato</TabsTrigger>
           <TabsTrigger value="registro">Registro de Imóveis</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="honorarios" className="pt-4"><HonorariosTab /></TabsContent>
         <TabsContent value="itcmd" className="pt-4"><ItcmdTab /></TabsContent>
         <TabsContent value="tabelionato" className="pt-4"><TabelionatoTab /></TabsContent>
         <TabsContent value="registro" className="pt-4"><RegistroTab /></TabsContent>

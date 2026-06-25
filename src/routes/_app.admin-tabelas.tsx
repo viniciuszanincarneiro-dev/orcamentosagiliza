@@ -42,15 +42,13 @@ function AdminTabelasPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="honorarios">
+      <Tabs defaultValue="itcmd">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="honorarios">Honorários Agiliza</TabsTrigger>
           <TabsTrigger value="itcmd">ITCMD</TabsTrigger>
           <TabsTrigger value="tabelionato">Tabelionato</TabsTrigger>
           <TabsTrigger value="registro">Registro de Imóveis</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="honorarios" className="pt-4"><HonorariosTab /></TabsContent>
         <TabsContent value="itcmd" className="pt-4"><ItcmdTab /></TabsContent>
         <TabsContent value="tabelionato" className="pt-4"><TabelionatoTab /></TabsContent>
         <TabsContent value="registro" className="pt-4"><RegistroTab /></TabsContent>
@@ -59,111 +57,7 @@ function AdminTabelasPage() {
   );
 }
 
-/* ============================ HONORÁRIOS ============================ */
 
-type Honorario = { id: string; codigo: string; descricao: string; valor: number; ativo: boolean; ordem: number };
-type HonorarioForm = { id?: string; codigo: string; descricao: string; valor: number; ordem: number; ativo: boolean };
-const emptyHonorario = (): HonorarioForm => ({ codigo: "", descricao: "", valor: 0, ordem: 0, ativo: true });
-
-function HonorariosTab() {
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<HonorarioForm>(emptyHonorario());
-
-  const { data: rows, isLoading } = useQuery({
-    queryKey: ["tabela_honorarios"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("tabela_honorarios" as never).select("*").order("ordem");
-      if (error) throw error;
-      return (data ?? []) as Honorario[];
-    },
-  });
-
-  const save = useMutation({
-    mutationFn: async (f: HonorarioForm) => {
-      const payload = { codigo: f.codigo.trim(), descricao: f.descricao.trim(), valor: f.valor, ordem: f.ordem, ativo: f.ativo };
-      if (f.id) {
-        const { error } = await supabase.from("tabela_honorarios" as never).update(payload as never).eq("id", f.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("tabela_honorarios" as never).insert(payload as never);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => { toast.success("Salvo"); setOpen(false); qc.invalidateQueries({ queryKey: ["tabela_honorarios"] }); },
-    onError: (e: Error) => toast.error("Erro", { description: e.message }),
-  });
-
-  const del = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("tabela_honorarios" as never).delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => { toast.success("Removido"); qc.invalidateQueries({ queryKey: ["tabela_honorarios"] }); },
-    onError: (e: Error) => toast.error("Erro", { description: e.message }),
-  });
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-3">
-        <div>
-          <CardTitle>Honorários / Serviços Agiliza</CardTitle>
-          <CardDescription>
-            Valores fixos cadastrados aqui são usados automaticamente nos orçamentos. {rows?.length ?? 0} item(ns).
-          </CardDescription>
-        </div>
-        <Button onClick={() => { setForm(emptyHonorario()); setOpen(true); }}><Plus className="h-4 w-4 mr-2" /> Novo</Button>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? <p className="text-sm text-muted-foreground">Carregando…</p> : (
-          <Table>
-            <TableHeader><TableRow>
-              <TableHead className="w-24">Ordem</TableHead>
-              <TableHead>Código</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="text-right w-32">Ações</TableHead>
-            </TableRow></TableHeader>
-            <TableBody>
-              {rows?.map((m) => (
-                <TableRow key={m.id} className={m.ativo ? "" : "opacity-50"}>
-                  <TableCell className="tabular-nums">{m.ordem}</TableCell>
-                  <TableCell className="font-mono text-xs">{m.codigo}</TableCell>
-                  <TableCell className="font-medium">{m.descricao}</TableCell>
-                  <TableCell className="text-right tabular-nums">{formatBRL(Number(m.valor))}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="icon" variant="ghost" onClick={() => { setForm({ id: m.id, codigo: m.codigo, descricao: m.descricao, valor: Number(m.valor), ordem: m.ordem, ativo: m.ativo }); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => { if (confirm(`Remover ${m.descricao}?`)) del.mutate(m.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{form.id ? "Editar honorário" : "Novo honorário"}</DialogTitle></DialogHeader>
-          <div className="grid gap-3">
-            <div><Label>Código (identificador interno)</Label><Input value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} placeholder="ex.: assessoria_documental" /></div>
-            <div><Label>Descrição (como aparece no orçamento)</Label><Input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Valor (R$)</Label><Input type="number" step="0.01" value={form.valor} onChange={(e) => setForm({ ...form, valor: Number(e.target.value) || 0 })} /></div>
-              <div><Label>Ordem de exibição</Label><Input type="number" value={form.ordem} onChange={(e) => setForm({ ...form, ordem: Number(e.target.value) || 0 })} /></div>
-            </div>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.ativo} onChange={(e) => setForm({ ...form, ativo: e.target.checked })} /> Ativo</label>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => save.mutate(form)} disabled={save.isPending || !form.codigo.trim() || !form.descricao.trim()}>
-              {save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
-}
 
 /* ============================ ITCMD ============================ */
 

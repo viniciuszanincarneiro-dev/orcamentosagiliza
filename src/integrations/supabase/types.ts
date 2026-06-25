@@ -333,39 +333,6 @@ export type Database = {
           },
         ]
       }
-      tabela_honorarios: {
-        Row: {
-          ativo: boolean
-          codigo: string
-          created_at: string
-          descricao: string
-          id: string
-          ordem: number
-          updated_at: string
-          valor: number
-        }
-        Insert: {
-          ativo?: boolean
-          codigo: string
-          created_at?: string
-          descricao: string
-          id?: string
-          ordem?: number
-          updated_at?: string
-          valor?: number
-        }
-        Update: {
-          ativo?: boolean
-          codigo?: string
-          created_at?: string
-          descricao?: string
-          id?: string
-          ordem?: number
-          updated_at?: string
-          valor?: number
-        }
-        Relationships: []
-      }
       tabela_registro_imoveis: {
         Row: {
           ativo: boolean

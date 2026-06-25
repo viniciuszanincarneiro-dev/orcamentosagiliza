@@ -173,7 +173,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           : v.ate_5ha ?? 3600;
       }
       case "registro": return calcularRegistroImoveis(valor ?? 0, fatorRI);
-      case "certidoes": return v.certidoes_assinaturas ?? 450;
+      case "certidoes": return v.certidoes_assinaturas ?? 200;
       case "ccir": return v.atualizacao_ccir ?? 250;
       case "tabelionato": return calcularTabelionato(valor ?? 0);
       case "assessoria": return v.assessoria_documental ?? 580;

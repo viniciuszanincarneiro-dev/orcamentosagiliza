@@ -3,7 +3,9 @@ import {
   WidthType, ImageRun,
 } from "docx";
 
-import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, METODOLOGIA_SERVICO } from "./empresa";
+import { EMPRESA, TIPO_TITULOS } from "./empresa";
+import { getModeloServico } from "./modelos-servico";
+
 import type { OrcamentoData } from "./orcamento-types";
 import type { Escritorio } from "@/hooks/use-profile";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";
@@ -93,26 +95,22 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
 
   // BLOCOS EXPLICATIVOS (título + metodologia + descrição) — apresentados PRIMEIRO
   const blocosExplicativos: Paragraph[] = blocos.flatMap((bloco) => {
-    const tipoB = bloco.tipo_servico;
-    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
-    const metod = METODOLOGIA_SERVICO[tipoB] ?? "";
-    const desc = DESCRICAO_PADRAO[tipoB] ?? "";
-    const ps: Paragraph[] = [P({ text: tituloB, bold: true, size: 22, spacing: 120 })];
-    if (metod) ps.push(P({ text: metod, spacing: 140 }));
-    if (desc) ps.push(P({ text: desc, spacing: 200 }));
+    const modelo = getModeloServico(bloco.tipo_servico);
+    const ps: Paragraph[] = [P({ text: modelo.titulo, bold: true, size: 22, spacing: 120 })];
+    if (modelo.metodologia) ps.push(P({ text: modelo.metodologia, spacing: 140 }));
+    if (modelo.descricao) ps.push(P({ text: modelo.descricao, spacing: 200 }));
     return ps;
   });
 
   // DESCRIÇÃO DOS SERVIÇOS (resumo curto enumerado)
   const descricaoServicos: Paragraph[] = blocos.flatMap((bloco, bi) => {
-    const tipoB = bloco.tipo_servico;
-    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
-    const desc = DESCRICAO_PADRAO[tipoB] ?? "";
-    const out: Paragraph[] = [P({ text: `${bi + 1}. ${tituloB}`, bold: true, spacing: 80 })];
-    if (desc) out.push(P({ text: desc, spacing: 120 }));
+    const modelo = getModeloServico(bloco.tipo_servico);
+    const out: Paragraph[] = [P({ text: `${bi + 1}. ${modelo.titulo}`, bold: true, spacing: 80 })];
+    if (modelo.descricao) out.push(P({ text: modelo.descricao, spacing: 120 }));
     if (bloco.observacoes?.trim()) out.push(P({ text: `Observações: ${bloco.observacoes.trim()}`, spacing: 120 }));
     return out;
   });
+
 
   // DOS VALORES — uma tabela por serviço
   const tabelasServicos: (Paragraph | Table)[] = blocos.flatMap((bloco, bi) => {

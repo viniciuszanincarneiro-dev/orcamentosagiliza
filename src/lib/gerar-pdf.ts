@@ -1,7 +1,9 @@
 import { jsPDF } from "jspdf";
 import autoTable, { type RowInput } from "jspdf-autotable";
 
-import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, METODOLOGIA_SERVICO, servicoTemITBI, servicoTemITCMD } from "./empresa";
+import { EMPRESA, TIPO_TITULOS, servicoTemITBI, servicoTemITCMD } from "./empresa";
+import { getModeloServico } from "./modelos-servico";
+
 import type { OrcamentoData } from "./orcamento-types";
 import type { Escritorio } from "@/hooks/use-profile";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";
@@ -215,7 +217,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
           const naturalW = words.reduce((a, w) => a + doc.getTextWidth(w), 0);
           const gap = (usableW - naturalW) / (words.length - 1);
           // Evita gaps absurdos quando a linha é muito curta
-          if (gap >= 0 && gap < size * 1.2) {
+          if (gap >= 0 && gap < size * 3) {
             let x = M;
             for (let j = 0; j < words.length; j++) {
               doc.text(words[j], x, y);
@@ -332,13 +334,12 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   // Cada serviço apresenta título próprio + texto explicativo/metodologia completa.
   blocos.forEach((bloco) => {
     const tipoB = bloco.tipo_servico;
-    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
-    const metod = METODOLOGIA_SERVICO[tipoB] ?? "";
-    const desc = DESCRICAO_PADRAO[tipoB] ?? "";
-    writeSectionTitle(tituloB);
-    if (metod) writeParagraph(metod, { gap: 6 });
-    if (desc) writeParagraph(desc, { gap: 10 });
+    const modelo = getModeloServico(tipoB);
+    writeSectionTitle(modelo.titulo);
+    if (modelo.metodologia) writeParagraph(modelo.metodologia, { gap: 6 });
+    if (modelo.descricao) writeParagraph(modelo.descricao, { gap: 10 });
   });
+
 
   // (Bloco legal de GEORREFERENCIAMENTO removido — mantido apenas na fundamentação do serviço)
 
@@ -394,12 +395,12 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   writeSectionTitle("DESCRIÇÃO DOS SERVIÇOS");
   blocos.forEach((bloco, bi) => {
     const tipoB = bloco.tipo_servico;
-    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
-    const desc = DESCRICAO_PADRAO[tipoB] ?? "";
-    writeParagraph(`${bi + 1}. ${tituloB}`, { bold: true, gap: 2, align: "left" });
-    if (desc) writeParagraph(desc, { gap: 6 });
+    const modelo = getModeloServico(tipoB);
+    writeParagraph(`${bi + 1}. ${modelo.titulo}`, { bold: true, gap: 2, align: "left" });
+    if (modelo.descricao) writeParagraph(modelo.descricao, { gap: 6 });
     if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 6 });
   });
+
 
   // ============ Pré-cálculo do ITBI (100% manual) ============
   const temITBI = blocos.some((b) => servicoTemITBI(b.tipo_servico));
@@ -493,34 +494,10 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     { content: formatBRL(orc.valor_total), styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], halign: "right", fontSize: 11 } },
   ]);
 
-  // Tabela financeira deve caber INTEIRA (cabeçalho + linhas + total) em uma
-  // única página. Calculamos o espaço disponível e ajustamos fonte/padding
-  // para garantir que nunca quebre entre páginas.
-  const rowsCount = tabelaBody.length + 1; // +1 cabeçalho
-  let available = BOTTOM - y;
-  const minNeededForObs = 90; // reserva mínima para observações abaixo
-  // Se não cabe nada razoável, vai para próxima página
-  if (available < 140) {
-    doc.addPage();
-    addHeader();
-    y = TOP;
-    available = BOTTOM - y;
-  }
-  const espacoTabela = Math.max(140, available - minNeededForObs);
-  // Calcula altura por linha que cabe; estilos básicos com fallback compactado
-  const alturaPorLinhaIdeal = 24;
-  const alturaPorLinhaMin = 14;
-  const alturaPorLinha = Math.max(
-    alturaPorLinhaMin,
-    Math.min(alturaPorLinhaIdeal, Math.floor(espacoTabela / rowsCount))
-  );
-  // Mapeia altura→fonte/padding
-  let fontSize = 10;
-  let cellPadding = 5;
-  if (alturaPorLinha < 22) { fontSize = 9; cellPadding = 4; }
-  if (alturaPorLinha < 18) { fontSize = 8; cellPadding = 3; }
-  if (alturaPorLinha < 15) { fontSize = 7.5; cellPadding = 2; }
-
+  // Tabela financeira: renderiza SEMPRE por completo. Se não couber em uma
+  // página, deixa o autotable quebrar normalmente entre páginas (sem nunca
+  // perder linhas como ITBI/ITCMD/TOTAL). Não forçamos mais "pageBreak: avoid"
+  // porque, em conteúdos longos, isso resultava em linhas omitidas.
   autoTable(doc, {
     startY: y,
     head: [[
@@ -530,15 +507,15 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     body: tabelaBody,
     theme: "grid",
     margin: { left: M, right: M, top: HEADER_H + 18, bottom: FOOTER_H + 14 },
-    showHead: "firstPage",
+    showHead: "everyPage",
     rowPageBreak: "avoid",
-    pageBreak: "avoid",
-    styles: { font: "helvetica", fontSize, cellPadding, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
+    styles: { font: "helvetica", fontSize: 10, cellPadding: 5, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
     columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },
     tableWidth: "auto",
     didDrawPage: (d) => { if (d.pageNumber > 1) addHeader(); },
   });
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+
 
 
   // OBSERVAÇÕES

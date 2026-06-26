@@ -217,7 +217,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
           const naturalW = words.reduce((a, w) => a + doc.getTextWidth(w), 0);
           const gap = (usableW - naturalW) / (words.length - 1);
           // Evita gaps absurdos quando a linha é muito curta
-          if (gap >= 0 && gap < size * 1.2) {
+          if (gap >= 0 && gap < size * 3) {
             let x = M;
             for (let j = 0; j < words.length; j++) {
               doc.text(words[j], x, y);

@@ -521,7 +521,6 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     doc.addPage();
     addHeader();
     y = TOP;
-    writeSectionTitle("DOS VALORES");
   }
 
   autoTable(doc, {

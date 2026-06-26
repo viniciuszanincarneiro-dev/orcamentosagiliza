@@ -445,6 +445,13 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
 
     writeSectionTitle("ITBI");
     if (orc.itbi_municipio) writeParagraph(`Município: ${orc.itbi_municipio}`, { gap: 2, align: "left" });
+    const aliq = Number(orc.itbi_aliquota ?? 0) || 0;
+    const baseITBI = baseProporcional || Number(orc.itbi_valor_declarado ?? 0) || Number(orc.imovel_valor_avaliado ?? 0) || 0;
+    if (baseITBI > 0) writeParagraph(`Base de cálculo: ${formatBRL(baseITBI)}`, { gap: 2, align: "left" });
+    if (aliq > 0) writeParagraph(`Alíquota: ${aliq.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}%`, { gap: 2, align: "left" });
+    if (baseITBI > 0 && aliq > 0) {
+      writeParagraph(`Cálculo: ${formatBRL(baseITBI)} × ${aliq.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}% = ${formatBRL(itbiValor)}`, { gap: 2, align: "left" });
+    }
     writeParagraph(`Valor do ITBI: ${formatBRL(itbiValor)}`, { bold: true, gap: 8, align: "left" });
   }
 

@@ -452,7 +452,11 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     if (baseITBI > 0 && aliq > 0) {
       writeParagraph(`Cálculo: ${formatBRL(baseITBI)} × ${aliq.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}% = ${formatBRL(itbiValor)}`, { gap: 2, align: "left" });
     }
-    writeParagraph(`Valor do ITBI: ${formatBRL(itbiValor)}`, { bold: true, gap: 8, align: "left" });
+    writeParagraph(`Valor do ITBI: ${formatBRL(itbiValor)}`, { bold: true, gap: 2, align: "left" });
+    writeParagraph(
+      "O ITBI (Imposto de Transmissão de Bens Imóveis) é calculado multiplicando o valor do imóvel (ou a fração transmitida) pela alíquota definida pelo município. O valor resultante é o montante a ser recolhido junto à prefeitura antes da lavratura da escritura pública.",
+      { gap: 8, align: "left" },
+    );
   }
 
   // ============ Pré-cálculo do ITCMD (100% manual) ============

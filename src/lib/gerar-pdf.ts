@@ -504,10 +504,19 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     { content: formatBRL(orc.valor_total), styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], halign: "right", fontSize: 11 } },
   ]);
 
-  // Tabela financeira: renderiza SEMPRE por completo. Se não couber em uma
-  // página, deixa o autotable quebrar normalmente entre páginas (sem nunca
-  // perder linhas como ITBI/ITCMD/TOTAL). Não forçamos mais "pageBreak: avoid"
-  // porque, em conteúdos longos, isso resultava em linhas omitidas.
+  // Tabela financeira: deve permanecer SEMPRE inteira na mesma página.
+  // Estimamos a altura total (cabeçalho da seção + header da tabela + linhas)
+  // e, se não couber no espaço restante da página, forçamos quebra ANTES de
+  // iniciar a tabela — assim nenhuma linha (ITBI/ITCMD/TOTAL) é separada.
+  const linhaH = 26; // altura estimada por linha (fontSize 10 + padding)
+  const alturaTabela = (tabelaBody.length + 1) * linhaH + 6;
+  if (y + alturaTabela > BOTTOM) {
+    doc.addPage();
+    addHeader();
+    y = TOP;
+    writeSectionTitle("DOS VALORES");
+  }
+
   autoTable(doc, {
     startY: y,
     head: [[
@@ -518,6 +527,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     theme: "grid",
     margin: { left: M, right: M, top: HEADER_H + 18, bottom: FOOTER_H + 14 },
     showHead: "everyPage",
+    pageBreak: "avoid",
     rowPageBreak: "avoid",
     styles: { font: "helvetica", fontSize: 10, cellPadding: 5, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
     columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },

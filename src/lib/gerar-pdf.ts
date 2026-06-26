@@ -494,34 +494,10 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     { content: formatBRL(orc.valor_total), styles: { fontStyle: "bold", fillColor: CINZA_TAB, textColor: [255, 255, 255], halign: "right", fontSize: 11 } },
   ]);
 
-  // Tabela financeira deve caber INTEIRA (cabeçalho + linhas + total) em uma
-  // única página. Calculamos o espaço disponível e ajustamos fonte/padding
-  // para garantir que nunca quebre entre páginas.
-  const rowsCount = tabelaBody.length + 1; // +1 cabeçalho
-  let available = BOTTOM - y;
-  const minNeededForObs = 90; // reserva mínima para observações abaixo
-  // Se não cabe nada razoável, vai para próxima página
-  if (available < 140) {
-    doc.addPage();
-    addHeader();
-    y = TOP;
-    available = BOTTOM - y;
-  }
-  const espacoTabela = Math.max(140, available - minNeededForObs);
-  // Calcula altura por linha que cabe; estilos básicos com fallback compactado
-  const alturaPorLinhaIdeal = 24;
-  const alturaPorLinhaMin = 14;
-  const alturaPorLinha = Math.max(
-    alturaPorLinhaMin,
-    Math.min(alturaPorLinhaIdeal, Math.floor(espacoTabela / rowsCount))
-  );
-  // Mapeia altura→fonte/padding
-  let fontSize = 10;
-  let cellPadding = 5;
-  if (alturaPorLinha < 22) { fontSize = 9; cellPadding = 4; }
-  if (alturaPorLinha < 18) { fontSize = 8; cellPadding = 3; }
-  if (alturaPorLinha < 15) { fontSize = 7.5; cellPadding = 2; }
-
+  // Tabela financeira: renderiza SEMPRE por completo. Se não couber em uma
+  // página, deixa o autotable quebrar normalmente entre páginas (sem nunca
+  // perder linhas como ITBI/ITCMD/TOTAL). Não forçamos mais "pageBreak: avoid"
+  // porque, em conteúdos longos, isso resultava em linhas omitidas.
   autoTable(doc, {
     startY: y,
     head: [[
@@ -531,15 +507,15 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     body: tabelaBody,
     theme: "grid",
     margin: { left: M, right: M, top: HEADER_H + 18, bottom: FOOTER_H + 14 },
-    showHead: "firstPage",
+    showHead: "everyPage",
     rowPageBreak: "avoid",
-    pageBreak: "avoid",
-    styles: { font: "helvetica", fontSize, cellPadding, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
+    styles: { font: "helvetica", fontSize: 10, cellPadding: 5, textColor: PRETO, lineColor: [180, 180, 180], lineWidth: 0.4, overflow: "linebreak", valign: "middle" },
     columnStyles: { 0: { cellWidth: "auto" }, 1: { halign: "right", cellWidth: 120 } },
     tableWidth: "auto",
     didDrawPage: (d) => { if (d.pageNumber > 1) addHeader(); },
   });
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+
 
 
   // OBSERVAÇÕES

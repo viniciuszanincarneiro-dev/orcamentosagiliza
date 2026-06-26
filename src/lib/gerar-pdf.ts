@@ -398,13 +398,16 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     y += 4;
   }
 
-  // ============ DESCRIÇÃO DOS SERVIÇOS (resumo do escopo) ============
+  // ============ DESCRIÇÃO DOS SERVIÇOS (metodologia / escopo) ============
   writeSectionTitle("DESCRIÇÃO DOS SERVIÇOS");
   blocos.forEach((bloco, bi) => {
     const tipoB = bloco.tipo_servico;
     const modelo = getModeloServico(tipoB);
-    writeParagraph(`${bi + 1}. ${modelo.titulo}`, { bold: true, gap: 2, align: "left" });
-    if (modelo.descricao) writeParagraph(modelo.descricao, { gap: 6 });
+    if (blocos.length > 1) {
+      writeParagraph(`${bi + 1}. ${modelo.titulo}`, { bold: true, gap: 2, align: "left" });
+    }
+    const metod = (modelo.metodologia ?? "").replace(/^\s*DESCRIÇÃO DOS SERVIÇOS:\s*\n+/i, "");
+    if (metod) writeParagraph(metod, { gap: 6 });
     if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 6 });
   });
 

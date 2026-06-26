@@ -516,12 +516,14 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   // e, se não couber no espaço restante da página, forçamos quebra ANTES de
   // iniciar a tabela — assim nenhuma linha (ITBI/ITCMD/TOTAL) é separada.
   const linhaH = 26; // altura estimada por linha (fontSize 10 + padding)
-  const alturaTabela = (tabelaBody.length + 1) * linhaH + 6;
+  const alturaTitulo = 24;
+  const alturaTabela = (tabelaBody.length + 1) * linhaH + 6 + alturaTitulo;
   if (y + alturaTabela > BOTTOM) {
     doc.addPage();
     addHeader();
     y = TOP;
   }
+  writeSectionTitle("DOS VALORES");
 
   autoTable(doc, {
     startY: y,

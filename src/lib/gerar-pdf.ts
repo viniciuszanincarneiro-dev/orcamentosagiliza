@@ -190,49 +190,57 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     }
   }
 
-  function writeParagraph(text: string, opts: { bold?: boolean; size?: number; color?: [number, number, number]; align?: "left" | "center" | "right" | "justify"; gap?: number; keepTogether?: boolean } = {}) {
+  function writeParagraph(text: string, opts: { bold?: boolean; size?: number; color?: [number, number, number]; align?: "left" | "center" | "right" | "justify"; gap?: number; keepTogether?: boolean; indent?: boolean } = {}) {
     const size = opts.size ?? 10;
     doc.setFont("helvetica", opts.bold ? "bold" : "normal");
     doc.setFontSize(size);
     doc.setTextColor(...(opts.color ?? PRETO));
-    const lines = doc.splitTextToSize(text, usableW) as string[];
+    // Recuo de primeira linha de parágrafo (padrão para texto corrido alinhado à esquerda)
+    const indent = opts.indent ?? (opts.align === undefined || opts.align === "left");
+    const indentW = indent ? 24 : 0;
+    const firstW = usableW - indentW;
+    // Quebra preservando \n explícitos e aplicando indent só na primeira linha
+    const paragraphs = text.split("\n");
     const lineH = size + 3;
-    const align = opts.align ?? "justify";
+    const align = opts.align ?? "left";
+
+    // Pré-calcula linhas totais para keepTogether
+    const allLines: { text: string; x: number; first: boolean }[] = [];
+    paragraphs.forEach((para) => {
+      if (!para.trim()) { allLines.push({ text: "", x: M, first: true }); return; }
+      const firstLines = doc.splitTextToSize(para, firstW) as string[];
+      // Primeira linha cabe em firstW; se sobrar texto, re-quebra o resto em usableW
+      if (firstLines.length === 0) return;
+      allLines.push({ text: firstLines[0], x: M + indentW, first: true });
+      if (firstLines.length > 1) {
+        const rest = firstLines.slice(1).join(" ");
+        const restLines = doc.splitTextToSize(rest, usableW) as string[];
+        restLines.forEach((ln) => allLines.push({ text: ln, x: M, first: false }));
+      }
+    });
+
     const keepTogether = opts.keepTogether ?? true;
     if (keepTogether) {
-      const totalH = lines.length * lineH;
+      const totalH = allLines.length * lineH;
       if (totalH <= (BOTTOM - TOP) && y + totalH > BOTTOM) {
         doc.addPage();
         addHeader();
         y = TOP;
       }
     }
-    for (let i = 0; i < lines.length; i++) {
-      const ln = lines[i];
+
+    for (const ln of allLines) {
       ensureSpace(lineH);
-      const isLast = i === lines.length - 1;
-      if (align === "justify" && !isLast) {
-        const words = ln.split(/\s+/).filter(Boolean);
-        if (words.length > 1) {
-          const naturalW = words.reduce((a, w) => a + doc.getTextWidth(w), 0);
-          const gap = (usableW - naturalW) / (words.length - 1);
-          // Evita gaps absurdos quando a linha é muito curta
-          if (gap >= 0 && gap < size * 3) {
-            let x = M;
-            for (let j = 0; j < words.length; j++) {
-              doc.text(words[j], x, y);
-              x += doc.getTextWidth(words[j]) + gap;
-            }
-            y += lineH;
-            continue;
-          }
-        }
+      if (align === "center") {
+        doc.text(ln.text, W / 2, y, { align: "center" });
+      } else if (align === "right") {
+        doc.text(ln.text, W - M, y, { align: "right" });
+      } else {
+        doc.text(ln.text, ln.x, y);
       }
-      const x = align === "center" ? W / 2 : align === "right" ? W - M : M;
-      const drawAlign = align === "justify" ? "left" : align;
-      doc.text(ln, x, y, { align: drawAlign as "left" | "center" | "right", maxWidth: usableW });
       y += lineH;
     }
+
     y += opts.gap ?? 4;
   }
 

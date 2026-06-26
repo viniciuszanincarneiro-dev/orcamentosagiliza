@@ -3,7 +3,9 @@ import {
   WidthType, ImageRun,
 } from "docx";
 
-import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, METODOLOGIA_SERVICO } from "./empresa";
+import { EMPRESA, TIPO_TITULOS } from "./empresa";
+import { getModeloServico } from "./modelos-servico";
+
 import type { OrcamentoData } from "./orcamento-types";
 import type { Escritorio } from "@/hooks/use-profile";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";

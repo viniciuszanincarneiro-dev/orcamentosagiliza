@@ -344,7 +344,6 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     const tipoB = bloco.tipo_servico;
     const modelo = getModeloServico(tipoB);
     writeSectionTitle(modelo.titulo);
-    if (modelo.metodologia) writeParagraph(modelo.metodologia, { gap: 6 });
     if (modelo.descricao) writeParagraph(modelo.descricao, { gap: 10 });
   });
 

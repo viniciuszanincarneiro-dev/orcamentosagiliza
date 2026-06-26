@@ -472,7 +472,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   // ============ DOS VALORES — TABELA FINANCEIRA ÚNICA ============
   // Cabeçalho + linhas de serviços + ITBI (quando aplicável) + TOTAL
   // são renderizados como uma ÚNICA tabela que permanece sempre na mesma página.
-  writeSectionTitle("DOS VALORES");
+  // (título "DOS VALORES" é escrito depois da verificação de quebra de página)
 
   const tabelaBody: RowInput[] = [];
   blocos.forEach((bloco, bi) => {

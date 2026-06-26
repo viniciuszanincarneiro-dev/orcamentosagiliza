@@ -1,7 +1,9 @@
 import { jsPDF } from "jspdf";
 import autoTable, { type RowInput } from "jspdf-autotable";
 
-import { EMPRESA, TIPO_TITULOS, DESCRICAO_PADRAO, METODOLOGIA_SERVICO, servicoTemITBI, servicoTemITCMD } from "./empresa";
+import { EMPRESA, TIPO_TITULOS, servicoTemITBI, servicoTemITCMD } from "./empresa";
+import { getModeloServico } from "./modelos-servico";
+
 import type { OrcamentoData } from "./orcamento-types";
 import type { Escritorio } from "@/hooks/use-profile";
 import { formatBRL, formatDateLong, formatNumberBR } from "./format";
@@ -332,13 +334,12 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   // Cada serviço apresenta título próprio + texto explicativo/metodologia completa.
   blocos.forEach((bloco) => {
     const tipoB = bloco.tipo_servico;
-    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
-    const metod = METODOLOGIA_SERVICO[tipoB] ?? "";
-    const desc = DESCRICAO_PADRAO[tipoB] ?? "";
-    writeSectionTitle(tituloB);
-    if (metod) writeParagraph(metod, { gap: 6 });
-    if (desc) writeParagraph(desc, { gap: 10 });
+    const modelo = getModeloServico(tipoB);
+    writeSectionTitle(modelo.titulo);
+    if (modelo.metodologia) writeParagraph(modelo.metodologia, { gap: 6 });
+    if (modelo.descricao) writeParagraph(modelo.descricao, { gap: 10 });
   });
+
 
   // (Bloco legal de GEORREFERENCIAMENTO removido — mantido apenas na fundamentação do serviço)
 
@@ -394,12 +395,12 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   writeSectionTitle("DESCRIÇÃO DOS SERVIÇOS");
   blocos.forEach((bloco, bi) => {
     const tipoB = bloco.tipo_servico;
-    const tituloB = TIPO_TITULOS[tipoB] ?? "PRESTAÇÃO DE SERVIÇOS";
-    const desc = DESCRICAO_PADRAO[tipoB] ?? "";
-    writeParagraph(`${bi + 1}. ${tituloB}`, { bold: true, gap: 2, align: "left" });
-    if (desc) writeParagraph(desc, { gap: 6 });
+    const modelo = getModeloServico(tipoB);
+    writeParagraph(`${bi + 1}. ${modelo.titulo}`, { bold: true, gap: 2, align: "left" });
+    if (modelo.descricao) writeParagraph(modelo.descricao, { gap: 6 });
     if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 6 });
   });
+
 
   // ============ Pré-cálculo do ITBI (100% manual) ============
   const temITBI = blocos.some((b) => servicoTemITBI(b.tipo_servico));

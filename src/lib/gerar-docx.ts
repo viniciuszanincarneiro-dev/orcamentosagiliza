@@ -93,20 +93,23 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
   if (orc.imovel_matricula) partes.push(`matriculado no Ofício de Registro de Imóveis sob o nº ${orc.imovel_matricula}`);
   if (orc.imovel_valor_avaliado) partes.push(`imóvel avaliado em ${formatBRL(orc.imovel_valor_avaliado)}`);
 
-  // BLOCOS EXPLICATIVOS (título + metodologia + descrição) — apresentados PRIMEIRO
+  // BLOCOS EXPLICATIVOS (título + descrição/fundamentação) — apresentados PRIMEIRO
   const blocosExplicativos: Paragraph[] = blocos.flatMap((bloco) => {
     const modelo = getModeloServico(bloco.tipo_servico);
     const ps: Paragraph[] = [P({ text: modelo.titulo, bold: true, size: 22, spacing: 120 })];
-    if (modelo.metodologia) ps.push(P({ text: modelo.metodologia, spacing: 140 }));
     if (modelo.descricao) ps.push(P({ text: modelo.descricao, spacing: 200 }));
     return ps;
   });
 
-  // DESCRIÇÃO DOS SERVIÇOS (resumo curto enumerado)
+  // DESCRIÇÃO DOS SERVIÇOS (metodologia — escopo do que está incluso)
   const descricaoServicos: Paragraph[] = blocos.flatMap((bloco, bi) => {
     const modelo = getModeloServico(bloco.tipo_servico);
-    const out: Paragraph[] = [P({ text: `${bi + 1}. ${modelo.titulo}`, bold: true, spacing: 80 })];
-    if (modelo.descricao) out.push(P({ text: modelo.descricao, spacing: 120 }));
+    const out: Paragraph[] = [];
+    if (blocos.length > 1) {
+      out.push(P({ text: `${bi + 1}. ${modelo.titulo}`, bold: true, spacing: 80 }));
+    }
+    const metod = (modelo.metodologia ?? "").replace(/^\s*DESCRIÇÃO DOS SERVIÇOS:\s*\n+/i, "");
+    if (metod) out.push(P({ text: metod, spacing: 120 }));
     if (bloco.observacoes?.trim()) out.push(P({ text: `Observações: ${bloco.observacoes.trim()}`, spacing: 120 }));
     return out;
   });

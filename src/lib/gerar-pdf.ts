@@ -445,6 +445,13 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
 
     writeSectionTitle("ITBI");
     if (orc.itbi_municipio) writeParagraph(`Município: ${orc.itbi_municipio}`, { gap: 2, align: "left" });
+    const aliq = Number(orc.itbi_aliquota ?? 0) || 0;
+    const baseITBI = baseProporcional || Number(orc.itbi_valor_declarado ?? 0) || Number(orc.imovel_valor_avaliado ?? 0) || 0;
+    if (baseITBI > 0) writeParagraph(`Base de cálculo: ${formatBRL(baseITBI)}`, { gap: 2, align: "left" });
+    if (aliq > 0) writeParagraph(`Alíquota: ${aliq.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}%`, { gap: 2, align: "left" });
+    if (baseITBI > 0 && aliq > 0) {
+      writeParagraph(`Cálculo: ${formatBRL(baseITBI)} × ${aliq.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}% = ${formatBRL(itbiValor)}`, { gap: 2, align: "left" });
+    }
     writeParagraph(`Valor do ITBI: ${formatBRL(itbiValor)}`, { bold: true, gap: 8, align: "left" });
   }
 
@@ -465,7 +472,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   // ============ DOS VALORES — TABELA FINANCEIRA ÚNICA ============
   // Cabeçalho + linhas de serviços + ITBI (quando aplicável) + TOTAL
   // são renderizados como uma ÚNICA tabela que permanece sempre na mesma página.
-  writeSectionTitle("DOS VALORES");
+  // (título "DOS VALORES" é escrito depois da verificação de quebra de página)
 
   const tabelaBody: RowInput[] = [];
   blocos.forEach((bloco, bi) => {
@@ -509,13 +516,14 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   // e, se não couber no espaço restante da página, forçamos quebra ANTES de
   // iniciar a tabela — assim nenhuma linha (ITBI/ITCMD/TOTAL) é separada.
   const linhaH = 26; // altura estimada por linha (fontSize 10 + padding)
-  const alturaTabela = (tabelaBody.length + 1) * linhaH + 6;
+  const alturaTitulo = 24;
+  const alturaTabela = (tabelaBody.length + 1) * linhaH + 6 + alturaTitulo;
   if (y + alturaTabela > BOTTOM) {
     doc.addPage();
     addHeader();
     y = TOP;
-    writeSectionTitle("DOS VALORES");
   }
+  writeSectionTitle("DOS VALORES");
 
   autoTable(doc, {
     startY: y,

@@ -196,27 +196,29 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     doc.setFontSize(size);
     doc.setTextColor(...(opts.color ?? PRETO));
     // Recuo de primeira linha de parágrafo (padrão para texto corrido alinhado à esquerda)
-    const indent = opts.indent ?? (opts.align === undefined || opts.align === "left");
+    const align = opts.align ?? "justify";
+    const indent = opts.indent ?? (align === "justify" || align === "left");
     const indentW = indent ? 24 : 0;
     const firstW = usableW - indentW;
     // Quebra preservando \n explícitos e aplicando indent só na primeira linha
     const paragraphs = text.split("\n");
     const lineH = size + 3;
-    const align = opts.align ?? "left";
 
     // Pré-calcula linhas totais para keepTogether
-    const allLines: { text: string; x: number; first: boolean }[] = [];
+    const allLines: { text: string; x: number; first: boolean; lineW: number; lastOfPara: boolean }[] = [];
     paragraphs.forEach((para) => {
-      if (!para.trim()) { allLines.push({ text: "", x: M, first: true }); return; }
+      if (!para.trim()) { allLines.push({ text: "", x: M, first: true, lineW: usableW, lastOfPara: true }); return; }
       const firstLines = doc.splitTextToSize(para, firstW) as string[];
-      // Primeira linha cabe em firstW; se sobrar texto, re-quebra o resto em usableW
       if (firstLines.length === 0) return;
-      allLines.push({ text: firstLines[0], x: M + indentW, first: true });
+      const paraLines: { text: string; x: number; first: boolean; lineW: number; lastOfPara: boolean }[] = [];
+      paraLines.push({ text: firstLines[0], x: M + indentW, first: true, lineW: firstW, lastOfPara: false });
       if (firstLines.length > 1) {
         const rest = firstLines.slice(1).join(" ");
         const restLines = doc.splitTextToSize(rest, usableW) as string[];
-        restLines.forEach((ln) => allLines.push({ text: ln, x: M, first: false }));
+        restLines.forEach((ln) => paraLines.push({ text: ln, x: M, first: false, lineW: usableW, lastOfPara: false }));
       }
+      paraLines[paraLines.length - 1].lastOfPara = true;
+      allLines.push(...paraLines);
     });
 
     const keepTogether = opts.keepTogether ?? true;
@@ -229,12 +231,23 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
       }
     }
 
+    const spaceW = doc.getTextWidth(" ");
     for (const ln of allLines) {
       ensureSpace(lineH);
       if (align === "center") {
         doc.text(ln.text, W / 2, y, { align: "center" });
       } else if (align === "right") {
         doc.text(ln.text, W - M, y, { align: "right" });
+      } else if (align === "justify" && !ln.lastOfPara && ln.text.trim().includes(" ")) {
+        const words = ln.text.split(/\s+/).filter(Boolean);
+        const wordsW = words.reduce((a, w) => a + doc.getTextWidth(w), 0);
+        const gaps = words.length - 1;
+        const extra = gaps > 0 ? (ln.lineW - wordsW - gaps * spaceW) / gaps : 0;
+        let cx = ln.x;
+        words.forEach((w, wi) => {
+          doc.text(w, cx, y);
+          cx += doc.getTextWidth(w) + spaceW + (wi < words.length - 1 ? extra : 0);
+        });
       } else {
         doc.text(ln.text, ln.x, y);
       }

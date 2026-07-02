@@ -12,10 +12,13 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import logo from "@/assets/agiliza-logo.png";
 
 export const Route = createFileRoute("/_app")({
+  // Usa getSession (leitura local do localStorage) em vez de getUser (round-trip de rede
+  // ao servidor de auth). Com `defaultPreload: "intent"`, o beforeLoad roda em cada hover
+  // de link — getUser() adicionava latência a cada preload/navegação.
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/login" });
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) throw redirect({ to: "/login" });
   },
   component: AppLayout,
 });

@@ -6,9 +6,13 @@ export const getRouter = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 30_000,
-        gcTime: 5 * 60_000,
+        // Cache mais agressivo: reduz refetches em cada navegação e mantém a
+        // UI responsiva mesmo quando várias pessoas acessam ao mesmo tempo.
+        staleTime: 5 * 60_000,
+        gcTime: 30 * 60_000,
         refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        refetchOnReconnect: false,
         retry: 1,
       },
     },
@@ -20,6 +24,9 @@ export const getRouter = () => {
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
+    // Evita "flash" de loader em navegações rápidas.
+    defaultPendingMs: 200,
+    defaultPendingMinMs: 300,
   });
 
   return router;

@@ -29,7 +29,9 @@ export function useProfile() {
   const q = useQuery({
     queryKey: ["profile", uid],
     enabled: !!uid,
-    staleTime: 60_000,
+    // Perfil + escritórios raramente mudam; mantém em cache por sessão.
+    staleTime: 15 * 60_000,
+    gcTime: 60 * 60_000,
     queryFn: async () => {
       if (!uid) return null;
       const [p, e] = await Promise.all([

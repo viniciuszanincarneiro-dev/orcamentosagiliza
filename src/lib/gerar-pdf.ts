@@ -40,6 +40,26 @@ function toInfo(e?: Escritorio | null): EscritorioInfo {
   };
 }
 
+function splitIncisos(text: string): string[] {
+  if (!text) return [];
+  const regex = /(\([ivxIVX]{1,5}|[a-zA-Z]\)\s+)/g;
+  const tokens = text.split(regex);
+  const result: string[] = [];
+  let current = "";
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.match(/^\([ivxIVX]{1,5}|[a-zA-Z]\)\s+$/)) {
+      if (current.trim()) result.push(current.trim());
+      current = token;
+    } else {
+      current += token;
+    }
+  }
+  if (current.trim()) result.push(current.trim());
+  return result;
+}
+
+
 // Cores
 const PRETO: [number, number, number] = [0, 0, 0];
 const CINZA: [number, number, number] = [90, 90, 90];
@@ -357,7 +377,10 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     const tipoB = bloco.tipo_servico;
     const modelo = getModeloServico(tipoB);
     writeSectionTitle(modelo.titulo);
-    if (modelo.descricao) writeParagraph(modelo.descricao, { gap: 10 });
+    if (modelo.descricao) {
+      const partes = splitIncisos(modelo.descricao);
+      partes.forEach((p, i) => writeParagraph(p, { gap: i === partes.length - 1 ? 10 : 4 }));
+    }
   });
 
 
@@ -420,7 +443,10 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
       writeParagraph(`${bi + 1}. ${modelo.titulo}`, { bold: true, gap: 2, align: "left" });
     }
     const metod = (modelo.metodologia ?? "").replace(/^\s*DESCRIÇÃO DOS SERVIÇOS:\s*\n+/i, "");
-    if (metod) writeParagraph(metod, { gap: 6 });
+    if (metod) {
+      const partes = splitIncisos(metod);
+      partes.forEach((p, i) => writeParagraph(p, { gap: i === partes.length - 1 ? 6 : 4 }));
+    }
     if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 6 });
   });
 

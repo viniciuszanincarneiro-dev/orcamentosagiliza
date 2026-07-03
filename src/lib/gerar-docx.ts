@@ -3,6 +3,26 @@ import {
   WidthType, ImageRun,
 } from "docx";
 
+function splitIncisos(text: string): string[] {
+  if (!text) return [];
+  const regex = /(\([ivxIVX]{1,5}|[a-zA-Z]\)\s+)/g;
+  const tokens = text.split(regex);
+  const result: string[] = [];
+  let current = "";
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.match(/^\([ivxIVX]{1,5}|[a-zA-Z]\)\s+$/)) {
+      if (current.trim()) result.push(current.trim());
+      current = token;
+    } else {
+      current += token;
+    }
+  }
+  if (current.trim()) result.push(current.trim());
+  return result;
+}
+
+
 import { EMPRESA, TIPO_TITULOS } from "./empresa";
 import { getModeloServico } from "./modelos-servico";
 
@@ -97,7 +117,10 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
   const blocosExplicativos: Paragraph[] = blocos.flatMap((bloco) => {
     const modelo = getModeloServico(bloco.tipo_servico);
     const ps: Paragraph[] = [P({ text: modelo.titulo, bold: true, size: 22, spacing: 120 })];
-    if (modelo.descricao) ps.push(P({ text: modelo.descricao, spacing: 200 }));
+    if (modelo.descricao) {
+      const partes = splitIncisos(modelo.descricao);
+      partes.forEach((p) => ps.push(P({ text: p, spacing: 160, align: AlignmentType.JUSTIFIED })));
+    }
     return ps;
   });
 
@@ -109,7 +132,10 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
       out.push(P({ text: `${bi + 1}. ${modelo.titulo}`, bold: true, spacing: 80 }));
     }
     const metod = (modelo.metodologia ?? "").replace(/^\s*DESCRIÇÃO DOS SERVIÇOS:\s*\n+/i, "");
-    if (metod) out.push(P({ text: metod, spacing: 120 }));
+    if (metod) {
+      const partes = splitIncisos(metod);
+      partes.forEach((p) => out.push(P({ text: p, spacing: 160, align: AlignmentType.JUSTIFIED })));
+    }
     if (bloco.observacoes?.trim()) out.push(P({ text: `Observações: ${bloco.observacoes.trim()}`, spacing: 120 }));
     return out;
   });

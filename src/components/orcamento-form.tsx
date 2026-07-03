@@ -638,13 +638,6 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       ]);
       const blob = await gerarOrcamentoDOCX(cur, escritorioDoOrcamento(cur));
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.docx`);
-      void registrarLog({
-        acao: "gerar_docx",
-        entidade: "orcamento",
-        entidade_id: cur.id ?? null,
-        numero: cur.numero ?? null,
-        descricao: `Gerou DOCX do orçamento ${cur.numero ?? "novo"}`,
-      });
     } catch (e) {
       toast.error("Erro ao gerar DOCX", { description: (e as Error).message });
     } finally { setGenerating(null); }

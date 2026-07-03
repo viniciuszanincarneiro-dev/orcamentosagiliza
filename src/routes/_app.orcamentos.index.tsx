@@ -37,7 +37,7 @@ function HistoricoPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("id, numero, requerente_nome, cliente_whatsapp, cliente_telefone, imovel_municipio, valor_total, status, created_at, data_envio, ultimo_contato, validade_dias")
+        .select("id, numero, requerente_nome, cliente_whatsapp, cliente_telefone, imovel_municipio, valor_total, status, created_at, updated_at, data_envio, ultimo_contato, validade_dias, created_by_nome, created_by_escritorio_nome, updated_by_nome, updated_by_escritorio_nome")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;

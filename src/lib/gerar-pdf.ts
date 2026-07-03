@@ -397,6 +397,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   }
 
 
+
   // ============ OBJETO DO ORÇAMENTO ============
   writeSectionTitle("OBJETO DO ORÇAMENTO");
   const objetoServicos = blocos.length === 1

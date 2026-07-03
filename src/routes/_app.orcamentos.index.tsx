@@ -230,10 +230,19 @@ function HistoricoPage() {
                           ) : null}
                         </TableCell>
                         <TableCell>{o.imovel_municipio ?? "—"}</TableCell>
-                        <TableCell className="text-sm">{formatDate(o.data_envio)}</TableCell>
                         <TableCell className="text-sm">
-                          {diasContato === null ? "—" : diasContato === 0 ? "hoje" : `há ${diasContato}d`}
+                          <div className="font-medium">{o.created_by_nome ?? "—"}</div>
+                          {o.created_by_escritorio_nome ? (
+                            <div className="text-xs text-muted-foreground">{o.created_by_escritorio_nome}</div>
+                          ) : null}
                         </TableCell>
+                        <TableCell className="text-sm">
+                          <div className="font-medium">{o.updated_by_nome ?? o.created_by_nome ?? "—"}</div>
+                          <div className="text-xs text-muted-foreground tabular-nums">
+                            {o.updated_at ? new Date(o.updated_at).toLocaleDateString("pt-BR") : "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">{formatDate(o.data_envio)}</TableCell>
                         <TableCell>
                           <Badge variant={STATUS_VARIANTS[o.status] ?? "secondary"}>
                             {statusLabel(o.status)}

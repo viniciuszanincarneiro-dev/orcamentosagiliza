@@ -3,6 +3,26 @@ import {
   WidthType, ImageRun,
 } from "docx";
 
+function splitIncisos(text: string): string[] {
+  if (!text) return [];
+  const regex = /(\([ivxIVX]{1,5}|[a-zA-Z]\)\s+)/g;
+  const tokens = text.split(regex);
+  const result: string[] = [];
+  let current = "";
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.match(/^\([ivxIVX]{1,5}|[a-zA-Z]\)\s+$/)) {
+      if (current.trim()) result.push(current.trim());
+      current = token;
+    } else {
+      current += token;
+    }
+  }
+  if (current.trim()) result.push(current.trim());
+  return result;
+}
+
+
 import { EMPRESA, TIPO_TITULOS } from "./empresa";
 import { getModeloServico } from "./modelos-servico";
 

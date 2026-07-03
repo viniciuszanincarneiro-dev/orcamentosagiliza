@@ -65,6 +65,13 @@ export type OrcamentoData = {
   itbi_valor_contrato?: number | null;
   /** Valor do ITCMD — informado manualmente (recebido pronto do órgão fazendário). */
   itcmd_estimado?: number | null;
+  /** Autoria — preenchida automaticamente pelo sistema. */
+  created_by?: string | null;
+  created_by_nome?: string | null;
+  created_by_escritorio_nome?: string | null;
+  updated_by?: string | null;
+  updated_by_nome?: string | null;
+  updated_by_escritorio_nome?: string | null;
   created_at?: string;
   updated_at?: string;
 };

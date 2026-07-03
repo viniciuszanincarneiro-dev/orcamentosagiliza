@@ -377,7 +377,10 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     const tipoB = bloco.tipo_servico;
     const modelo = getModeloServico(tipoB);
     writeSectionTitle(modelo.titulo);
-    if (modelo.descricao) writeParagraph(modelo.descricao, { gap: 10 });
+    if (modelo.descricao) {
+      const partes = splitIncisos(modelo.descricao);
+      partes.forEach((p, i) => writeParagraph(p, { gap: i === partes.length - 1 ? 10 : 4 }));
+    }
   });
 
 

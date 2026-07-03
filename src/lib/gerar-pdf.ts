@@ -40,6 +40,26 @@ function toInfo(e?: Escritorio | null): EscritorioInfo {
   };
 }
 
+function splitIncisos(text: string): string[] {
+  if (!text) return [];
+  const regex = /(\([ivxIVX]{1,5}|[a-zA-Z]\)\s+)/g;
+  const tokens = text.split(regex);
+  const result: string[] = [];
+  let current = "";
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.match(/^\([ivxIVX]{1,5}|[a-zA-Z]\)\s+$/)) {
+      if (current.trim()) result.push(current.trim());
+      current = token;
+    } else {
+      current += token;
+    }
+  }
+  if (current.trim()) result.push(current.trim());
+  return result;
+}
+
+
 // Cores
 const PRETO: [number, number, number] = [0, 0, 0];
 const CINZA: [number, number, number] = [90, 90, 90];

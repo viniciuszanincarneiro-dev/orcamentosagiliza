@@ -65,7 +65,6 @@ function HistoricoPage() {
       .eq("id", id);
     setAcaoPendente(null);
     if (error) return toast.error("Erro ao excluir", { description: error.message });
-    await registrarLog({ acao: "excluir", entidade: "orcamento", entidade_id: id, numero, descricao: `Excluiu orçamento ${numero} (movido para lixeira)` });
     toast.success("Movido para a lixeira", { description: "Você pode restaurar em Lixeira." });
     refetch();
   }

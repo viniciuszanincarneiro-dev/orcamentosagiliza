@@ -45,13 +45,12 @@ function LixeiraPage() {
     refetch();
   }
 
-  async function excluirDefinitivo(id: string, numero: string) {
+  async function excluirDefinitivo(id: string, _numero: string) {
     if (pendente) return;
     setPendente(id);
     const { error } = await supabase.from("orcamentos").delete().eq("id", id);
     setPendente(null);
     if (error) return toast.error("Erro ao excluir", { description: error.message });
-    await registrarLog({ acao: "excluir_definitivo", entidade: "orcamento", entidade_id: id, numero, descricao: `Excluiu definitivamente o orçamento ${numero}` });
     toast.success("Excluído definitivamente");
     refetch();
   }

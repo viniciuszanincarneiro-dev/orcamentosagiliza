@@ -22,7 +22,7 @@ import { calcularTabelionato } from "@/lib/calculo-tabelionato";
 // gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento, ServicoBloco } from "@/lib/orcamento-types";
-import { registrarLog } from "@/lib/activity-log";
+
 import { useProfile } from "@/hooks/use-profile";
 
 function novoId(): string {

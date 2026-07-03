@@ -198,8 +198,9 @@ function HistoricoPage() {
                     <TableHead>Nº</TableHead>
                     <TableHead>Requerente</TableHead>
                     <TableHead>Município</TableHead>
+                    <TableHead>Criado por</TableHead>
+                    <TableHead>Última alteração</TableHead>
                     <TableHead>Enviado</TableHead>
-                    <TableHead>Último contato</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
                     <TableHead className="w-32 text-right">Ações</TableHead>

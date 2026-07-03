@@ -41,7 +41,6 @@ function LixeiraPage() {
     const { error } = await supabase.from("orcamentos").update({ deleted_at: null } as never).eq("id", id);
     setPendente(null);
     if (error) return toast.error("Erro ao restaurar", { description: error.message });
-    await registrarLog({ acao: "restaurar", entidade: "orcamento", entidade_id: id, numero, descricao: `Restaurou orçamento ${numero}` });
     toast.success("Orçamento restaurado");
     refetch();
   }

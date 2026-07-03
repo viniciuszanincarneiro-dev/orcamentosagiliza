@@ -566,6 +566,13 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       }
       if (statusMudou) payload.ultimo_contato = agora;
 
+      // Autoria automática — quem editou e em qual escritório.
+      const usuarioNome = (profile?.nome?.trim() || profile?.email || null);
+      const escritorioNome = escritorio?.nome ?? null;
+      payload.updated_by = profile?.id ?? null;
+      payload.updated_by_nome = usuarioNome;
+      payload.updated_by_escritorio_nome = escritorioNome;
+
       let saved: OrcamentoData;
       const eraNovo = !data.id;
       if (data.id) {
@@ -583,6 +590,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           if (numErr) throw numErr;
           numeroFinal = numero as string;
         }
+        // Na criação, registra também "criado por" (não sobrescreve depois).
+        payload.created_by = profile?.id ?? null;
+        payload.created_by_nome = usuarioNome;
+        payload.created_by_escritorio_nome = escritorioNome;
         const { data: row, error } = await supabase
           .from("orcamentos")
           .insert({ ...payload, numero: numeroFinal } as never)

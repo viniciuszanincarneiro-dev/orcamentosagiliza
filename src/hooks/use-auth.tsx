@@ -48,7 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (data.session) {
         setSession(data.session);
-        void registrarLog({ acao: "login", descricao: `Login de ${data.session.user.email ?? email}` });
       }
       return { error: error?.message ?? null };
     },

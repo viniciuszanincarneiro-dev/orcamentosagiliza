@@ -14,42 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      activity_logs: {
-        Row: {
-          acao: string
-          created_at: string
-          descricao: string | null
-          entidade: string | null
-          entidade_id: string | null
-          id: string
-          metadata: Json | null
-          user_email: string | null
-          user_id: string | null
-        }
-        Insert: {
-          acao: string
-          created_at?: string
-          descricao?: string | null
-          entidade?: string | null
-          entidade_id?: string | null
-          id?: string
-          metadata?: Json | null
-          user_email?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          acao?: string
-          created_at?: string
-          descricao?: string | null
-          entidade?: string | null
-          entidade_id?: string | null
-          id?: string
-          metadata?: Json | null
-          user_email?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       escritorios: {
         Row: {
           ativo: boolean
@@ -165,6 +129,8 @@ export type Database = {
           confrontantes: Json | null
           created_at: string
           created_by: string | null
+          created_by_escritorio_nome: string | null
+          created_by_nome: string | null
           data_envio: string | null
           deleted_at: string | null
           escritorio_id: string | null
@@ -198,6 +164,9 @@ export type Database = {
           tipo_servico: string
           ultimo_contato: string | null
           updated_at: string
+          updated_by: string | null
+          updated_by_escritorio_nome: string | null
+          updated_by_nome: string | null
           validade_dias: number | null
           valor_total: number
         }
@@ -207,6 +176,8 @@ export type Database = {
           confrontantes?: Json | null
           created_at?: string
           created_by?: string | null
+          created_by_escritorio_nome?: string | null
+          created_by_nome?: string | null
           data_envio?: string | null
           deleted_at?: string | null
           escritorio_id?: string | null
@@ -240,6 +211,9 @@ export type Database = {
           tipo_servico?: string
           ultimo_contato?: string | null
           updated_at?: string
+          updated_by?: string | null
+          updated_by_escritorio_nome?: string | null
+          updated_by_nome?: string | null
           validade_dias?: number | null
           valor_total?: number
         }
@@ -249,6 +223,8 @@ export type Database = {
           confrontantes?: Json | null
           created_at?: string
           created_by?: string | null
+          created_by_escritorio_nome?: string | null
+          created_by_nome?: string | null
           data_envio?: string | null
           deleted_at?: string | null
           escritorio_id?: string | null
@@ -282,6 +258,9 @@ export type Database = {
           tipo_servico?: string
           ultimo_contato?: string | null
           updated_at?: string
+          updated_by?: string | null
+          updated_by_escritorio_nome?: string | null
+          updated_by_nome?: string | null
           validade_dias?: number | null
           valor_total?: number
         }

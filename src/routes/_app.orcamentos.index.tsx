@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { diasDesde, formatBRL, formatDate, whatsappLink } from "@/lib/format";
 import { STATUS_ORCAMENTO, STATUS_VARIANTS } from "@/lib/empresa";
-import { registrarLog } from "@/lib/activity-log";
+
 import { exportarCSV, exportarJSON, timestampNome } from "@/lib/export-dados";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -37,7 +37,7 @@ function HistoricoPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")
-        .select("id, numero, requerente_nome, cliente_whatsapp, cliente_telefone, imovel_municipio, valor_total, status, created_at, data_envio, ultimo_contato, validade_dias")
+        .select("id, numero, requerente_nome, cliente_whatsapp, cliente_telefone, imovel_municipio, valor_total, status, created_at, updated_at, data_envio, ultimo_contato, validade_dias, created_by_nome, created_by_escritorio_nome, updated_by_nome, updated_by_escritorio_nome")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -65,7 +65,6 @@ function HistoricoPage() {
       .eq("id", id);
     setAcaoPendente(null);
     if (error) return toast.error("Erro ao excluir", { description: error.message });
-    await registrarLog({ acao: "excluir", entidade: "orcamento", entidade_id: id, numero, descricao: `Excluiu orçamento ${numero} (movido para lixeira)` });
     toast.success("Movido para a lixeira", { description: "Você pode restaurar em Lixeira." });
     refetch();
   }
@@ -84,7 +83,7 @@ function HistoricoPage() {
     const nome = `orcamentos-${timestampNome()}`;
     if (formato === "csv") exportarCSV(nome, linhas);
     else exportarJSON(nome, linhas);
-    await registrarLog({ acao: "exportar", entidade: "orcamento", descricao: `Exportação ${formato.toUpperCase()} (${linhas.length} registros)` });
+    
     toast.success(`Exportado ${linhas.length} registros`);
   }
 
@@ -105,7 +104,7 @@ function HistoricoPage() {
         .single();
       if (insErr) throw insErr;
       const novoTyped = novo as { id: string; numero: string };
-      await registrarLog({ acao: "duplicar", entidade: "orcamento", entidade_id: novoTyped.id, numero: novoTyped.numero, descricao: `Duplicou orçamento ${(orig as { numero: string }).numero} → ${novoTyped.numero}` });
+      
       toast.success(`Orçamento duplicado: ${novoTyped.numero}`);
       navigate({ to: "/orcamentos/$id", params: { id: novoTyped.id } });
     } catch (e) {
@@ -199,8 +198,9 @@ function HistoricoPage() {
                     <TableHead>Nº</TableHead>
                     <TableHead>Requerente</TableHead>
                     <TableHead>Município</TableHead>
+                    <TableHead>Criado por</TableHead>
+                    <TableHead>Última alteração</TableHead>
                     <TableHead>Enviado</TableHead>
-                    <TableHead>Último contato</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
                     <TableHead className="w-32 text-right">Ações</TableHead>
@@ -230,10 +230,19 @@ function HistoricoPage() {
                           ) : null}
                         </TableCell>
                         <TableCell>{o.imovel_municipio ?? "—"}</TableCell>
-                        <TableCell className="text-sm">{formatDate(o.data_envio)}</TableCell>
                         <TableCell className="text-sm">
-                          {diasContato === null ? "—" : diasContato === 0 ? "hoje" : `há ${diasContato}d`}
+                          <div className="font-medium">{o.created_by_nome ?? "—"}</div>
+                          {o.created_by_escritorio_nome ? (
+                            <div className="text-xs text-muted-foreground">{o.created_by_escritorio_nome}</div>
+                          ) : null}
                         </TableCell>
+                        <TableCell className="text-sm">
+                          <div className="font-medium">{o.updated_by_nome ?? o.created_by_nome ?? "—"}</div>
+                          <div className="text-xs text-muted-foreground tabular-nums">
+                            {o.updated_at ? new Date(o.updated_at).toLocaleDateString("pt-BR") : "—"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">{formatDate(o.data_envio)}</TableCell>
                         <TableCell>
                           <Badge variant={STATUS_VARIANTS[o.status] ?? "secondary"}>
                             {statusLabel(o.status)}

@@ -22,7 +22,7 @@ import { calcularTabelionato } from "@/lib/calculo-tabelionato";
 // gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento, ServicoBloco } from "@/lib/orcamento-types";
-import { registrarLog } from "@/lib/activity-log";
+
 import { useProfile } from "@/hooks/use-profile";
 
 function novoId(): string {
@@ -566,8 +566,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       }
       if (statusMudou) payload.ultimo_contato = agora;
 
+      // Autoria automática — quem editou e em qual escritório.
+      const usuarioNome = (profile?.nome?.trim() || profile?.email || null);
+      const escritorioNome = escritorio?.nome ?? null;
+      payload.updated_by = profile?.id ?? null;
+      payload.updated_by_nome = usuarioNome;
+      payload.updated_by_escritorio_nome = escritorioNome;
+
       let saved: OrcamentoData;
-      const eraNovo = !data.id;
       if (data.id) {
         // Permite alterar manualmente o número também em edição.
         const updatePayload = { ...payload, ...(data.numero?.trim() ? { numero: data.numero.trim() } : {}) };
@@ -583,6 +589,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           if (numErr) throw numErr;
           numeroFinal = numero as string;
         }
+        // Na criação, registra também "criado por" (não sobrescreve depois).
+        payload.created_by = profile?.id ?? null;
+        payload.created_by_nome = usuarioNome;
+        payload.created_by_escritorio_nome = escritorioNome;
         const { data: row, error } = await supabase
           .from("orcamentos")
           .insert({ ...payload, numero: numeroFinal } as never)
@@ -594,14 +604,6 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       setData({ ...saved, valor_total: Number(saved.valor_total ?? totalAtual), itens: itensFlat, servicos: servicosPayload });
       setServicos(normalizarServicos({ ...saved, itens: itensFlat, servicos: servicosPayload } as OrcamentoData));
       toast.success("Orçamento salvo");
-      void registrarLog({
-        acao: eraNovo ? "criar" : "editar",
-        entidade: "orcamento",
-        entidade_id: saved.id,
-        numero: saved.numero,
-        descricao: `${eraNovo ? "Criou" : "Editou"} orçamento ${saved.numero} — ${saved.requerente_nome ?? ""}`,
-        metadata: { valor_total: saved.valor_total, status: saved.status },
-      });
       onSaved?.(saved.id!, saved.numero!);
       return saved;
     } catch (e) {
@@ -632,13 +634,6 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       ]);
       const blob = await gerarOrcamentoPDF(cur, escritorioDoOrcamento(cur), escritorios);
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.pdf`);
-      void registrarLog({
-        acao: "gerar_pdf",
-        entidade: "orcamento",
-        entidade_id: cur.id ?? null,
-        numero: cur.numero ?? null,
-        descricao: `Gerou PDF do orçamento ${cur.numero ?? "novo"}`,
-      });
     } catch (e) {
       toast.error("Erro ao gerar PDF", { description: (e as Error).message });
     } finally { setGenerating(null); }
@@ -653,13 +648,6 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       ]);
       const blob = await gerarOrcamentoDOCX(cur, escritorioDoOrcamento(cur));
       fileSaver.saveAs(blob, `Orcamento-${cur.numero ?? "novo"}.docx`);
-      void registrarLog({
-        acao: "gerar_docx",
-        entidade: "orcamento",
-        entidade_id: cur.id ?? null,
-        numero: cur.numero ?? null,
-        descricao: `Gerou DOCX do orçamento ${cur.numero ?? "novo"}`,
-      });
     } catch (e) {
       toast.error("Erro ao gerar DOCX", { description: (e as Error).message });
     } finally { setGenerating(null); }
@@ -1249,6 +1237,46 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             placeholder="Observações adicionais que devem aparecer no orçamento." />
         </CardContent>
       </Card>
+
+      {data.id ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações do Orçamento</CardTitle>
+            <CardDescription>Registro automático de autoria — preenchido pelo sistema.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div>
+                <dt className="text-muted-foreground text-xs uppercase tracking-wide">Criado por</dt>
+                <dd className="font-medium">{data.created_by_nome ?? "—"}</dd>
+                <dd className="text-xs text-muted-foreground">
+                  {data.created_by_escritorio_nome ?? "Sem escritório vinculado"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground text-xs uppercase tracking-wide">Criado em</dt>
+                <dd className="font-medium tabular-nums">
+                  {data.created_at ? new Date(data.created_at).toLocaleString("pt-BR") : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground text-xs uppercase tracking-wide">Última alteração por</dt>
+                <dd className="font-medium">{data.updated_by_nome ?? data.created_by_nome ?? "—"}</dd>
+                <dd className="text-xs text-muted-foreground">
+                  {data.updated_by_escritorio_nome ?? data.created_by_escritorio_nome ?? "Sem escritório vinculado"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground text-xs uppercase tracking-wide">Última alteração em</dt>
+                <dd className="font-medium tabular-nums">
+                  {data.updated_at ? new Date(data.updated_at).toLocaleString("pt-BR") : "—"}
+                </dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+      ) : null}
+
 
       <div className="flex flex-wrap gap-2 justify-end sticky bottom-0 bg-background/95 backdrop-blur py-3 -mx-4 px-4 border-t">
         <Button variant="outline" onClick={() => save()} disabled={saving}>

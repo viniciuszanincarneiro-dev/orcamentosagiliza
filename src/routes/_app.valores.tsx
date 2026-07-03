@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatBRL } from "@/lib/format";
-import { registrarLog } from "@/lib/activity-log";
+
 
 export const Route = createFileRoute("/_app/valores")({
   component: ValoresPage,
@@ -215,16 +215,8 @@ function LinhaValor({ row, onSaved }: { row: ValorRow; onSaved: () => void }) {
     mutationFn: async () => {
       const n = Number(valor.replace(",", "."));
       if (!isFinite(n)) throw new Error("Valor inválido");
-      const anterior = row.valor;
       const { error } = await supabase.from("tabela_valores").update({ valor: n }).eq("id", row.id);
       if (error) throw error;
-      void registrarLog({
-        acao: "editar_valores",
-        entidade: "tabela_valores",
-        entidade_id: row.id,
-        descricao: `Alterou "${row.descricao}" de ${formatBRL(anterior)} para ${formatBRL(n)}`,
-        metadata: { chave: row.chave, anterior, novo: n },
-      });
     },
     onSuccess: () => { toast.success("Valor atualizado"); setEditing(false); onSaved(); },
     onError: (e: Error) => toast.error(e.message),

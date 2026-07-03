@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatBRL, formatDate } from "@/lib/format";
-import { registrarLog } from "@/lib/activity-log";
+
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -41,18 +41,16 @@ function LixeiraPage() {
     const { error } = await supabase.from("orcamentos").update({ deleted_at: null } as never).eq("id", id);
     setPendente(null);
     if (error) return toast.error("Erro ao restaurar", { description: error.message });
-    await registrarLog({ acao: "restaurar", entidade: "orcamento", entidade_id: id, numero, descricao: `Restaurou orçamento ${numero}` });
     toast.success("Orçamento restaurado");
     refetch();
   }
 
-  async function excluirDefinitivo(id: string, numero: string) {
+  async function excluirDefinitivo(id: string, _numero: string) {
     if (pendente) return;
     setPendente(id);
     const { error } = await supabase.from("orcamentos").delete().eq("id", id);
     setPendente(null);
     if (error) return toast.error("Erro ao excluir", { description: error.message });
-    await registrarLog({ acao: "excluir_definitivo", entidade: "orcamento", entidade_id: id, numero, descricao: `Excluiu definitivamente o orçamento ${numero}` });
     toast.success("Excluído definitivamente");
     refetch();
   }

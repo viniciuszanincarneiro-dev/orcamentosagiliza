@@ -594,14 +594,6 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       setData({ ...saved, valor_total: Number(saved.valor_total ?? totalAtual), itens: itensFlat, servicos: servicosPayload });
       setServicos(normalizarServicos({ ...saved, itens: itensFlat, servicos: servicosPayload } as OrcamentoData));
       toast.success("Orçamento salvo");
-      void registrarLog({
-        acao: eraNovo ? "criar" : "editar",
-        entidade: "orcamento",
-        entidade_id: saved.id,
-        numero: saved.numero,
-        descricao: `${eraNovo ? "Criou" : "Editou"} orçamento ${saved.numero} — ${saved.requerente_nome ?? ""}`,
-        metadata: { valor_total: saved.valor_total, status: saved.status },
-      });
       onSaved?.(saved.id!, saved.numero!);
       return saved;
     } catch (e) {

@@ -574,7 +574,6 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       payload.updated_by_escritorio_nome = escritorioNome;
 
       let saved: OrcamentoData;
-      const eraNovo = !data.id;
       if (data.id) {
         // Permite alterar manualmente o número também em edição.
         const updatePayload = { ...payload, ...(data.numero?.trim() ? { numero: data.numero.trim() } : {}) };

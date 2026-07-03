@@ -83,7 +83,7 @@ function HistoricoPage() {
     const nome = `orcamentos-${timestampNome()}`;
     if (formato === "csv") exportarCSV(nome, linhas);
     else exportarJSON(nome, linhas);
-    await registrarLog({ acao: "exportar", entidade: "orcamento", descricao: `Exportação ${formato.toUpperCase()} (${linhas.length} registros)` });
+    
     toast.success(`Exportado ${linhas.length} registros`);
   }
 

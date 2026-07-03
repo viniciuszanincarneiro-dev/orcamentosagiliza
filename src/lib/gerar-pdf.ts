@@ -443,7 +443,10 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
       writeParagraph(`${bi + 1}. ${modelo.titulo}`, { bold: true, gap: 2, align: "left" });
     }
     const metod = (modelo.metodologia ?? "").replace(/^\s*DESCRIÇÃO DOS SERVIÇOS:\s*\n+/i, "");
-    if (metod) writeParagraph(metod, { gap: 6 });
+    if (metod) {
+      const partes = splitIncisos(metod);
+      partes.forEach((p, i) => writeParagraph(p, { gap: i === partes.length - 1 ? 6 : 4 }));
+    }
     if (bloco.observacoes?.trim()) writeParagraph(`Observações: ${bloco.observacoes.trim()}`, { gap: 6 });
   });
 

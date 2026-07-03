@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { diasDesde, formatBRL, formatDate, whatsappLink } from "@/lib/format";
 import { STATUS_ORCAMENTO, STATUS_VARIANTS } from "@/lib/empresa";
-import { registrarLog } from "@/lib/activity-log";
+
 import { exportarCSV, exportarJSON, timestampNome } from "@/lib/export-dados";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,

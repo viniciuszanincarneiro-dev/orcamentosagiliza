@@ -117,7 +117,10 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
   const blocosExplicativos: Paragraph[] = blocos.flatMap((bloco) => {
     const modelo = getModeloServico(bloco.tipo_servico);
     const ps: Paragraph[] = [P({ text: modelo.titulo, bold: true, size: 22, spacing: 120 })];
-    if (modelo.descricao) ps.push(P({ text: modelo.descricao, spacing: 200 }));
+    if (modelo.descricao) {
+      const partes = splitIncisos(modelo.descricao);
+      partes.forEach((p) => ps.push(P({ text: p, spacing: 160, align: AlignmentType.JUSTIFIED })));
+    }
     return ps;
   });
 
@@ -129,7 +132,10 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
       out.push(P({ text: `${bi + 1}. ${modelo.titulo}`, bold: true, spacing: 80 }));
     }
     const metod = (modelo.metodologia ?? "").replace(/^\s*DESCRIÇÃO DOS SERVIÇOS:\s*\n+/i, "");
-    if (metod) out.push(P({ text: metod, spacing: 120 }));
+    if (metod) {
+      const partes = splitIncisos(metod);
+      partes.forEach((p) => out.push(P({ text: p, spacing: 160, align: AlignmentType.JUSTIFIED })));
+    }
     if (bloco.observacoes?.trim()) out.push(P({ text: `Observações: ${bloco.observacoes.trim()}`, spacing: 120 }));
     return out;
   });

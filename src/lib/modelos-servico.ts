@@ -59,7 +59,7 @@ const OFICIAIS: Record<string, ModeloServico> = {
     descricao:
       "O desmembramento de um imóvel com autorização do INCRA é um procedimento técnico que permite subdividir uma propriedade rural em frações menores.\n\nA autorização pelo INCRA é necessária nas seguintes hipóteses:\n\na) Empreendimentos imobiliários rurais;\nb) Desmembramento de parcela de imóvel rural sem que haja título de transmissão que justifique o parcelamento;\nc) Desmembramento que resulte em área inferior à fração mínima de parcelamento.",
     metodologia:
-      "No presente orçamento está incluso os seguintes serviços:\n\nLevantamento Topográfico, Locação, Assessoria Documental (elaboração de mapas, memoriais descritivos, TRT, requerimentos e demais documentos que compõe o processo), Coleta de Assinaturas (proprietários e confrontantes), encaminhamento dos documentos ao Tabelionato de Notas e ao Cartório de Registro de Imóveis e atualização dos cadastros rurais CCIR, ITR e CAR.",
+      "DESCRIÇÃO DOS SERVIÇOS:\n\nNo presente orçamento está incluso os seguintes serviços: Levantamento Topográfico, Locação (marcos georreferenciados), Assessoria Documental (elaboração de mapas, memoriais descritivos, TRT, requerimentos e demais documentos que compõe o processo), Coleta de Assinaturas (proprietários e confrontantes), encaminhamento dos documentos no Registro de Imóveis e, atualização dos cadastros rurais CCIR, ITR e CAR.",
   },
   remembramento: {
     titulo: "REMEMBRAMENTO DE IMÓVEL",

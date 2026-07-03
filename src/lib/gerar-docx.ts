@@ -184,8 +184,21 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
 
   const tabelaAdicional = null;
 
-  // Bloco legal de GEORREFERENCIAMENTO removido — mantido apenas na fundamentação do serviço
-  const blocoLegal: never[] = [];
+  // Bloco legal de GEORREFERENCIAMENTO (quando houver serviço rural)
+  const blocoLegal: Paragraph[] = anyRural
+    ? [
+        P({ text: "GEORREFERENCIAMENTO", bold: true, size: 22 }),
+        P({
+          text: "A Lei nº 10.267/2001, a qual foi regulamentada pelo Decreto nº 4.449/2002, demonstra algumas alterações e determina que sejam cumpridas. Estas alterações estão relacionadas ao cadastramento de imóveis rurais, tornando obrigatório o georreferenciamento, o qual deverá conter as coordenadas dos vértices definidores dos limites dos imóveis rurais, com precisão posicional, nos casos de desmembramento, remembramento ou mudança de titularidade entre outras modalidades. Tais exigências representam uma mudança paradigmática nas formas de levantamento e cadastro imobiliário até então vigentes no Brasil. Todos os imóveis rurais possuem a obrigatoriedade em fazer o georreferenciamento até 20 de novembro de 2025, prazo esse definido no Decreto 4.449/02, alterado pelo decreto 9.311/18.",
+          spacing: 160,
+          align: AlignmentType.JUSTIFIED,
+        }),
+        P({ text: "• Vigente para imóveis acima de 100 hectares;", spacing: 60 }),
+        P({ text: "• 20/11/2023 para os imóveis com área superior a 25 hectares;", spacing: 60 }),
+        P({ text: "• 20/11/2025 para os imóveis com área inferior a 25 hectares.", spacing: 120 }),
+      ]
+    : [];
+
 
   const proprietariosBlock = orc.proprietarios?.length ? [
     P({ text: "PROPRIETÁRIOS", bold: true, size: 22 }),

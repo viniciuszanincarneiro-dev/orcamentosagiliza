@@ -31,7 +31,7 @@ const baseNav = [
   { to: "/financeiro", label: "Financeiro", icon: TrendingUp },
   { to: "/valores", label: "Tabela de Valores", icon: Settings },
   { to: "/lixeira", label: "Lixeira", icon: Trash2 },
-  { to: "/logs", label: "Histórico de Ações", icon: Activity },
+  
   { to: "/tutorial", label: "Tutorial", icon: BookOpen },
 ] as const;
 

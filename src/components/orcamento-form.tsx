@@ -1238,6 +1238,46 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         </CardContent>
       </Card>
 
+      {data.id ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações do Orçamento</CardTitle>
+            <CardDescription>Registro automático de autoria — preenchido pelo sistema.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div>
+                <dt className="text-muted-foreground text-xs uppercase tracking-wide">Criado por</dt>
+                <dd className="font-medium">{data.created_by_nome ?? "—"}</dd>
+                <dd className="text-xs text-muted-foreground">
+                  {data.created_by_escritorio_nome ?? "Sem escritório vinculado"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground text-xs uppercase tracking-wide">Criado em</dt>
+                <dd className="font-medium tabular-nums">
+                  {data.created_at ? new Date(data.created_at).toLocaleString("pt-BR") : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground text-xs uppercase tracking-wide">Última alteração por</dt>
+                <dd className="font-medium">{data.updated_by_nome ?? data.created_by_nome ?? "—"}</dd>
+                <dd className="text-xs text-muted-foreground">
+                  {data.updated_by_escritorio_nome ?? data.created_by_escritorio_nome ?? "Sem escritório vinculado"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground text-xs uppercase tracking-wide">Última alteração em</dt>
+                <dd className="font-medium tabular-nums">
+                  {data.updated_at ? new Date(data.updated_at).toLocaleString("pt-BR") : "—"}
+                </dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+      ) : null}
+
+
       <div className="flex flex-wrap gap-2 justify-end sticky bottom-0 bg-background/95 backdrop-blur py-3 -mx-4 px-4 border-t">
         <Button variant="outline" onClick={() => save()} disabled={saving}>
           {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />} Salvar

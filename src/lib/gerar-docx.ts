@@ -68,10 +68,12 @@ async function logoBytes(): Promise<Uint8Array> {
   return _logoBytesCache;
 }
 
-function P(opts: { text?: string; bold?: boolean; color?: string; size?: number; align?: typeof AlignmentType[keyof typeof AlignmentType]; spacing?: number; runs?: TextRun[] }): Paragraph {
+function P(opts: { text?: string; bold?: boolean; color?: string; size?: number; align?: typeof AlignmentType[keyof typeof AlignmentType]; spacing?: number; runs?: TextRun[]; keepNext?: boolean; keepLines?: boolean }): Paragraph {
   return new Paragraph({
     alignment: opts.align,
     spacing: { after: opts.spacing ?? 100 },
+    keepNext: opts.keepNext,
+    keepLines: opts.keepLines,
     children: opts.runs ?? [new TextRun({
       text: opts.text ?? "",
       bold: opts.bold,

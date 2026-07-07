@@ -1,55 +1,53 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FilePlus2, FileText, Clock, CheckCircle2, DollarSign, TrendingUp } from "lucide-react";
+import { FilePlus2, FileText, Clock, CheckCircle2, DollarSign, TrendingUp, Loader2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatBRL, formatDate } from "@/lib/format";
-import { calcularLucro, calcularRepasse, type ItemLike } from "@/lib/lucro";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
 });
 
+type DashboardStats = {
+  total: number;
+  finalizados: number;
+  rascunhos: number;
+  valor_total: number;
+  lucro_bruto: number;
+  repasses: number;
+};
+
 function DashboardPage() {
-  const { data: stats } = useQuery({
-    queryKey: ["dashboard-stats"],
-    staleTime: 60_000,
+  // Agregação inteira no servidor via RPC — 1 request em vez de 4, sem trazer JSONB pesado.
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ["dashboard-stats-v2"],
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
-      // Conta linhas no servidor sem trazer dados; soma apenas valores via select leve
-      const [totalRes, finalRes, rascRes, valoresRes] = await Promise.all([
-        supabase.from("orcamentos").select("*", { count: "exact", head: true }).is("deleted_at", null),
-        supabase.from("orcamentos").select("*", { count: "exact", head: true }).is("deleted_at", null).eq("status", "finalizado"),
-        supabase.from("orcamentos").select("*", { count: "exact", head: true }).is("deleted_at", null).eq("status", "rascunho"),
-        supabase.from("orcamentos").select("valor_total, itens").is("deleted_at", null),
-      ]);
-      if (totalRes.error) throw totalRes.error;
-      if (valoresRes.error) throw valoresRes.error;
-      let valorTotal = 0;
-      let lucroBruto = 0;
-      let repasses = 0;
-      for (const o of valoresRes.data ?? []) {
-        valorTotal += Number(o.valor_total ?? 0);
-        const itens = (o.itens as ItemLike[] | null) ?? [];
-        lucroBruto += calcularLucro(itens);
-        repasses += calcularRepasse(itens);
-      }
+      const { data, error } = await supabase.rpc("dashboard_stats");
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
+      if (!row) return { total: 0, finalizados: 0, rascunhos: 0, valor_total: 0, lucro_bruto: 0, repasses: 0 } as DashboardStats;
       return {
-        total: totalRes.count ?? 0,
-        finalizados: finalRes.count ?? 0,
-        rascunhos: rascRes.count ?? 0,
-        valorTotal,
-        lucroBruto: Math.round(lucroBruto * 100) / 100,
-        repasses: Math.round(repasses * 100) / 100,
-      };
+        total: Number(row.total ?? 0),
+        finalizados: Number(row.finalizados ?? 0),
+        rascunhos: Number(row.rascunhos ?? 0),
+        valor_total: Number(row.valor_total ?? 0),
+        lucro_bruto: Number(row.lucro_bruto ?? 0),
+        repasses: Number(row.repasses ?? 0),
+      } as DashboardStats;
     },
   });
 
-  const { data: recentes } = useQuery({
+  // Consulta leve (só 5 linhas, colunas específicas) — resolve independente das agregações.
+  const { data: recentes, isLoading: recLoading } = useQuery({
     queryKey: ["orcamentos-recentes"],
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")
@@ -61,6 +59,7 @@ function DashboardPage() {
       return data ?? [];
     },
   });
+
 
   return (
     <div className="space-y-8">
@@ -80,7 +79,7 @@ function DashboardPage() {
         <StatCard title="Total" value={stats?.total ?? 0} icon={FileText} color="text-foreground" />
         <StatCard title="Finalizados" value={stats?.finalizados ?? 0} icon={CheckCircle2} color="text-primary" />
         <StatCard title="Rascunhos" value={stats?.rascunhos ?? 0} icon={Clock} color="text-destructive" />
-        <StatCard title="Valor Acumulado" value={formatBRL(stats?.valorTotal ?? 0)} icon={DollarSign} color="text-primary" />
+        <StatCard title="Valor Acumulado" value={formatBRL(stats?.valor_total ?? 0)} icon={DollarSign} color="text-primary" loading={statsLoading} />
       </div>
 
       <Card className="border-primary/30 bg-primary/5">
@@ -105,19 +104,19 @@ function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Lucro bruto acumulado</p>
               <p className="text-3xl font-bold tabular-nums text-primary mt-1">
-                {formatBRL(stats?.lucroBruto ?? 0)}
+                {statsLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary/60" /> : formatBRL(stats?.lucro_bruto ?? 0)}
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Repasses a cartório</p>
               <p className="text-2xl font-semibold tabular-nums text-muted-foreground mt-1">
-                {formatBRL(stats?.repasses ?? 0)}
+                {statsLoading ? "—" : formatBRL(stats?.repasses ?? 0)}
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Faturamento total</p>
               <p className="text-2xl font-semibold tabular-nums mt-1">
-                {formatBRL(stats?.valorTotal ?? 0)}
+                {statsLoading ? "—" : formatBRL(stats?.valor_total ?? 0)}
               </p>
             </div>
           </div>
@@ -138,7 +137,9 @@ function DashboardPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {!recentes || recentes.length === 0 ? (
+          {recLoading ? (
+            <p className="text-center py-10 text-muted-foreground text-sm">Carregando…</p>
+          ) : !recentes || recentes.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
               <FileText className="h-10 w-10 mx-auto mb-2 opacity-30" />
               Nenhum orçamento criado ainda.
@@ -173,14 +174,14 @@ function DashboardPage() {
   );
 }
 
-function StatCard({ title, value, icon: Icon, color }: { title: string; value: string | number; icon: typeof FileText; color: string }) {
+function StatCard({ title, value, icon: Icon, color, loading }: { title: string; value: string | number; icon: typeof FileText; color: string; loading?: boolean }) {
   return (
     <Card>
       <CardContent className="pt-6">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1 tabular-nums">{value}</p>
+            <p className="text-2xl font-bold mt-1 tabular-nums">{loading ? "…" : value}</p>
           </div>
           <div className={`p-2 rounded-md bg-muted ${color}`}>
             <Icon className="h-5 w-5" />
@@ -190,3 +191,4 @@ function StatCard({ title, value, icon: Icon, color }: { title: string; value: s
     </Card>
   );
 }
+

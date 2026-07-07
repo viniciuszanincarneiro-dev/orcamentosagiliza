@@ -1,55 +1,53 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FilePlus2, FileText, Clock, CheckCircle2, DollarSign, TrendingUp } from "lucide-react";
+import { FilePlus2, FileText, Clock, CheckCircle2, DollarSign, TrendingUp, Loader2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatBRL, formatDate } from "@/lib/format";
-import { calcularLucro, calcularRepasse, type ItemLike } from "@/lib/lucro";
 
 export const Route = createFileRoute("/_app/dashboard")({
   component: DashboardPage,
 });
 
+type DashboardStats = {
+  total: number;
+  finalizados: number;
+  rascunhos: number;
+  valor_total: number;
+  lucro_bruto: number;
+  repasses: number;
+};
+
 function DashboardPage() {
-  const { data: stats } = useQuery({
-    queryKey: ["dashboard-stats"],
-    staleTime: 60_000,
+  // Agregação inteira no servidor via RPC — 1 request em vez de 4, sem trazer JSONB pesado.
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ["dashboard-stats-v2"],
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
-      // Conta linhas no servidor sem trazer dados; soma apenas valores via select leve
-      const [totalRes, finalRes, rascRes, valoresRes] = await Promise.all([
-        supabase.from("orcamentos").select("*", { count: "exact", head: true }).is("deleted_at", null),
-        supabase.from("orcamentos").select("*", { count: "exact", head: true }).is("deleted_at", null).eq("status", "finalizado"),
-        supabase.from("orcamentos").select("*", { count: "exact", head: true }).is("deleted_at", null).eq("status", "rascunho"),
-        supabase.from("orcamentos").select("valor_total, itens").is("deleted_at", null),
-      ]);
-      if (totalRes.error) throw totalRes.error;
-      if (valoresRes.error) throw valoresRes.error;
-      let valorTotal = 0;
-      let lucroBruto = 0;
-      let repasses = 0;
-      for (const o of valoresRes.data ?? []) {
-        valorTotal += Number(o.valor_total ?? 0);
-        const itens = (o.itens as ItemLike[] | null) ?? [];
-        lucroBruto += calcularLucro(itens);
-        repasses += calcularRepasse(itens);
-      }
+      const { data, error } = await supabase.rpc("dashboard_stats");
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null;
+      if (!row) return { total: 0, finalizados: 0, rascunhos: 0, valor_total: 0, lucro_bruto: 0, repasses: 0 } as DashboardStats;
       return {
-        total: totalRes.count ?? 0,
-        finalizados: finalRes.count ?? 0,
-        rascunhos: rascRes.count ?? 0,
-        valorTotal,
-        lucroBruto: Math.round(lucroBruto * 100) / 100,
-        repasses: Math.round(repasses * 100) / 100,
-      };
+        total: Number(row.total ?? 0),
+        finalizados: Number(row.finalizados ?? 0),
+        rascunhos: Number(row.rascunhos ?? 0),
+        valor_total: Number(row.valor_total ?? 0),
+        lucro_bruto: Number(row.lucro_bruto ?? 0),
+        repasses: Number(row.repasses ?? 0),
+      } as DashboardStats;
     },
   });
 
-  const { data: recentes } = useQuery({
+  // Consulta leve (só 5 linhas, colunas específicas) — resolve independente das agregações.
+  const { data: recentes, isLoading: recLoading } = useQuery({
     queryKey: ["orcamentos-recentes"],
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orcamentos")
@@ -61,6 +59,7 @@ function DashboardPage() {
       return data ?? [];
     },
   });
+
 
   return (
     <div className="space-y-8">

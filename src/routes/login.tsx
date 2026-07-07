@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate, redirect, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,9 +26,17 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Pré-carrega o chunk e as queries do dashboard em paralelo enquanto o usuário digita.
+  // Após o submit, a navegação encontra tudo pronto no cache.
+  useEffect(() => {
+    router.preloadRoute({ to: "/dashboard" }).catch(() => {});
+  }, [router]);
+
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();

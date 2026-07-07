@@ -137,7 +137,9 @@ function DashboardPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {!recentes || recentes.length === 0 ? (
+          {recLoading ? (
+            <p className="text-center py-10 text-muted-foreground text-sm">Carregando…</p>
+          ) : !recentes || recentes.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
               <FileText className="h-10 w-10 mx-auto mb-2 opacity-30" />
               Nenhum orçamento criado ainda.
@@ -172,14 +174,14 @@ function DashboardPage() {
   );
 }
 
-function StatCard({ title, value, icon: Icon, color }: { title: string; value: string | number; icon: typeof FileText; color: string }) {
+function StatCard({ title, value, icon: Icon, color, loading }: { title: string; value: string | number; icon: typeof FileText; color: string; loading?: boolean }) {
   return (
     <Card>
       <CardContent className="pt-6">
         <div className="flex justify-between items-start">
           <div>
             <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1 tabular-nums">{value}</p>
+            <p className="text-2xl font-bold mt-1 tabular-nums">{loading ? "…" : value}</p>
           </div>
           <div className={`p-2 rounded-md bg-muted ${color}`}>
             <Icon className="h-5 w-5" />
@@ -189,3 +191,4 @@ function StatCard({ title, value, icon: Icon, color }: { title: string; value: s
     </Card>
   );
 }
+

@@ -420,6 +420,17 @@ export type Database = {
     }
     Functions: {
       current_escritorio_id: { Args: never; Returns: string }
+      dashboard_stats: {
+        Args: never
+        Returns: {
+          finalizados: number
+          lucro_bruto: number
+          rascunhos: number
+          repasses: number
+          total: number
+          valor_total: number
+        }[]
+      }
       gen_orcamento_numero: { Args: never; Returns: string }
       is_admin: { Args: { _uid: string }; Returns: boolean }
     }

@@ -14,6 +14,12 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/agiliza-logo.png";
 
 export const Route = createFileRoute("/login")({
+  // Se já estiver autenticado, pula direto para o dashboard — evita o "loop" no login.
+  beforeLoad: async () => {
+    if (typeof window === "undefined") return;
+    const { data } = await supabase.auth.getSession();
+    if (data.session) throw redirect({ to: "/dashboard" });
+  },
   component: LoginPage,
 });
 

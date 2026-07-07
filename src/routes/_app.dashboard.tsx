@@ -79,7 +79,7 @@ function DashboardPage() {
         <StatCard title="Total" value={stats?.total ?? 0} icon={FileText} color="text-foreground" />
         <StatCard title="Finalizados" value={stats?.finalizados ?? 0} icon={CheckCircle2} color="text-primary" />
         <StatCard title="Rascunhos" value={stats?.rascunhos ?? 0} icon={Clock} color="text-destructive" />
-        <StatCard title="Valor Acumulado" value={formatBRL(stats?.valorTotal ?? 0)} icon={DollarSign} color="text-primary" />
+        <StatCard title="Valor Acumulado" value={formatBRL(stats?.valor_total ?? 0)} icon={DollarSign} color="text-primary" loading={statsLoading} />
       </div>
 
       <Card className="border-primary/30 bg-primary/5">
@@ -104,19 +104,19 @@ function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Lucro bruto acumulado</p>
               <p className="text-3xl font-bold tabular-nums text-primary mt-1">
-                {formatBRL(stats?.lucroBruto ?? 0)}
+                {statsLoading ? <Loader2 className="h-6 w-6 animate-spin text-primary/60" /> : formatBRL(stats?.lucro_bruto ?? 0)}
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Repasses a cartório</p>
               <p className="text-2xl font-semibold tabular-nums text-muted-foreground mt-1">
-                {formatBRL(stats?.repasses ?? 0)}
+                {statsLoading ? "—" : formatBRL(stats?.repasses ?? 0)}
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Faturamento total</p>
               <p className="text-2xl font-semibold tabular-nums mt-1">
-                {formatBRL(stats?.valorTotal ?? 0)}
+                {statsLoading ? "—" : formatBRL(stats?.valor_total ?? 0)}
               </p>
             </div>
           </div>

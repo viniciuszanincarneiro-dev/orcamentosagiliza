@@ -54,6 +54,13 @@ const OFICIAIS: Record<string, ModeloServico> = {
     metodologia:
       "No presente orçamento está incluso os seguintes serviços:\n\nEncaminhamento de Viabilidade para Desdobro do Lote junto à Prefeitura Municipal, CASAN e CELESC;\n\nSendo viável o desdobro, realiza-se o Levantamento Topográfico, Locação, Assessoria Documental (elaboração de mapas, memoriais descritivos, TRT, requerimentos e demais documentos que compõe o processo), Coleta de Assinaturas dos proprietários;\n\nProtocolo do Projeto na Prefeitura Municipal e, por fim, Protocolo junto ao Registro de Imóveis.",
   },
+  retificacao_geo: {
+    titulo: "GEORREFERENCIAMENTO CERTIFICADO PELO INCRA",
+    descricao:
+      "No presente orçamento está incluso os seguintes serviços: Levantamento Topográfico, Locação (marcos georreferenciados), Assessoria Documental (elaboração de mapas, memoriais descritivos, TRT, requerimentos e demais documentos que compõe o processo), Coleta de Assinaturas (proprietários e confrontantes), encaminhamento dos documentos no Registro de Imóveis e, atualização dos cadastros rurais CCIR, ITR e CAR.",
+    metodologia:
+      "No presente orçamento está incluso os seguintes serviços: Levantamento Topográfico, Locação (marcos georreferenciados), Assessoria Documental (elaboração de mapas, memoriais descritivos, TRT, requerimentos e demais documentos que compõe o processo), Coleta de Assinaturas (proprietários e confrontantes), encaminhamento dos documentos no Registro de Imóveis e, atualização dos cadastros rurais CCIR, ITR e CAR.",
+  },
   desmembramento_incra: {
     titulo: "DESMEMBRAMENTO COM AUTORIZAÇÃO INCRA",
     descricao:

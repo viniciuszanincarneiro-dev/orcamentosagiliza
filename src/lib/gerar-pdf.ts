@@ -375,6 +375,9 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   // Cada serviço apresenta título próprio + texto explicativo/metodologia completa.
   blocos.forEach((bloco) => {
     const tipoB = bloco.tipo_servico;
+    // Para serviços rurais o bloco explicativo é suprimido do topo; o bloco legal
+    // de georreferenciamento (logo abaixo) já concentra a fundamentação.
+    if (TIPOS_RURAIS.has(tipoB)) return;
     const modelo = getModeloServico(tipoB);
     writeSectionTitle(modelo.titulo);
     if (modelo.descricao) {

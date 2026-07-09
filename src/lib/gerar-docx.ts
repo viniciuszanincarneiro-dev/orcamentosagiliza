@@ -116,7 +116,10 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
   if (orc.imovel_valor_avaliado) partes.push(`imóvel avaliado em ${formatBRL(orc.imovel_valor_avaliado)}`);
 
   // BLOCOS EXPLICATIVOS (título + descrição/fundamentação) — apresentados PRIMEIRO
+  // Serviços rurais não renderizam este bloco, pois a fundamentação jurídica de
+  // georreferenciamento é exibida no bloco legal específico.
   const blocosExplicativos: Paragraph[] = blocos.flatMap((bloco) => {
+    if (TIPOS_RURAIS.has(bloco.tipo_servico)) return [];
     const modelo = getModeloServico(bloco.tipo_servico);
     const ps: Paragraph[] = [P({ text: modelo.titulo, bold: true, size: 22, spacing: 120 })];
     if (modelo.descricao) {

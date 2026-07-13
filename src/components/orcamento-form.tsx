@@ -577,25 +577,33 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       if (data.id) {
         // Permite alterar manualmente o número também em edição.
         const updatePayload = { ...payload, ...(data.numero?.trim() ? { numero: data.numero.trim() } : {}) };
-        const { data: row, error } = await supabase.from("orcamentos").update(updatePayload as never).eq("id", data.id).select().single();
+        // Lock otimista: só atualiza se updated_at bater com o que carregamos.
+        // Evita sobrescrever silenciosamente edição feita por outro usuário.
+        let q = supabase.from("orcamentos").update(updatePayload as never).eq("id", data.id);
+        if (data.updated_at) q = q.eq("updated_at", data.updated_at);
+        const { data: rows, error } = await q.select();
         if (error) throw error;
-        saved = row as unknown as OrcamentoData;
-      } else {
-        // Número: usa o informado manualmente; senão gera automaticamente.
-        const numeroManual = (data.numero ?? "").trim();
-        let numeroFinal = numeroManual;
-        if (!numeroFinal) {
-          const { data: numero, error: numErr } = await supabase.rpc("gen_orcamento_numero");
-          if (numErr) throw numErr;
-          numeroFinal = numero as string;
+        if (!rows || rows.length === 0) {
+          toast.error("Este orçamento foi alterado por outro usuário.", {
+            description: "Recarregue a página para ver a versão mais recente antes de salvar.",
+          });
+          return null;
         }
+        saved = rows[0] as unknown as OrcamentoData;
+      } else {
+        // Número é preenchido pelo trigger BEFORE INSERT (advisory lock + índice único).
+        // Se o usuário informou manualmente, respeita.
+        const numeroManual = (data.numero ?? "").trim();
         // Na criação, registra também "criado por" (não sobrescreve depois).
         payload.created_by = profile?.id ?? null;
         payload.created_by_nome = usuarioNome;
         payload.created_by_escritorio_nome = escritorioNome;
+        const insertPayload = numeroManual
+          ? { ...payload, numero: numeroManual }
+          : { ...payload, numero: undefined };
         const { data: row, error } = await supabase
           .from("orcamentos")
-          .insert({ ...payload, numero: numeroFinal } as never)
+          .insert(insertPayload as never)
           .select()
           .single();
         if (error) throw error;

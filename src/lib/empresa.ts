@@ -167,8 +167,9 @@ export const METODOLOGIA_SERVICO: Record<string, string> = {
  * Itens sem `auto` usam um valor base sugerido (editável).
  */
 export type TemplateItem =
-  | { descricao: string; auto: "topografia" | "registro" | "certidoes" | "ccir" | "tabelionato" | "assessoria" }
+  | { descricao: string; auto: "topografia" | "registro" | "certidoes" | "ccir" | "tabelionato" | "assessoria" | "averbacoes" }
   | { descricao: string; valor_base: number };
+
 
 export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
   retificacao_geo: [
@@ -181,6 +182,7 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "SERVIÇO PRESTADO (ASSESSORIA DOCUMENTAL)", valor_base: 1500 },
     { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", valor_base: 420 },
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
   ],
   georreferenciamento: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO GEORREFERENCIADO", auto: "topografia" },
@@ -194,11 +196,13 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
   desmembramento: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },
     { descricao: "REGISTRO DE IMÓVEIS (DESMEMBRAMENTO)", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "ASSESSORIA DOCUMENTAL E PROTOCOLO MUNICIPAL", valor_base: 1200 },
   ],
   remembramento: [
     { descricao: "REMEMBRAMENTO", valor_base: 1800 },
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", valor_base: 200 },
   ],
   usucapiao_extrajudicial: [
@@ -206,56 +210,70 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "COLETA DE ASSINATURAS E CERTIDÕES", auto: "certidoes" },
     { descricao: "ASSESSORIA DOCUMENTAL E ENCAMINHAMENTO AO TABELIONATO", valor_base: 2500 },
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
   ],
   inventario_extrajudicial: [
     { descricao: "ASSESSORIA DOCUMENTAL E ELABORAÇÃO DA MINUTA", valor_base: 2000 },
     { descricao: "COLETA DE CERTIDÕES E NEGATIVAS", auto: "certidoes" },
-    { descricao: "ENCAMINHAMENTO AO TABELIONATO", valor_base: 600 },
+    { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
   ],
+
   compra_venda: [
     { descricao: "ASSESSORIA DOCUMENTAL", auto: "assessoria" },
     { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
-    { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", auto: "registro" },
     { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
+    { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
   ],
   outros: [],
   desdobro: [
     { descricao: "DESDOBRO URBANO", valor_base: 3200 },
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "ASSINATURAS, CERTIDÕES E NEGATIVAS", valor_base: 420 },
   ],
   desmembramento_incra: [
     { descricao: "DESMEMBRAMENTO INCRA", valor_base: 3400 },
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", valor_base: 450 },
     { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", valor_base: 250 },
   ],
   estremacao: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO", auto: "topografia" },
     { descricao: "REGISTRO DE IMÓVEIS (ESTREMAÇÃO)", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "ASSESSORIA DOCUMENTAL", valor_base: 1500 },
   ],
   doacao: [
     { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "ASSESSORIA DOCUMENTAL", auto: "assessoria" },
     { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", auto: "certidoes" },
   ],
   doacao_usufruto: [
     { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "ASSESSORIA DOCUMENTAL", auto: "assessoria" },
     { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", auto: "certidoes" },
   ],
   divisao_amigavel: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },
+    { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
     { descricao: "REGISTRO DE IMÓVEIS (DIVISÃO AMIGÁVEL)", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "ASSESSORIA DOCUMENTAL", valor_base: 1500 },
   ],
   permuta: [
     { descricao: "ASSESSORIA DOCUMENTAL (ESCRITURA DE PERMUTA)", valor_base: 1800 },
     { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
+    { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
     { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÕES)", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
   ],
   declaracao_tecnica: [
     { descricao: "ELABORAÇÃO DE DECLARAÇÃO TÉCNICA E ART/TRT", valor_base: 600 },
@@ -264,6 +282,7 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "LEVANTAMENTO PLANIALTIMÉTRICO", auto: "topografia" },
     { descricao: "ELABORAÇÃO DE PLANTA E MEMORIAL DESCRITIVO", valor_base: 900 },
   ],
+
 };
 
 export const STATUS_ORCAMENTO = [

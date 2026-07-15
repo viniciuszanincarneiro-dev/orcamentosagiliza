@@ -103,7 +103,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [modo, setModo] = useState<"auto" | "manual">("auto");
   const [ultimaLeitura, setUltimaLeitura] = useState<{ parsed: MatriculaParsed; qualidade: ReturnType<typeof avaliarQualidade> } | null>(null);
   const [erroLeitura, setErroLeitura] = useState<string | null>(null);
-  const [fatorRI, setFatorRI] = useState<number>(70);
+  const [fatorRI, setFatorRI] = useState<number>(100);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { escritorio, escritorios, profile } = useProfile();
@@ -146,9 +146,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   // O usuário pode sobrescrever localmente no card de cálculo.
   const fatorRIConfig = useMemo(() => {
     const row = tabelaValores?.find((x) => x.chave === "ri_fator_ajuste");
-    const n = row ? Number(row.valor) : 70;
-    return Number.isFinite(n) && n > 0 ? Math.min(100, Math.max(1, n)) : 70;
+    const n = row ? Number(row.valor) : 100;
+    return Number.isFinite(n) && n > 0 ? Math.min(100, Math.max(1, n)) : 100;
   }, [tabelaValores]);
+
   const fatorRIInicializado = useRef(false);
   if (!fatorRIInicializado.current && tabelaValores) {
     fatorRIInicializado.current = true;
@@ -157,7 +158,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
   const set = <K extends keyof OrcamentoData>(k: K, v: OrcamentoData[K]) => setData((d) => ({ ...d, [k]: v }));
 
-  type AutoKind = "topografia" | "registro" | "certidoes" | "ccir" | "tabelionato" | "assessoria";
+  type AutoKind = "topografia" | "registro" | "certidoes" | "ccir" | "tabelionato" | "assessoria" | "averbacoes";
   function calcValorAuto(kind: AutoKind, area_m2?: number, valor?: number): number {
     if (!tabelaValores) return 0;
     const v = Object.fromEntries(tabelaValores.map((x) => [x.chave, Number(x.valor)]));
@@ -172,14 +173,22 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             })
           : v.ate_5ha ?? 3600;
       }
+      // RI: usa base íntegra (valor declarado ou proporcional). Fator = 100
+      // por padrão — só reduz quando o admin definir explicitamente < 100.
       case "registro": return calcularRegistroImoveis(valor ?? 0, fatorRI);
       case "certidoes": return v.certidoes_assinaturas ?? 200;
       case "ccir": return v.atualizacao_ccir ?? 250;
       case "tabelionato": return calcularTabelionato(valor ?? 0);
       case "assessoria": return v.assessoria_documental ?? 580;
+      case "averbacoes": {
+        const unit = Number.isFinite(v.averbacao_valor) && v.averbacao_valor > 0 ? v.averbacao_valor : 158.47;
+        const qtd = Number.isFinite(v.averbacao_qtd) && v.averbacao_qtd > 0 ? v.averbacao_qtd : 2;
+        return Math.round(unit * qtd * 100) / 100;
+      }
       default: return 0;
     }
   }
+
 
   function aplicarTemplate(tipo: string, blocoIdx = 0, area_m2 = data.imovel_area_m2, valor?: number) {
     // Por padrão usa a base proporcional (quando houver transmissão parcial),
@@ -493,6 +502,49 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       return mudou ? next : arr;
     });
   }, [novoValorRI]);
+
+  // Recalcula automaticamente Tabelionato quando a base muda.
+  useEffect(() => {
+    if (!Number.isFinite(valorBaseProporcional) || valorBaseProporcional <= 0) return;
+    const novoTab = calcularTabelionato(valorBaseProporcional);
+    setServicos((arr) => {
+      let mudou = false;
+      const next = arr.map((s) => {
+        const idx = s.itens.findIndex((it) => /tabelionato/i.test(it.descricao));
+        if (idx === -1) return s;
+        if (Math.abs((Number(s.itens[idx].valor) || 0) - novoTab) < 0.005) return s;
+        mudou = true;
+        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: novoTab } : it);
+        return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
+      });
+      return mudou ? next : arr;
+    });
+  }, [valorBaseProporcional]);
+
+  // Mantém averbações sincronizadas com o valor cadastrado em tabela_valores.
+  const averbacaoTotal = useMemo(() => {
+    if (!tabelaValores) return 316.94;
+    const v = Object.fromEntries(tabelaValores.map((x) => [x.chave, Number(x.valor)]));
+    const unit = Number.isFinite(v.averbacao_valor) && v.averbacao_valor > 0 ? v.averbacao_valor : 158.47;
+    const qtd = Number.isFinite(v.averbacao_qtd) && v.averbacao_qtd > 0 ? v.averbacao_qtd : 2;
+    return Math.round(unit * qtd * 100) / 100;
+  }, [tabelaValores]);
+  useEffect(() => {
+    if (!Number.isFinite(averbacaoTotal) || averbacaoTotal <= 0) return;
+    setServicos((arr) => {
+      let mudou = false;
+      const next = arr.map((s) => {
+        const idx = s.itens.findIndex((it) => /averba[cç]/i.test(it.descricao));
+        if (idx === -1) return s;
+        if (Math.abs((Number(s.itens[idx].valor) || 0) - averbacaoTotal) < 0.005) return s;
+        mudou = true;
+        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: averbacaoTotal } : it);
+        return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
+      });
+      return mudou ? next : arr;
+    });
+  }, [averbacaoTotal]);
+
 
 
   async function save(status: string = data.status ?? "rascunho"): Promise<OrcamentoData | null> {

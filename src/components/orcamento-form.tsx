@@ -146,9 +146,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   // O usuário pode sobrescrever localmente no card de cálculo.
   const fatorRIConfig = useMemo(() => {
     const row = tabelaValores?.find((x) => x.chave === "ri_fator_ajuste");
-    const n = row ? Number(row.valor) : 70;
-    return Number.isFinite(n) && n > 0 ? Math.min(100, Math.max(1, n)) : 70;
+    const n = row ? Number(row.valor) : 100;
+    return Number.isFinite(n) && n > 0 ? Math.min(100, Math.max(1, n)) : 100;
   }, [tabelaValores]);
+
   const fatorRIInicializado = useRef(false);
   if (!fatorRIInicializado.current && tabelaValores) {
     fatorRIInicializado.current = true;

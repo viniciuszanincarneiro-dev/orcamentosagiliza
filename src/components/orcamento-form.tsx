@@ -503,6 +503,49 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     });
   }, [novoValorRI]);
 
+  // Recalcula automaticamente Tabelionato quando a base muda.
+  useEffect(() => {
+    if (!Number.isFinite(valorBaseProporcional) || valorBaseProporcional <= 0) return;
+    const novoTab = calcularTabelionato(valorBaseProporcional);
+    setServicos((arr) => {
+      let mudou = false;
+      const next = arr.map((s) => {
+        const idx = s.itens.findIndex((it) => /tabelionato/i.test(it.descricao));
+        if (idx === -1) return s;
+        if (Math.abs((Number(s.itens[idx].valor) || 0) - novoTab) < 0.005) return s;
+        mudou = true;
+        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: novoTab } : it);
+        return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
+      });
+      return mudou ? next : arr;
+    });
+  }, [valorBaseProporcional]);
+
+  // Mantém averbações sincronizadas com o valor cadastrado em tabela_valores.
+  const averbacaoTotal = useMemo(() => {
+    if (!tabelaValores) return 316.94;
+    const v = Object.fromEntries(tabelaValores.map((x) => [x.chave, Number(x.valor)]));
+    const unit = Number.isFinite(v.averbacao_valor) && v.averbacao_valor > 0 ? v.averbacao_valor : 158.47;
+    const qtd = Number.isFinite(v.averbacao_qtd) && v.averbacao_qtd > 0 ? v.averbacao_qtd : 2;
+    return Math.round(unit * qtd * 100) / 100;
+  }, [tabelaValores]);
+  useEffect(() => {
+    if (!Number.isFinite(averbacaoTotal) || averbacaoTotal <= 0) return;
+    setServicos((arr) => {
+      let mudou = false;
+      const next = arr.map((s) => {
+        const idx = s.itens.findIndex((it) => /averba[cç]/i.test(it.descricao));
+        if (idx === -1) return s;
+        if (Math.abs((Number(s.itens[idx].valor) || 0) - averbacaoTotal) < 0.005) return s;
+        mudou = true;
+        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: averbacaoTotal } : it);
+        return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
+      });
+      return mudou ? next : arr;
+    });
+  }, [averbacaoTotal]);
+
+
 
   async function save(status: string = data.status ?? "rascunho"): Promise<OrcamentoData | null> {
     if (!data.requerente_nome.trim()) {

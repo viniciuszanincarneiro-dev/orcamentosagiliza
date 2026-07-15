@@ -182,6 +182,7 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "SERVIÇO PRESTADO (ASSESSORIA DOCUMENTAL)", valor_base: 1500 },
     { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", valor_base: 420 },
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
   ],
   georreferenciamento: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO GEORREFERENCIADO", auto: "topografia" },
@@ -195,11 +196,13 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
   desmembramento: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },
     { descricao: "REGISTRO DE IMÓVEIS (DESMEMBRAMENTO)", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "ASSESSORIA DOCUMENTAL E PROTOCOLO MUNICIPAL", valor_base: 1200 },
   ],
   remembramento: [
     { descricao: "REMEMBRAMENTO", valor_base: 1800 },
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", valor_base: 200 },
   ],
   usucapiao_extrajudicial: [
@@ -207,12 +210,16 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "COLETA DE ASSINATURAS E CERTIDÕES", auto: "certidoes" },
     { descricao: "ASSESSORIA DOCUMENTAL E ENCAMINHAMENTO AO TABELIONATO", valor_base: 2500 },
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
   ],
   inventario_extrajudicial: [
     { descricao: "ASSESSORIA DOCUMENTAL E ELABORAÇÃO DA MINUTA", valor_base: 2000 },
     { descricao: "COLETA DE CERTIDÕES E NEGATIVAS", auto: "certidoes" },
-    { descricao: "ENCAMINHAMENTO AO TABELIONATO", valor_base: 600 },
+    { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
   ],
+
   compra_venda: [
     { descricao: "ASSESSORIA DOCUMENTAL", auto: "assessoria" },
     { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },

@@ -157,7 +157,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
   const set = <K extends keyof OrcamentoData>(k: K, v: OrcamentoData[K]) => setData((d) => ({ ...d, [k]: v }));
 
-  type AutoKind = "topografia" | "registro" | "certidoes" | "ccir" | "tabelionato" | "assessoria";
+  type AutoKind = "topografia" | "registro" | "certidoes" | "ccir" | "tabelionato" | "assessoria" | "averbacoes";
   function calcValorAuto(kind: AutoKind, area_m2?: number, valor?: number): number {
     if (!tabelaValores) return 0;
     const v = Object.fromEntries(tabelaValores.map((x) => [x.chave, Number(x.valor)]));
@@ -172,14 +172,22 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             })
           : v.ate_5ha ?? 3600;
       }
+      // RI: usa base íntegra (valor declarado ou proporcional). Fator = 100
+      // por padrão — só reduz quando o admin definir explicitamente < 100.
       case "registro": return calcularRegistroImoveis(valor ?? 0, fatorRI);
       case "certidoes": return v.certidoes_assinaturas ?? 200;
       case "ccir": return v.atualizacao_ccir ?? 250;
       case "tabelionato": return calcularTabelionato(valor ?? 0);
       case "assessoria": return v.assessoria_documental ?? 580;
+      case "averbacoes": {
+        const unit = Number.isFinite(v.averbacao_valor) && v.averbacao_valor > 0 ? v.averbacao_valor : 158.47;
+        const qtd = Number.isFinite(v.averbacao_qtd) && v.averbacao_qtd > 0 ? v.averbacao_qtd : 2;
+        return Math.round(unit * qtd * 100) / 100;
+      }
       default: return 0;
     }
   }
+
 
   function aplicarTemplate(tipo: string, blocoIdx = 0, area_m2 = data.imovel_area_m2, valor?: number) {
     // Por padrão usa a base proporcional (quando houver transmissão parcial),

@@ -26,28 +26,28 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Pré-carrega o chunk e as queries do dashboard em paralelo enquanto o usuário digita.
-  // Após o submit, a navegação encontra tudo pronto no cache.
-  useEffect(() => {
-    router.preloadRoute({ to: "/dashboard" }).catch(() => {});
-  }, [router]);
-
-
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await signIn(email, password);
-    if (error) {
+    try {
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast.error("Erro ao entrar", { description: error });
+        return;
+      }
+      toast.success("Bem-vindo!");
+      // replace: true evita voltar para /login pelo histórico após logar.
+      await navigate({ to: "/dashboard", replace: true });
+    } catch (err) {
+      console.error("[login] falha inesperada", err);
+      toast.error("Falha inesperada ao entrar. Tente novamente.");
+    } finally {
       setLoading(false);
-      return toast.error("Erro ao entrar", { description: error });
     }
-    toast.success("Bem-vindo!");
-    navigate({ to: "/dashboard" });
   }
 
   async function handleSignUp(e: React.FormEvent) {

@@ -12,11 +12,11 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import logo from "@/assets/agiliza-logo.png";
 
 export const Route = createFileRoute("/_app")({
-  // Usa getSession (leitura local do localStorage) em vez de getUser (round-trip de rede
-  // ao servidor de auth). Com `defaultPreload: "intent"`, o beforeLoad roda em cada hover
-  // de link — getUser() adicionava latência a cada preload/navegação.
+  // ssr:false — a sessão do Supabase vive no localStorage e nunca está disponível
+  // no servidor. Sem isso, o SSR renderiza o shell autenticado para qualquer
+  // visitante e o cliente às vezes "trava" nesse estado até o próximo evento de auth.
+  ssr: false,
   beforeLoad: async () => {
-    if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
     if (!data.session) throw redirect({ to: "/login" });
   },

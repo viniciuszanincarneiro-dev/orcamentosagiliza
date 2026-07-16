@@ -29,17 +29,20 @@ export function useProfile() {
   const q = useQuery({
     queryKey: ["profile", uid],
     enabled: !!uid,
-    // Perfil + escritórios raramente mudam; mantém em cache por sessão.
     staleTime: 15 * 60_000,
     gcTime: 60 * 60_000,
+    retry: 1,
     queryFn: async () => {
       if (!uid) return null;
       const [p, e] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
         supabase.from("escritorios").select("*").order("ordem"),
       ]);
-      if (p.error) throw p.error;
-      if (e.error) throw e.error;
+      // Nunca lançar erro aqui — se qualquer consulta falhar, seguimos com
+      // dados vazios para que a aplicação carregue mesmo que o perfil/escritório
+      // esteja inacessível temporariamente (evita "loading infinito").
+      if (p.error) console.error("[useProfile] profiles:", p.error);
+      if (e.error) console.error("[useProfile] escritorios:", e.error);
       const profile = (p.data ?? null) as Profile | null;
       const escritorios = (e.data ?? []) as Escritorio[];
       const escritorio = profile?.escritorio_id

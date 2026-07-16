@@ -96,11 +96,17 @@ function RootComponent() {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
-        queryClient.clear();
+      // Só reage a transições reais de identidade. Evita clear/invalidate em
+      // TOKEN_REFRESHED (a cada ~1h e ao focar aba) e INITIAL_SESSION (a cada mount),
+      // que causavam refetch em loop e ficavam com telas "carregando" para os usuários.
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
         router.invalidate();
+        if (event !== "SIGNED_OUT") {
+          // Em SIGNED_OUT o cleanup do logout já cuida do cache; refetch aqui
+          // dispararia queries protegidas contra sessão nula → 401 storm.
+          queryClient.invalidateQueries();
+        }
       }
-      // TOKEN_REFRESHED / USER_UPDATED: nothing to do — não invalida nada.
     });
     return () => subscription.unsubscribe();
   }, [router, queryClient]);

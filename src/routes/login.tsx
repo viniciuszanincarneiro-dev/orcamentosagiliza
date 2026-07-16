@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate, redirect, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 

@@ -29,13 +29,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!active) return;
       setSession(data.session);
       setLoading(false);
-    }).catch(() => {
+    }).catch((err) => {
+      console.error("[useAuth] getSession falhou", err);
       if (!active) return;
       setSession(null);
       setLoading(false);
     });
+    // Salvaguarda: se por algum motivo nem o listener nem o getSession resolverem
+    // (rede instável, storage bloqueado), destravamos o loading em 5s para não
+    // manter o usuário preso em tela de carregamento.
+    const failsafe = setTimeout(() => {
+      if (!active) return;
+      setLoading(false);
+    }, 5000);
     return () => {
       active = false;
+      clearTimeout(failsafe);
       subscription.unsubscribe();
     };
   }, []);

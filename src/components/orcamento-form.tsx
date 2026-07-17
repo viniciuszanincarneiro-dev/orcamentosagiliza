@@ -518,9 +518,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   }
 
   function recalcularRI() {
-    const novo = explicacaoRI.valor;
+    const novo = novoValorRI;
     setServicos((arr) => {
-      // Procura primeiro bloco com item RI; se não houver, adiciona no primeiro bloco
       let alvo = arr.findIndex((s) => s.itens.some((i) => /registro\s+de\s+im[oó]veis/i.test(i.descricao)));
       if (alvo === -1) alvo = 0;
       return arr.map((s, i) => {
@@ -529,11 +528,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         const itens = idx === -1
           ? [...s.itens, { descricao: "REGISTRO DE IMÓVEIS", valor: novo }]
           : s.itens.map((it, k) => k === idx ? { ...it, valor: novo } : it);
-        return { ...s, itens };
+        return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
       });
     });
-    toast.success(`RI recalculado: ${formatBRL(novo)}`);
+    toast.success(`RI recalculado (tabela oficial + averbações): ${formatBRL(novo)}`);
   }
+
 
   // Mantém o item de "REGISTRO DE IMÓVEIS" sincronizado com a TABELA OFICIAL
   // (tabela_registro_imoveis) + averbações incorporadas. Nunca usa fórmula própria.

@@ -102,7 +102,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [modo, setModo] = useState<"auto" | "manual">("auto");
   const [ultimaLeitura, setUltimaLeitura] = useState<{ parsed: MatriculaParsed; qualidade: ReturnType<typeof avaliarQualidade> } | null>(null);
   const [erroLeitura, setErroLeitura] = useState<string | null>(null);
-  const [fatorRI, setFatorRI] = useState<number>(100);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { escritorio, escritorios, profile } = useProfile();

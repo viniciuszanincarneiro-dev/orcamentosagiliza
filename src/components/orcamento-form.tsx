@@ -154,11 +154,19 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     },
   });
 
-  function lookupFaixa(base: number, faixas?: Array<{ faixa_min: number; faixa_max: number | null; valor: number }>): number | null {
+  type FaixaRow = { faixa_min: number; faixa_max: number | null; valor: number };
+  function lookupFaixaRow(base: number, faixas?: Array<FaixaRow>): FaixaRow | null {
     if (!faixas || faixas.length === 0) return null;
-    if (!Number.isFinite(base) || base <= 0) return Number(faixas[0].valor);
+    if (!Number.isFinite(base) || base <= 0) return null;
     const f = faixas.find((x) => base >= Number(x.faixa_min) && (x.faixa_max == null || base <= Number(x.faixa_max)));
-    return f ? Number(f.valor) : Number(faixas[faixas.length - 1].valor);
+    if (f) return { faixa_min: Number(f.faixa_min), faixa_max: f.faixa_max == null ? null : Number(f.faixa_max), valor: Number(f.valor) };
+    // Acima do teto da última faixa cadastrada — usa a última linha oficial (sem extrapolar por fórmula).
+    const last = faixas[faixas.length - 1];
+    return { faixa_min: Number(last.faixa_min), faixa_max: last.faixa_max == null ? null : Number(last.faixa_max), valor: Number(last.valor) };
+  }
+  function lookupFaixa(base: number, faixas?: Array<FaixaRow>): number | null {
+    const r = lookupFaixaRow(base, faixas);
+    return r ? r.valor : null;
   }
 
   const { data: itbiMunicipios } = useQuery({

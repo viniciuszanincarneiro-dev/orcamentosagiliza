@@ -983,67 +983,64 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             </p>
 
             {data.imovel_valor_avaliado ? (
-              <div className={
-                "mt-2 rounded-md border px-3 py-2 text-sm flex flex-col gap-2 " +
-                (explicacaoRI.alerta === "muito_alto"
-                  ? "border-destructive/50 bg-destructive/10 text-destructive"
-                  : explicacaoRI.alerta === "alto"
-                  ? "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                  : "border-border bg-muted/40 text-foreground")
-              }>
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    {explicacaoRI.alerta ? <AlertTriangle className="h-4 w-4" /> : <Calculator className="h-4 w-4 text-primary" />}
-                    <span className="font-medium">Registro de Imóveis estimado:</span>
-                    <span className="tabular-nums font-semibold">{formatBRL(explicacaoRI.valor)}</span>
-                  </div>
-                  <Button type="button" size="sm" variant="outline" onClick={recalcularRI}>
-                    Aplicar no item RI
-                  </Button>
-                </div>
-
-                <div className="grid sm:grid-cols-[auto_120px_auto] items-center gap-2 text-xs">
-                  <Label className="text-xs font-medium m-0">Fator de ajuste interno do RI</Label>
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={100}
-                      step={1}
-                      value={fatorRI}
-                      onChange={(e) => {
-                        const n = Number(e.target.value);
-                        if (Number.isFinite(n)) setFatorRI(Math.min(100, Math.max(1, n)));
-                      }}
-                      className="h-7 text-right tabular-nums"
-                    />
-                    <span className="text-muted-foreground">%</span>
-                  </div>
-                  <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={salvarFatorPadrao}>
-                    Salvar como padrão
-                  </Button>
+              <div className="mt-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm flex flex-col gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Calculator className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Emolumentos (tabela oficial cadastrada)</span>
                 </div>
 
                 <p className="text-xs opacity-90 tabular-nums">
-                  Valor declarado: <b>{formatBRL(explicacaoRI.valorImovelOriginal)}</b>
-                  {explicacaoRI.fatorPct < 100 ? (
-                    <>
-                      {" "}→ Base de cálculo (após {explicacaoRI.fatorPct}%): <b>{formatBRL(explicacaoRI.valorImovelAjustado)}</b>
-                    </>
+                  Base considerada: <b>{formatBRL(valorBaseProporcional)}</b>
+                  {transmissaoParcial ? (
+                    <> {" "}(valor cheio {formatBRL(baseTransmissao.valorCheio)} × {baseTransmissao.fracaoPct.toFixed(2)}%)</>
                   ) : null}
                 </p>
-                <p className="text-xs opacity-90">{explicacaoRI.descricao}</p>
-                {explicacaoRI.alerta ? (
-                  <p className="text-xs font-medium">
-                    ⚠ RI representa {((explicacaoRI.valor / (data.imovel_valor_avaliado || 1)) * 100).toFixed(1)}% do valor declarado.
-                    Ajuste o fator interno ou edite manualmente o valor do RI no item correspondente abaixo.
-                  </p>
-                ) : null}
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="rounded border bg-background/60 px-3 py-2">
+                    <div className="text-xs text-muted-foreground">Registro de Imóveis (tabela + averbações)</div>
+                    <div className="text-lg font-semibold tabular-nums">{formatBRL(novoValorRI)}</div>
+                    {faixaRI ? (
+                      <div className="text-[11px] opacity-80 tabular-nums">
+                        Faixa: {formatBRL(faixaRI.faixa_min)} — {faixaRI.faixa_max == null ? "∞" : formatBRL(faixaRI.faixa_max)}
+                        {" · "}Tabela: <b>{formatBRL(faixaRI.valor)}</b>
+                        {" + "}Averbações: <b>{formatBRL(averbacaoTotal)}</b>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] opacity-70">Aguardando base de cálculo…</div>
+                    )}
+                  </div>
+
+                  <div className="rounded border bg-background/60 px-3 py-2">
+                    <div className="text-xs text-muted-foreground">Tabelionato de Notas (tabela oficial)</div>
+                    <div className="text-lg font-semibold tabular-nums">{formatBRL(novoValorTab)}</div>
+                    {faixaTab ? (
+                      <div className="text-[11px] opacity-80 tabular-nums">
+                        Faixa: {formatBRL(faixaTab.faixa_min)} — {faixaTab.faixa_max == null ? "∞" : formatBRL(faixaTab.faixa_max)}
+                        {" · "}Tabela: <b>{formatBRL(faixaTab.valor)}</b>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] opacity-70">Aguardando base de cálculo…</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button type="button" size="sm" variant="outline" onClick={recalcularRI}>
+                    Aplicar RI nos itens
+                  </Button>
+                </div>
+
+                <p className="text-[11px] text-muted-foreground">
+                  Os valores acima são lidos diretamente da tabela oficial cadastrada (Registro de Imóveis e Tabelionato de Notas — SC 2026).
+                  Nenhuma fórmula ou estimativa é aplicada.
+                </p>
               </div>
             ) : null}
           </div>
         </CardContent>
       </Card>
+
 
 
       {/* ============ ITBI 100% MANUAL (somado ao total) ============ */}

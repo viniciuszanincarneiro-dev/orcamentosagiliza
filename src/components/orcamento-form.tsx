@@ -535,10 +535,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     toast.success(`RI recalculado: ${formatBRL(novo)}`);
   }
 
-  // Mantém o item de "REGISTRO DE IMÓVEIS" sincronizado com a base proporcional.
-  // Quando o usuário altera área transmitida / fração ideal / valor de contrato,
-  // o RI é recalculado automaticamente nos blocos que já o possuem.
-  const novoValorRI = explicacaoRI.valor;
+  // Mantém o item de "REGISTRO DE IMÓVEIS" sincronizado com a TABELA OFICIAL
+  // (tabela_registro_imoveis) + averbações incorporadas. Nunca usa fórmula própria.
+  const novoValorRI = useMemo(() => {
+    const tab = lookupFaixa(valorBaseProporcional, tabelaRI);
+    if (tab == null) return 0;
+    return Math.round((tab + (averbacaoTotal || 0)) * 100) / 100;
+  }, [valorBaseProporcional, tabelaRI, averbacaoTotal]);
+
   useEffect(() => {
     if (!Number.isFinite(novoValorRI) || novoValorRI <= 0) return;
     setServicos((arr) => {
@@ -555,47 +559,43 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     });
   }, [novoValorRI]);
 
-  // Recalcula automaticamente Tabelionato quando a base muda.
+  // Recalcula Tabelionato pela TABELA OFICIAL quando a base muda.
+  const novoValorTab = useMemo(
+    () => lookupFaixa(valorBaseProporcional, tabelaTab) ?? 0,
+    [valorBaseProporcional, tabelaTab],
+  );
   useEffect(() => {
-    if (!Number.isFinite(valorBaseProporcional) || valorBaseProporcional <= 0) return;
-    const novoTab = calcularTabelionato(valorBaseProporcional);
+    if (!Number.isFinite(novoValorTab) || novoValorTab <= 0) return;
     setServicos((arr) => {
       let mudou = false;
       const next = arr.map((s) => {
         const idx = s.itens.findIndex((it) => /tabelionato/i.test(it.descricao));
         if (idx === -1) return s;
-        if (Math.abs((Number(s.itens[idx].valor) || 0) - novoTab) < 0.005) return s;
+        if (Math.abs((Number(s.itens[idx].valor) || 0) - novoValorTab) < 0.005) return s;
         mudou = true;
-        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: novoTab } : it);
+        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: novoValorTab } : it);
         return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
       });
       return mudou ? next : arr;
     });
-  }, [valorBaseProporcional]);
+  }, [novoValorTab]);
 
-  // Mantém averbações sincronizadas com o valor cadastrado em tabela_valores.
-  const averbacaoTotal = useMemo(() => {
-    if (!tabelaValores) return 316.94;
-    const v = Object.fromEntries(tabelaValores.map((x) => [x.chave, Number(x.valor)]));
-    const unit = Number.isFinite(v.averbacao_valor) && v.averbacao_valor > 0 ? v.averbacao_valor : 158.47;
-    const qtd = Number.isFinite(v.averbacao_qtd) && v.averbacao_qtd > 0 ? v.averbacao_qtd : 2;
-    return Math.round(unit * qtd * 100) / 100;
-  }, [tabelaValores]);
+  // Averbações foram incorporadas ao Registro de Imóveis — remove
+  // quaisquer linhas legadas de "AVERBAÇÕES" que ainda existam nos blocos.
   useEffect(() => {
-    if (!Number.isFinite(averbacaoTotal) || averbacaoTotal <= 0) return;
     setServicos((arr) => {
       let mudou = false;
       const next = arr.map((s) => {
-        const idx = s.itens.findIndex((it) => /averba[cç]/i.test(it.descricao));
-        if (idx === -1) return s;
-        if (Math.abs((Number(s.itens[idx].valor) || 0) - averbacaoTotal) < 0.005) return s;
+        if (!s.itens.some((it) => /averba[cç]/i.test(it.descricao))) return s;
         mudou = true;
-        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: averbacaoTotal } : it);
+        const itens = s.itens.filter((it) => !/averba[cç]/i.test(it.descricao));
         return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
       });
       return mudou ? next : arr;
     });
-  }, [averbacaoTotal]);
+  }, []);
+
+
 
 
 

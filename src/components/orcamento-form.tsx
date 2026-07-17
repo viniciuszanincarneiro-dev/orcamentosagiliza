@@ -588,6 +588,11 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     });
   }, [novoValorTab]);
 
+  // Faixas oficiais localizadas — usadas na UI para mostrar exatamente qual
+  // linha da tabela oficial foi aplicada (sem fórmulas próprias).
+  const faixaRI = useMemo(() => lookupFaixaRow(valorBaseProporcional, tabelaRI), [valorBaseProporcional, tabelaRI]);
+  const faixaTab = useMemo(() => lookupFaixaRow(valorBaseProporcional, tabelaTab), [valorBaseProporcional, tabelaTab]);
+
   // Averbações foram incorporadas ao Registro de Imóveis — remove
   // quaisquer linhas legadas de "AVERBAÇÕES" que ainda existam nos blocos.
   useEffect(() => {

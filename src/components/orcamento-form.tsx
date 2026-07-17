@@ -244,12 +244,15 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     // caindo para o valor avaliado do imóvel quando nada for informado.
     const valorBase = valor ?? (valorBaseProporcional || data.imovel_valor_avaliado || 0);
     const template = TEMPLATES_ITENS[tipo] ?? [];
-    const itens: ItemOrcamento[] = template.map((t) =>
-      "auto" in t
-        ? { descricao: t.descricao, valor: calcValorAuto(t.auto, area_m2, valorBase) }
-        : { descricao: t.descricao, valor: t.valor_base }
-    );
+    const itens: ItemOrcamento[] = template
+      .filter((t) => !("auto" in t) || t.auto !== "averbacoes")
+      .map((t) =>
+        "auto" in t
+          ? { descricao: t.descricao, valor: calcValorAuto(t.auto, area_m2, valorBase) }
+          : { descricao: t.descricao, valor: t.valor_base }
+      );
     setServicos((arr) => arr.map((s, i) => i === blocoIdx ? { ...s, tipo_servico: tipo, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) } : s));
+
   }
 
   async function fileToBase64(file: Blob): Promise<string> {

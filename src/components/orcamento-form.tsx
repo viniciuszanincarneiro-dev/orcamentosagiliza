@@ -182,18 +182,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
 
   // Sincroniza o fator de ajuste interno do RI vindo da configuração (se existir).
-  // O usuário pode sobrescrever localmente no card de cálculo.
-  const fatorRIConfig = useMemo(() => {
-    const row = tabelaValores?.find((x) => x.chave === "ri_fator_ajuste");
-    const n = row ? Number(row.valor) : 100;
-    return Number.isFinite(n) && n > 0 ? Math.min(100, Math.max(1, n)) : 100;
-  }, [tabelaValores]);
+  // (Fator de ajuste do RI foi removido: os emolumentos vêm 100% da tabela oficial.)
 
-  const fatorRIInicializado = useRef(false);
-  if (!fatorRIInicializado.current && tabelaValores) {
-    fatorRIInicializado.current = true;
-    if (fatorRI !== fatorRIConfig) setFatorRI(fatorRIConfig);
-  }
 
   const set = <K extends keyof OrcamentoData>(k: K, v: OrcamentoData[K]) => setData((d) => ({ ...d, [k]: v }));
 

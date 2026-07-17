@@ -17,8 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/format";
 import { TIPOS_SERVICO, TEMPLATES_ITENS, STATUS_ORCAMENTO, servicoTemITBI, servicoTemITCMD } from "@/lib/empresa";
-import { calcularGeoPorHectare, calcularRegistroImoveis, explicarRegistroImoveis, m2ParaHectares } from "@/lib/calculo-registro";
-import { calcularTabelionato } from "@/lib/calculo-tabelionato";
+import { calcularGeoPorHectare, m2ParaHectares } from "@/lib/calculo-registro";
 // gerar-pdf e gerar-docx são pesados (jspdf/docx) — importados dinamicamente abaixo
 import { parseMatricula, type MatriculaParsed } from "@/lib/parse-matricula.functions";
 import type { OrcamentoData, ItemOrcamento, ServicoBloco } from "@/lib/orcamento-types";
@@ -103,7 +102,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   const [modo, setModo] = useState<"auto" | "manual">("auto");
   const [ultimaLeitura, setUltimaLeitura] = useState<{ parsed: MatriculaParsed; qualidade: ReturnType<typeof avaliarQualidade> } | null>(null);
   const [erroLeitura, setErroLeitura] = useState<string | null>(null);
-  const [fatorRI, setFatorRI] = useState<number>(100);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { escritorio, escritorios, profile } = useProfile();
@@ -154,11 +153,19 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     },
   });
 
-  function lookupFaixa(base: number, faixas?: Array<{ faixa_min: number; faixa_max: number | null; valor: number }>): number | null {
+  type FaixaRow = { faixa_min: number; faixa_max: number | null; valor: number };
+  function lookupFaixaRow(base: number, faixas?: Array<FaixaRow>): FaixaRow | null {
     if (!faixas || faixas.length === 0) return null;
-    if (!Number.isFinite(base) || base <= 0) return Number(faixas[0].valor);
+    if (!Number.isFinite(base) || base <= 0) return null;
     const f = faixas.find((x) => base >= Number(x.faixa_min) && (x.faixa_max == null || base <= Number(x.faixa_max)));
-    return f ? Number(f.valor) : Number(faixas[faixas.length - 1].valor);
+    if (f) return { faixa_min: Number(f.faixa_min), faixa_max: f.faixa_max == null ? null : Number(f.faixa_max), valor: Number(f.valor) };
+    // Acima do teto da última faixa cadastrada — usa a última linha oficial (sem extrapolar por fórmula).
+    const last = faixas[faixas.length - 1];
+    return { faixa_min: Number(last.faixa_min), faixa_max: last.faixa_max == null ? null : Number(last.faixa_max), valor: Number(last.valor) };
+  }
+  function lookupFaixa(base: number, faixas?: Array<FaixaRow>): number | null {
+    const r = lookupFaixaRow(base, faixas);
+    return r ? r.valor : null;
   }
 
   const { data: itbiMunicipios } = useQuery({
@@ -175,18 +182,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
 
   // Sincroniza o fator de ajuste interno do RI vindo da configuração (se existir).
-  // O usuário pode sobrescrever localmente no card de cálculo.
-  const fatorRIConfig = useMemo(() => {
-    const row = tabelaValores?.find((x) => x.chave === "ri_fator_ajuste");
-    const n = row ? Number(row.valor) : 100;
-    return Number.isFinite(n) && n > 0 ? Math.min(100, Math.max(1, n)) : 100;
-  }, [tabelaValores]);
+  // (Fator de ajuste do RI foi removido: os emolumentos vêm 100% da tabela oficial.)
 
-  const fatorRIInicializado = useRef(false);
-  if (!fatorRIInicializado.current && tabelaValores) {
-    fatorRIInicializado.current = true;
-    if (fatorRI !== fatorRIConfig) setFatorRI(fatorRIConfig);
-  }
 
   const set = <K extends keyof OrcamentoData>(k: K, v: OrcamentoData[K]) => setData((d) => ({ ...d, [k]: v }));
 
@@ -497,25 +494,9 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     valorBaseProporcional > 0 &&
     valorBaseProporcional !== baseTransmissao.valorCheio;
 
-  // Explicação do RI baseado na BASE PROPORCIONAL quando houver transmissão parcial.
-  const explicacaoRI = useMemo(
-    () => explicarRegistroImoveis(valorBaseProporcional, fatorRI),
-    [valorBaseProporcional, fatorRI],
-  );
+  // Nenhuma fórmula/estimativa própria: RI e Tabelionato são resolvidos
+  // exclusivamente por lookup na tabela oficial (ver faixaRI/faixaTab e novoValorRI/novoValorTab).
 
-  async function salvarFatorPadrao() {
-    try {
-      const { error } = await supabase
-        .from("tabela_valores")
-        .update({ valor: fatorRI } as never)
-        .eq("categoria", "config")
-        .eq("chave", "ri_fator_ajuste");
-      if (error) throw error;
-      toast.success(`Fator de ajuste salvo como padrão: ${fatorRI}%`);
-    } catch (e) {
-      toast.error("Erro ao salvar fator", { description: (e as Error).message });
-    }
-  }
 
   function recalcularRI() {
     const novo = novoValorRI;
@@ -579,6 +560,11 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       return mudou ? next : arr;
     });
   }, [novoValorTab]);
+
+  // Faixas oficiais localizadas — usadas na UI para mostrar exatamente qual
+  // linha da tabela oficial foi aplicada (sem fórmulas próprias).
+  const faixaRI = useMemo(() => lookupFaixaRow(valorBaseProporcional, tabelaRI), [valorBaseProporcional, tabelaRI]);
+  const faixaTab = useMemo(() => lookupFaixaRow(valorBaseProporcional, tabelaTab), [valorBaseProporcional, tabelaTab]);
 
   // Averbações foram incorporadas ao Registro de Imóveis — remove
   // quaisquer linhas legadas de "AVERBAÇÕES" que ainda existam nos blocos.
@@ -970,67 +956,64 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             </p>
 
             {data.imovel_valor_avaliado ? (
-              <div className={
-                "mt-2 rounded-md border px-3 py-2 text-sm flex flex-col gap-2 " +
-                (explicacaoRI.alerta === "muito_alto"
-                  ? "border-destructive/50 bg-destructive/10 text-destructive"
-                  : explicacaoRI.alerta === "alto"
-                  ? "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                  : "border-border bg-muted/40 text-foreground")
-              }>
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    {explicacaoRI.alerta ? <AlertTriangle className="h-4 w-4" /> : <Calculator className="h-4 w-4 text-primary" />}
-                    <span className="font-medium">Registro de Imóveis estimado:</span>
-                    <span className="tabular-nums font-semibold">{formatBRL(explicacaoRI.valor)}</span>
-                  </div>
-                  <Button type="button" size="sm" variant="outline" onClick={recalcularRI}>
-                    Aplicar no item RI
-                  </Button>
-                </div>
-
-                <div className="grid sm:grid-cols-[auto_120px_auto] items-center gap-2 text-xs">
-                  <Label className="text-xs font-medium m-0">Fator de ajuste interno do RI</Label>
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={100}
-                      step={1}
-                      value={fatorRI}
-                      onChange={(e) => {
-                        const n = Number(e.target.value);
-                        if (Number.isFinite(n)) setFatorRI(Math.min(100, Math.max(1, n)));
-                      }}
-                      className="h-7 text-right tabular-nums"
-                    />
-                    <span className="text-muted-foreground">%</span>
-                  </div>
-                  <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={salvarFatorPadrao}>
-                    Salvar como padrão
-                  </Button>
+              <div className="mt-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm flex flex-col gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Calculator className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Emolumentos (tabela oficial cadastrada)</span>
                 </div>
 
                 <p className="text-xs opacity-90 tabular-nums">
-                  Valor declarado: <b>{formatBRL(explicacaoRI.valorImovelOriginal)}</b>
-                  {explicacaoRI.fatorPct < 100 ? (
-                    <>
-                      {" "}→ Base de cálculo (após {explicacaoRI.fatorPct}%): <b>{formatBRL(explicacaoRI.valorImovelAjustado)}</b>
-                    </>
+                  Base considerada: <b>{formatBRL(valorBaseProporcional)}</b>
+                  {transmissaoParcial ? (
+                    <> {" "}(valor cheio {formatBRL(baseTransmissao.valorCheio)} × {baseTransmissao.fracaoPct.toFixed(2)}%)</>
                   ) : null}
                 </p>
-                <p className="text-xs opacity-90">{explicacaoRI.descricao}</p>
-                {explicacaoRI.alerta ? (
-                  <p className="text-xs font-medium">
-                    ⚠ RI representa {((explicacaoRI.valor / (data.imovel_valor_avaliado || 1)) * 100).toFixed(1)}% do valor declarado.
-                    Ajuste o fator interno ou edite manualmente o valor do RI no item correspondente abaixo.
-                  </p>
-                ) : null}
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="rounded border bg-background/60 px-3 py-2">
+                    <div className="text-xs text-muted-foreground">Registro de Imóveis (tabela + averbações)</div>
+                    <div className="text-lg font-semibold tabular-nums">{formatBRL(novoValorRI)}</div>
+                    {faixaRI ? (
+                      <div className="text-[11px] opacity-80 tabular-nums">
+                        Faixa: {formatBRL(faixaRI.faixa_min)} — {faixaRI.faixa_max == null ? "∞" : formatBRL(faixaRI.faixa_max)}
+                        {" · "}Tabela: <b>{formatBRL(faixaRI.valor)}</b>
+                        {" + "}Averbações: <b>{formatBRL(averbacaoTotal)}</b>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] opacity-70">Aguardando base de cálculo…</div>
+                    )}
+                  </div>
+
+                  <div className="rounded border bg-background/60 px-3 py-2">
+                    <div className="text-xs text-muted-foreground">Tabelionato de Notas (tabela oficial)</div>
+                    <div className="text-lg font-semibold tabular-nums">{formatBRL(novoValorTab)}</div>
+                    {faixaTab ? (
+                      <div className="text-[11px] opacity-80 tabular-nums">
+                        Faixa: {formatBRL(faixaTab.faixa_min)} — {faixaTab.faixa_max == null ? "∞" : formatBRL(faixaTab.faixa_max)}
+                        {" · "}Tabela: <b>{formatBRL(faixaTab.valor)}</b>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] opacity-70">Aguardando base de cálculo…</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button type="button" size="sm" variant="outline" onClick={recalcularRI}>
+                    Aplicar RI nos itens
+                  </Button>
+                </div>
+
+                <p className="text-[11px] text-muted-foreground">
+                  Os valores acima são lidos diretamente da tabela oficial cadastrada (Registro de Imóveis e Tabelionato de Notas — SC 2026).
+                  Nenhuma fórmula ou estimativa é aplicada.
+                </p>
               </div>
             ) : null}
           </div>
         </CardContent>
       </Card>
+
 
 
       {/* ============ ITBI 100% MANUAL (somado ao total) ============ */}

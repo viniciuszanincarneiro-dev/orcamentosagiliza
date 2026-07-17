@@ -504,25 +504,9 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     valorBaseProporcional > 0 &&
     valorBaseProporcional !== baseTransmissao.valorCheio;
 
-  // Explicação do RI baseado na BASE PROPORCIONAL quando houver transmissão parcial.
-  const explicacaoRI = useMemo(
-    () => explicarRegistroImoveis(valorBaseProporcional, fatorRI),
-    [valorBaseProporcional, fatorRI],
-  );
+  // Nenhuma fórmula/estimativa própria: RI e Tabelionato são resolvidos
+  // exclusivamente por lookup na tabela oficial (ver faixaRI/faixaTab e novoValorRI/novoValorTab).
 
-  async function salvarFatorPadrao() {
-    try {
-      const { error } = await supabase
-        .from("tabela_valores")
-        .update({ valor: fatorRI } as never)
-        .eq("categoria", "config")
-        .eq("chave", "ri_fator_ajuste");
-      if (error) throw error;
-      toast.success(`Fator de ajuste salvo como padrão: ${fatorRI}%`);
-    } catch (e) {
-      toast.error("Erro ao salvar fator", { description: (e as Error).message });
-    }
-  }
 
   function recalcularRI() {
     const novo = novoValorRI;

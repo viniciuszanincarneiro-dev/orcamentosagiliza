@@ -130,6 +130,37 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     },
   });
 
+  const { data: tabelaRI } = useQuery({
+    queryKey: ["tabela-registro-imoveis-form"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tabela_registro_imoveis" as never)
+        .select("faixa_min, faixa_max, valor")
+        .order("faixa_min");
+      if (error) throw error;
+      return (data ?? []) as Array<{ faixa_min: number; faixa_max: number | null; valor: number }>;
+    },
+  });
+
+  const { data: tabelaTab } = useQuery({
+    queryKey: ["tabela-tabelionato-form"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tabela_tabelionato" as never)
+        .select("faixa_min, faixa_max, valor")
+        .order("faixa_min");
+      if (error) throw error;
+      return (data ?? []) as Array<{ faixa_min: number; faixa_max: number | null; valor: number }>;
+    },
+  });
+
+  function lookupFaixa(base: number, faixas?: Array<{ faixa_min: number; faixa_max: number | null; valor: number }>): number | null {
+    if (!faixas || faixas.length === 0) return null;
+    if (!Number.isFinite(base) || base <= 0) return Number(faixas[0].valor);
+    const f = faixas.find((x) => base >= Number(x.faixa_min) && (x.faixa_max == null || base <= Number(x.faixa_max)));
+    return f ? Number(f.valor) : Number(faixas[faixas.length - 1].valor);
+  }
+
   const { data: itbiMunicipios } = useQuery({
     queryKey: ["itbi-municipios"],
     queryFn: async () => {
@@ -141,6 +172,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       return (data ?? []) as Array<{ id: string; nome: string; aliquota: number }>;
     },
   });
+
 
   // Sincroniza o fator de ajuste interno do RI vindo da configuração (se existir).
   // O usuário pode sobrescrever localmente no card de cálculo.

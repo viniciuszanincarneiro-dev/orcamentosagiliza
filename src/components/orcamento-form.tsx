@@ -516,7 +516,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       if (servico.tipo_servico !== "compra_venda") return servico;
       const registro = valorRegistroOficial("compra_venda");
       const tabelionato = valorTabelionatoOficial("compra_venda");
-      const itens = servico.itens
+      let itens = servico.itens
         .filter((item) => !/averba[cç]/i.test(item.descricao))
         .map((item) => {
           if (/registro\s+de\s+im[oó]veis/i.test(item.descricao) && registro > 0) {
@@ -527,6 +527,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
           }
           return item;
         });
+      if (registro > 0 && !itens.some((item) => /registro\s+de\s+im[oó]veis/i.test(item.descricao))) {
+        itens = [...itens, { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", valor: registro }];
+      }
+      if (tabelionato > 0 && !itens.some((item) => /tabelionato/i.test(item.descricao))) {
+        itens = [...itens, { descricao: "TABELIONATO DE NOTAS", valor: tabelionato }];
+      }
       return { ...servico, itens, subtotal: itens.reduce((soma, item) => soma + (Number(item.valor) || 0), 0) };
     });
   }

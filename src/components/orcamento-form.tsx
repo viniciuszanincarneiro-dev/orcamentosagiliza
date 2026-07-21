@@ -135,6 +135,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       const { data, error } = await supabase
         .from("tabela_registro_imoveis" as never)
         .select("faixa_min, faixa_max, valor")
+        .eq("ativo", true)
         .order("faixa_min");
       if (error) throw error;
       return (data ?? []) as Array<{ faixa_min: number; faixa_max: number | null; valor: number }>;
@@ -147,6 +148,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       const { data, error } = await supabase
         .from("tabela_tabelionato" as never)
         .select("faixa_min, faixa_max, valor")
+        .eq("ativo", true)
         .order("faixa_min");
       if (error) throw error;
       return (data ?? []) as Array<{ faixa_min: number; faixa_max: number | null; valor: number }>;

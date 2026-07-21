@@ -135,6 +135,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       const { data, error } = await supabase
         .from("tabela_registro_imoveis" as never)
         .select("faixa_min, faixa_max, valor")
+        .eq("ativo", true)
         .order("faixa_min");
       if (error) throw error;
       return (data ?? []) as Array<{ faixa_min: number; faixa_max: number | null; valor: number }>;
@@ -147,6 +148,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       const { data, error } = await supabase
         .from("tabela_tabelionato" as never)
         .select("faixa_min, faixa_max, valor")
+        .eq("ativo", true)
         .order("faixa_min");
       if (error) throw error;
       return (data ?? []) as Array<{ faixa_min: number; faixa_max: number | null; valor: number }>;
@@ -159,9 +161,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     if (!Number.isFinite(base) || base <= 0) return null;
     const f = faixas.find((x) => base >= Number(x.faixa_min) && (x.faixa_max == null || base <= Number(x.faixa_max)));
     if (f) return { faixa_min: Number(f.faixa_min), faixa_max: f.faixa_max == null ? null : Number(f.faixa_max), valor: Number(f.valor) };
-    // Acima do teto da última faixa cadastrada — usa a última linha oficial (sem extrapolar por fórmula).
-    const last = faixas[faixas.length - 1];
-    return { faixa_min: Number(last.faixa_min), faixa_max: last.faixa_max == null ? null : Number(last.faixa_max), valor: Number(last.valor) };
+    // Sem faixa exata não há cálculo: nunca reutiliza outra faixa nem extrapola por fórmula.
+    return null;
   }
   function lookupFaixa(base: number, faixas?: Array<FaixaRow>): number | null {
     const r = lookupFaixaRow(base, faixas);
@@ -194,8 +195,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     if (!tabelaValores) return 316.94;
     const v = Object.fromEntries(tabelaValores.map((x) => [x.chave, Number(x.valor)]));
     const unit = Number.isFinite(v.averbacao_valor) && v.averbacao_valor > 0 ? v.averbacao_valor : 158.47;
-    const qtd = Number.isFinite(v.averbacao_qtd) && v.averbacao_qtd > 0 ? v.averbacao_qtd : 2;
-    return Math.round(unit * qtd * 100) / 100;
+    return Math.round(unit * 2 * 100) / 100;
   }, [tabelaValores]);
 
   function calcValorAuto(kind: AutoKind, area_m2?: number, valor?: number): number {
@@ -237,9 +237,12 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
 
   function aplicarTemplate(tipo: string, blocoIdx = 0, area_m2 = data.imovel_area_m2, valor?: number) {
-    // Por padrão usa a base proporcional (quando houver transmissão parcial),
-    // caindo para o valor avaliado do imóvel quando nada for informado.
-    const valorBase = valor ?? (valorBaseProporcional || data.imovel_valor_avaliado || 0);
+    // Compra e Venda usa obrigatoriamente o valor avaliado integral do imóvel.
+    // Transmissão parcial/valor de contrato não altera RI ou Tabelionato desse serviço.
+    const valorAvaliado = Number(valor ?? data.imovel_valor_avaliado ?? 0) || 0;
+    const valorBase = tipo === "compra_venda"
+      ? valorAvaliado
+      : (valor ?? (valorBaseProporcional || valorAvaliado));
     const template = TEMPLATES_ITENS[tipo] ?? [];
     const itens: ItemOrcamento[] = template
       .filter((t) => !("auto" in t) || t.auto !== "averbacoes")
@@ -407,8 +410,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   }
   function updateBlocoTipo(idx: number, tipo: string) {
     const itensAtuais = servicos[idx]?.itens ?? [];
-    // Aplica template se bloco está vazio
-    if (itensAtuais.length === 0 || tipo === "retificacao_urbana") {
+    // Compra e Venda sempre recebe o modelo financeiro correto ao ser selecionado.
+    if (itensAtuais.length === 0 || tipo === "retificacao_urbana" || tipo === "compra_venda") {
       aplicarTemplate(tipo, idx);
     } else {
       setServicos((arr) => arr.map((s, i) => i === idx ? { ...s, tipo_servico: tipo } : s));
@@ -489,6 +492,54 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   }, [data.imovel_valor_avaliado, data.imovel_area_m2, data.itbi_area_transmitida, data.itbi_fracao_ideal, data.itbi_usar_contrato, data.itbi_valor_contrato]);
 
   const valorBaseProporcional = baseTransmissao.base;
+  const compraVendaAtiva = servicos.some((s) => s.tipo_servico === "compra_venda");
+
+  function baseEmolumentosParaTipo(tipo: string): number {
+    if (tipo === "compra_venda") {
+      return Number(data.imovel_valor_avaliado ?? 0) || 0;
+    }
+    return valorBaseProporcional;
+  }
+
+  function valorRegistroOficial(tipo: string): number {
+    const valorTabela = lookupFaixa(baseEmolumentosParaTipo(tipo), tabelaRI);
+    if (valorTabela == null) return 0;
+    return Math.round((valorTabela + averbacaoTotal) * 100) / 100;
+  }
+
+  function valorTabelionatoOficial(tipo: string): number {
+    return lookupFaixa(baseEmolumentosParaTipo(tipo), tabelaTab) ?? 0;
+  }
+
+  function normalizarCompraVenda(blocos: ServicoBloco[]): ServicoBloco[] {
+    return blocos.map((servico) => {
+      if (servico.tipo_servico !== "compra_venda") return servico;
+      const registro = valorRegistroOficial("compra_venda");
+      const tabelionato = valorTabelionatoOficial("compra_venda");
+      let itens = servico.itens
+        .filter((item) => !/averba[cç]/i.test(item.descricao))
+        .map((item) => {
+          if (/registro\s+de\s+im[oó]veis/i.test(item.descricao) && registro > 0) {
+            return { ...item, valor: registro };
+          }
+          if (/tabelionato/i.test(item.descricao) && tabelionato > 0) {
+            return { ...item, valor: tabelionato };
+          }
+          return item;
+        });
+      if (registro > 0 && !itens.some((item) => /registro\s+de\s+im[oó]veis/i.test(item.descricao))) {
+        itens = [...itens, { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", valor: registro }];
+      }
+      if (tabelionato > 0 && !itens.some((item) => /tabelionato/i.test(item.descricao))) {
+        itens = [...itens, { descricao: "TABELIONATO DE NOTAS", valor: tabelionato }];
+      }
+      return { ...servico, itens, subtotal: itens.reduce((soma, item) => soma + (Number(item.valor) || 0), 0) };
+    });
+  }
+
+  const valorBaseEmolumentos = compraVendaAtiva
+    ? (Number(data.imovel_valor_avaliado ?? 0) || 0)
+    : valorBaseProporcional;
   const transmissaoParcial =
     baseTransmissao.origem !== "total" &&
     valorBaseProporcional > 0 &&
@@ -499,10 +550,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
 
   function recalcularRI() {
-    const novo = novoValorRI;
+    let alvo = servicos.findIndex((s) => s.itens.some((i) => /registro\s+de\s+im[oó]veis/i.test(i.descricao)));
+    if (alvo === -1) alvo = 0;
+    const novo = valorRegistroOficial(servicos[alvo]?.tipo_servico ?? data.tipo_servico);
     setServicos((arr) => {
-      let alvo = arr.findIndex((s) => s.itens.some((i) => /registro\s+de\s+im[oó]veis/i.test(i.descricao)));
-      if (alvo === -1) alvo = 0;
       return arr.map((s, i) => {
         if (i !== alvo) return s;
         const idx = s.itens.findIndex((it) => /registro\s+de\s+im[oó]veis/i.test(it.descricao));
@@ -519,10 +570,10 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
   // Mantém o item de "REGISTRO DE IMÓVEIS" sincronizado com a TABELA OFICIAL
   // (tabela_registro_imoveis) + averbações incorporadas. Nunca usa fórmula própria.
   const novoValorRI = useMemo(() => {
-    const tab = lookupFaixa(valorBaseProporcional, tabelaRI);
+    const tab = lookupFaixa(valorBaseEmolumentos, tabelaRI);
     if (tab == null) return 0;
     return Math.round((tab + (averbacaoTotal || 0)) * 100) / 100;
-  }, [valorBaseProporcional, tabelaRI, averbacaoTotal]);
+  }, [valorBaseEmolumentos, tabelaRI, averbacaoTotal]);
 
   useEffect(() => {
     if (!Number.isFinite(novoValorRI) || novoValorRI <= 0) return;
@@ -531,19 +582,20 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       const next = arr.map((s) => {
         const idx = s.itens.findIndex((it) => /registro\s+de\s+im[oó]veis/i.test(it.descricao));
         if (idx === -1) return s;
-        if (Math.abs((Number(s.itens[idx].valor) || 0) - novoValorRI) < 0.005) return s;
+        const valorCorreto = valorRegistroOficial(s.tipo_servico);
+        if (valorCorreto <= 0 || Math.abs((Number(s.itens[idx].valor) || 0) - valorCorreto) < 0.005) return s;
         mudou = true;
-        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: novoValorRI } : it);
+        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: valorCorreto } : it);
         return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
       });
       return mudou ? next : arr;
     });
-  }, [novoValorRI]);
+  }, [novoValorRI, valorBaseProporcional, data.imovel_valor_avaliado, tabelaRI, averbacaoTotal]);
 
   // Recalcula Tabelionato pela TABELA OFICIAL quando a base muda.
   const novoValorTab = useMemo(
-    () => lookupFaixa(valorBaseProporcional, tabelaTab) ?? 0,
-    [valorBaseProporcional, tabelaTab],
+    () => lookupFaixa(valorBaseEmolumentos, tabelaTab) ?? 0,
+    [valorBaseEmolumentos, tabelaTab],
   );
   useEffect(() => {
     if (!Number.isFinite(novoValorTab) || novoValorTab <= 0) return;
@@ -552,19 +604,20 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       const next = arr.map((s) => {
         const idx = s.itens.findIndex((it) => /tabelionato/i.test(it.descricao));
         if (idx === -1) return s;
-        if (Math.abs((Number(s.itens[idx].valor) || 0) - novoValorTab) < 0.005) return s;
+        const valorCorreto = valorTabelionatoOficial(s.tipo_servico);
+        if (valorCorreto <= 0 || Math.abs((Number(s.itens[idx].valor) || 0) - valorCorreto) < 0.005) return s;
         mudou = true;
-        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: novoValorTab } : it);
+        const itens = s.itens.map((it, k) => k === idx ? { ...it, valor: valorCorreto } : it);
         return { ...s, itens, subtotal: itens.reduce((a, b) => a + (Number(b.valor) || 0), 0) };
       });
       return mudou ? next : arr;
     });
-  }, [novoValorTab]);
+  }, [novoValorTab, valorBaseProporcional, data.imovel_valor_avaliado, tabelaTab]);
 
   // Faixas oficiais localizadas — usadas na UI para mostrar exatamente qual
   // linha da tabela oficial foi aplicada (sem fórmulas próprias).
-  const faixaRI = useMemo(() => lookupFaixaRow(valorBaseProporcional, tabelaRI), [valorBaseProporcional, tabelaRI]);
-  const faixaTab = useMemo(() => lookupFaixaRow(valorBaseProporcional, tabelaTab), [valorBaseProporcional, tabelaTab]);
+  const faixaRI = useMemo(() => lookupFaixaRow(valorBaseEmolumentos, tabelaRI), [valorBaseEmolumentos, tabelaRI]);
+  const faixaTab = useMemo(() => lookupFaixaRow(valorBaseEmolumentos, tabelaTab), [valorBaseEmolumentos, tabelaTab]);
 
   // Averbações foram incorporadas ao Registro de Imóveis — remove
   // quaisquer linhas legadas de "AVERBAÇÕES" que ainda existam nos blocos.
@@ -599,7 +652,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
       const agora = new Date().toISOString();
       const statusMudou = status !== data.status;
       // Aglutina itens de todos os blocos (mantém compat com lucro/financeiro)
-      const itensFlat: ItemOrcamento[] = servicos.flatMap((s) => s.itens);
+      const servicosCorrigidos = normalizarCompraVenda(servicos);
+      const itensFlat: ItemOrcamento[] = servicosCorrigidos.flatMap((s) => s.itens);
       const totalServicosAtual = itensFlat.reduce((a, b) => a + (Number(b.valor) || 0), 0);
       const totalAtual = totalServicosAtual + (temITBI ? itbiValorManual : 0) + (temITCMD ? itcmdValorManual : 0);
       // Observações: concatena observações de cada bloco quando houver mais de uma
@@ -611,7 +665,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         ? (obsFromBlocos ? `${data.observacoes.trim()}\n\n${obsFromBlocos}` : data.observacoes.trim())
         : (obsFromBlocos || null);
       // Serializa blocos (com subtotais atualizados)
-      const servicosPayload = servicos.map((s) => ({
+      const servicosPayload = servicosCorrigidos.map((s) => ({
         ...s,
         subtotal: s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0),
       }));
@@ -642,7 +696,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         itbi_estimado: temITBI ? itbiValorManual : null,
         itbi_area_transmitida: temITBI ? (data.itbi_area_transmitida ?? null) : null,
         itbi_fracao_ideal: temITBI ? (data.itbi_fracao_ideal ?? null) : null,
-        itbi_base_calculo: temITBI ? valorBaseProporcional : null,
+        itbi_base_calculo: temITBI ? valorBaseEmolumentos : null,
         itbi_usar_contrato: temITBI ? !!data.itbi_usar_contrato : null,
         itbi_valor_contrato: temITBI ? (data.itbi_valor_contrato ?? null) : null,
         itcmd_estimado: temITCMD ? itcmdValorManual : null,
@@ -714,12 +768,14 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
   // Monta um snapshot do orçamento atual (sem persistir) para geração de PDF/DOCX
   function snapshotAtual(): OrcamentoData {
-    const itensFlat: ItemOrcamento[] = servicos.flatMap((s) => s.itens);
-    const servicosSnap = servicos.map((s) => ({
+    const servicosCorrigidos = normalizarCompraVenda(servicos);
+    const itensFlat: ItemOrcamento[] = servicosCorrigidos.flatMap((s) => s.itens);
+    const servicosSnap = servicosCorrigidos.map((s) => ({
       ...s,
       subtotal: s.itens.reduce((a, b) => a + (Number(b.valor) || 0), 0),
     }));
-    return { ...data, itens: itensFlat, servicos: servicosSnap, valor_total: total, tipo_servico: servicos[0]?.tipo_servico ?? data.tipo_servico };
+    const totalCorrigido = itensFlat.reduce((soma, item) => soma + (Number(item.valor) || 0), 0) + itbiNoTotal + itcmdNoTotal;
+    return { ...data, itens: itensFlat, servicos: servicosSnap, valor_total: totalCorrigido, tipo_servico: servicosCorrigidos[0]?.tipo_servico ?? data.tipo_servico };
   }
 
   async function downloadPDF() {
@@ -963,8 +1019,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                 </div>
 
                 <p className="text-xs opacity-90 tabular-nums">
-                  Base considerada: <b>{formatBRL(valorBaseProporcional)}</b>
-                  {transmissaoParcial ? (
+                  Base considerada: <b>{formatBRL(valorBaseEmolumentos)}</b>
+                  {!compraVendaAtiva && transmissaoParcial ? (
                     <> {" "}(valor cheio {formatBRL(baseTransmissao.valorCheio)} × {baseTransmissao.fracaoPct.toFixed(2)}%)</>
                   ) : null}
                 </p>
@@ -1062,8 +1118,9 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
           <div className="text-sm font-medium mb-2">Transmissão parcial (opcional)</div>
           <p className="text-xs text-muted-foreground mb-3">
-            Usado apenas para calcular a <b>base proporcional</b> do Registro de Imóveis e Tabelionato.
-            Não afeta o valor do ITBI (que é manual).
+            {compraVendaAtiva
+              ? <>Na Compra e Venda, o Registro de Imóveis e o Tabelionato usam sempre o <b>valor avaliado integral do imóvel</b>. Estes campos não alteram os emolumentos.</>
+              : <>Usado apenas para calcular a <b>base proporcional</b> do Registro de Imóveis e Tabelionato. Não afeta o valor do ITBI (que é manual).</>}
           </p>
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -1140,7 +1197,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             <div className="text-2xl font-semibold tabular-nums">{formatBRL(itbiValorManual)}</div>
           </div>
 
-          {transmissaoParcial ? (
+          {!compraVendaAtiva && transmissaoParcial ? (
             <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 dark:border-amber-800">
               <div className="font-medium mb-1">Base proporcional aplicada ao RI/Tabelionato</div>
               <div className="text-xs">

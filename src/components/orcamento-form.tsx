@@ -193,8 +193,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     if (!tabelaValores) return 316.94;
     const v = Object.fromEntries(tabelaValores.map((x) => [x.chave, Number(x.valor)]));
     const unit = Number.isFinite(v.averbacao_valor) && v.averbacao_valor > 0 ? v.averbacao_valor : 158.47;
-    const qtd = Number.isFinite(v.averbacao_qtd) && v.averbacao_qtd > 0 ? v.averbacao_qtd : 2;
-    return Math.round(unit * qtd * 100) / 100;
+    return Math.round(unit * 2 * 100) / 100;
   }, [tabelaValores]);
 
   function calcValorAuto(kind: AutoKind, area_m2?: number, valor?: number): number {
@@ -1012,8 +1011,8 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
                 </div>
 
                 <p className="text-xs opacity-90 tabular-nums">
-                  Base considerada: <b>{formatBRL(valorBaseProporcional)}</b>
-                  {transmissaoParcial ? (
+                  Base considerada: <b>{formatBRL(valorBaseEmolumentos)}</b>
+                  {!compraVendaAtiva && transmissaoParcial ? (
                     <> {" "}(valor cheio {formatBRL(baseTransmissao.valorCheio)} × {baseTransmissao.fracaoPct.toFixed(2)}%)</>
                   ) : null}
                 </p>
@@ -1111,8 +1110,9 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
 
           <div className="text-sm font-medium mb-2">Transmissão parcial (opcional)</div>
           <p className="text-xs text-muted-foreground mb-3">
-            Usado apenas para calcular a <b>base proporcional</b> do Registro de Imóveis e Tabelionato.
-            Não afeta o valor do ITBI (que é manual).
+            {compraVendaAtiva
+              ? <>Na Compra e Venda, o Registro de Imóveis e o Tabelionato usam sempre o <b>valor avaliado integral do imóvel</b>. Estes campos não alteram os emolumentos.</>
+              : <>Usado apenas para calcular a <b>base proporcional</b> do Registro de Imóveis e Tabelionato. Não afeta o valor do ITBI (que é manual).</>}
           </p>
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -1189,7 +1189,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
             <div className="text-2xl font-semibold tabular-nums">{formatBRL(itbiValorManual)}</div>
           </div>
 
-          {transmissaoParcial ? (
+          {!compraVendaAtiva && transmissaoParcial ? (
             <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 dark:border-amber-800">
               <div className="font-medium mb-1">Base proporcional aplicada ao RI/Tabelionato</div>
               <div className="text-xs">

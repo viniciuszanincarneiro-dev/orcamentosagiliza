@@ -241,7 +241,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
     const valorAvaliado = Number(valor ?? data.imovel_valor_avaliado ?? 0) || 0;
     const valorBase = tipo === "compra_venda"
       ? valorAvaliado
-      : (valor ?? valorBaseProporcional || valorAvaliado);
+      : (valor ?? (valorBaseProporcional || valorAvaliado));
     const template = TEMPLATES_ITENS[tipo] ?? [];
     const itens: ItemOrcamento[] = template
       .filter((t) => !("auto" in t) || t.auto !== "averbacoes")
@@ -689,7 +689,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         itbi_estimado: temITBI ? itbiValorManual : null,
         itbi_area_transmitida: temITBI ? (data.itbi_area_transmitida ?? null) : null,
         itbi_fracao_ideal: temITBI ? (data.itbi_fracao_ideal ?? null) : null,
-        itbi_base_calculo: temITBI ? valorBaseProporcional : null,
+        itbi_base_calculo: temITBI ? valorBaseEmolumentos : null,
         itbi_usar_contrato: temITBI ? !!data.itbi_usar_contrato : null,
         itbi_valor_contrato: temITBI ? (data.itbi_valor_contrato ?? null) : null,
         itcmd_estimado: temITCMD ? itcmdValorManual : null,

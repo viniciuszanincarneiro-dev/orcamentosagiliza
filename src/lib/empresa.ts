@@ -243,8 +243,9 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
   ],
   estremacao: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO", valor_base: 3200 },
-    { descricao: "TABELIONATO DE NOTAS", valor_base: 811.44 },
-    { descricao: "REGISTRO DE IMÓVEIS", valor_base: 1093.50 },
+    { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
+    { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
+    { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "ATUALIZAÇÃO CCIR, ITR E CAR", valor_base: 300 },
   ],
   doacao: [

@@ -75,6 +75,13 @@ const OFICIAIS: Record<string, ModeloServico> = {
     metodologia:
       "No presente orçamento está incluso os seguintes serviços:\n\nLevantamento Topográfico, Locação, Assessoria Documental (elaboração de mapas, memoriais descritivos, TRT, requerimentos organização dos documentos pessoais das partes e demais documentos que compõe o processo), Coleta de Assinaturas (proprietários e confrontantes), requerimento de viabilidade junto ao Prefeitura, CASAN e CELESC, encaminhamento dos documentos ao Cartório de Registro de Imóveis.",
   },
+  estremacao: {
+    titulo: "ESCRITURA PÚBLICA DE ESTREMAÇÃO",
+    descricao:
+      "A estremação de imóveis rurais é um procedimento que visa extinguir um condomínio pro diviso, estabelecendo limites, divisas e confrontações à parte ideal de cada proprietário.\n\nDesde que cumpridos os requisitos, a delimitação territorial na estremação é feita por meio de levantamentos topográficos e georreferenciamento, que garantem a precisão das coordenadas e a exatidão dos limites do imóvel.\n\nApós realizada a parte técnica, é elaborado os mapas, memoriais descritivos, TRT, requerimentos e demais documentos que compõe o processo. Coleta-se a assinatura dos proprietários estremantes e dos confrontantes da área a ser regularizada.\n\nFeito isto, é encaminhado todo os documentos para o Tabelionato de Notas lavrar a escritura pública de estremação. Estando a escritura pública devidamente assinada, é realizado o protocolo no Registro de Imóveis.\n\nNo Brasil, a Lei de Parcelamento do Solo (Lei 6766/79) e outras normas específicas são aplicadas para orientar esses procedimentos.",
+    metodologia:
+      "DESCRIÇÃO DOS SERVIÇOS:\n\nNo presente orçamento está incluso os seguintes serviços: Levantamento Topográfico e Georreferenciamento, Assessoria Documental (elaboração de mapas, memoriais descritivos, TRT, requerimentos e demais documentos que compõe o processo), Coleta de Assinaturas (proprietários estremantes e confrontantes), encaminhamento ao Tabelionato de Notas para lavratura da Escritura Pública de Estremação, protocolo no Registro de Imóveis e atualização dos cadastros rurais CCIR, ITR e CAR.",
+  },
 };
 
 /**

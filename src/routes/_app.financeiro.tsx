@@ -52,6 +52,16 @@ import { TIPOS_SERVICO, STATUS_ORCAMENTO } from "@/lib/empresa";
 import { useProfile } from "@/hooks/use-profile";
 
 export const Route = createFileRoute("/_app/financeiro")({
+  head: () => ({
+    meta: [
+      { title: "Financeiro | Agiliza" },
+      { name: "description", content: "Indicadores financeiros e lucros dos orçamentos aprovados da Agiliza." },
+      { property: "og:title", content: "Financeiro | Agiliza" },
+      { property: "og:description", content: "Indicadores financeiros e lucros dos orçamentos aprovados da Agiliza." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: FinanceiroPage,
 });
 
@@ -203,7 +213,7 @@ function FinanceiroPage() {
   const chartData = useMemo(() => [...linhas].reverse().map((l) => ({
     mes: l.curto,
     Faturamento: round(l.bruto),
-    Líquido: round(l.liquido),
+    "Lucro aprovado": round(l.liquido),
     Orçamentos: l.qtd,
   })), [linhas]);
 
@@ -296,7 +306,7 @@ function FinanceiroPage() {
                     <TableHead className="text-center">Orçamentos</TableHead>
                     <TableHead className="text-right">Faturamento</TableHead>
                     <TableHead className="text-right">Custas externas</TableHead>
-                    <TableHead className="text-right">Líquido Agiliza</TableHead>
+                    <TableHead className="text-right">Lucro aprovado</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -349,7 +359,7 @@ function FinanceiroPage() {
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => compact(v)} />
                   <Tooltip formatter={(v: number) => formatBRL(v)} contentStyle={tooltipStyle} />
                   <Bar dataKey="Faturamento" fill="var(--muted-foreground)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Líquido" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Lucro aprovado" fill="var(--primary)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}

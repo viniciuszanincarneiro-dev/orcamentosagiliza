@@ -52,6 +52,16 @@ import { TIPOS_SERVICO, STATUS_ORCAMENTO } from "@/lib/empresa";
 import { useProfile } from "@/hooks/use-profile";
 
 export const Route = createFileRoute("/_app/financeiro")({
+  head: () => ({
+    meta: [
+      { title: "Financeiro | Agiliza" },
+      { name: "description", content: "Indicadores financeiros e lucros dos orçamentos aprovados da Agiliza." },
+      { property: "og:title", content: "Financeiro | Agiliza" },
+      { property: "og:description", content: "Indicadores financeiros e lucros dos orçamentos aprovados da Agiliza." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: FinanceiroPage,
 });
 
@@ -84,6 +94,12 @@ type LinhaMes = {
   liquido: number; // lucro líquido (serviços AGILIZA)
   despesas: number; // repasses/cartório
 };
+
+function calcularLucroAprovado(orcamento: OrcamentoRow): number {
+  return orcamento.status === "aprovado"
+    ? calcularLucro(orcamento.itens ?? [])
+    : 0;
+}
 
 function FinanceiroPage() {
   const { isAdmin, escritorio: meuEscritorio, escritorios } = useProfile();
@@ -137,7 +153,7 @@ function FinanceiroPage() {
       const k = o.escritorio_id ?? "sem";
       const nome = o.escritorio_id ? (escritoriosMap.get(o.escritorio_id) ?? "—") : "Sem escritório";
       const itens = o.itens ?? [];
-      const liq = calcularLucro(itens);
+      const liq = calcularLucroAprovado(o);
       const desp = calcularRepasse(itens);
       const bruto = Number(o.valor_total ?? 0);
       const at = map.get(k);
@@ -158,7 +174,7 @@ function FinanceiroPage() {
       const mes = d.getMonth();
       const chave = `${ano}-${String(mes + 1).padStart(2, "0")}`;
       const itens = o.itens ?? [];
-      const liq = calcularLucro(itens);
+      const liq = calcularLucroAprovado(o);
       const desp = calcularRepasse(itens);
       const bruto = Number(o.valor_total ?? 0);
       const aprov = o.status === "aprovado" ? 1 : 0;
@@ -197,7 +213,7 @@ function FinanceiroPage() {
   const chartData = useMemo(() => [...linhas].reverse().map((l) => ({
     mes: l.curto,
     Faturamento: round(l.bruto),
-    Líquido: round(l.liquido),
+    "Lucro aprovado": round(l.liquido),
     Orçamentos: l.qtd,
   })), [linhas]);
 
@@ -290,7 +306,7 @@ function FinanceiroPage() {
                     <TableHead className="text-center">Orçamentos</TableHead>
                     <TableHead className="text-right">Faturamento</TableHead>
                     <TableHead className="text-right">Custas externas</TableHead>
-                    <TableHead className="text-right">Líquido Agiliza</TableHead>
+                    <TableHead className="text-right">Lucro aprovado</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -313,10 +329,10 @@ function FinanceiroPage() {
 
       {/* Cards de totais */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Lucro líquido" value={formatBRL(totais.liquido)} icon={TrendingUp} highlight />
+        <KpiCard label="Lucro líquido (aprovados)" value={formatBRL(totais.liquido)} icon={TrendingUp} highlight />
         <KpiCard label="Faturamento bruto" value={formatBRL(totais.bruto)} icon={DollarSign} />
         <KpiCard label="Repasses / cartório" value={formatBRL(totais.despesas)} icon={Receipt} muted />
-        <KpiCard label="Média mensal (líquido)" value={formatBRL(totais.mediaMensal)} icon={Calendar} />
+        <KpiCard label="Média mensal (aprovados)" value={formatBRL(totais.mediaMensal)} icon={Calendar} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -329,8 +345,8 @@ function FinanceiroPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Faturamento × Lucro líquido</CardTitle>
-            <CardDescription>Por mês, no período selecionado.</CardDescription>
+            <CardTitle className="text-base">Faturamento × Lucro aprovado</CardTitle>
+            <CardDescription>O lucro considera somente orçamentos aprovados.</CardDescription>
           </CardHeader>
           <CardContent>
             {chartData.length === 0 ? (
@@ -343,7 +359,7 @@ function FinanceiroPage() {
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => compact(v)} />
                   <Tooltip formatter={(v: number) => formatBRL(v)} contentStyle={tooltipStyle} />
                   <Bar dataKey="Faturamento" fill="var(--muted-foreground)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Líquido" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Lucro aprovado" fill="var(--primary)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -379,7 +395,7 @@ function FinanceiroPage() {
           <CardTitle>Detalhamento mês a mês</CardTitle>
           <CardDescription>
             Aplica os filtros acima. Lucro líquido considera apenas serviços
-            executados pelo escritório; despesas são repasses (RI, certidões).
+            executados pelo escritório em orçamentos aprovados; despesas são repasses (RI, certidões).
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -400,7 +416,7 @@ function FinanceiroPage() {
                     <TableHead className="text-center">Final.</TableHead>
                     <TableHead className="text-right">Faturamento</TableHead>
                     <TableHead className="text-right">Despesas</TableHead>
-                    <TableHead className="text-right">Lucro líquido</TableHead>
+                    <TableHead className="text-right">Lucro aprovado</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

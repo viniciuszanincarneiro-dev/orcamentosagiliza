@@ -14,9 +14,19 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/agiliza-logo.png";
 
 export const Route = createFileRoute("/login")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Entrar | AGILIZA" },
+      { name: "description", content: "Acesso ao sistema interno de orçamentos da AGILIZA." },
+      { property: "og:title", content: "Entrar | AGILIZA" },
+      { property: "og:description", content: "Acesso ao sistema interno de orçamentos da AGILIZA." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   // Se já estiver autenticado, pula direto para o dashboard — evita o "loop" no login.
   beforeLoad: async () => {
-    if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
     if (data.session) throw redirect({ to: "/dashboard" });
   },

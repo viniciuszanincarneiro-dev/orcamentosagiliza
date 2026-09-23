@@ -85,6 +85,12 @@ type LinhaMes = {
   despesas: number; // repasses/cartório
 };
 
+function calcularLucroAprovado(orcamento: OrcamentoRow): number {
+  return orcamento.status === "aprovado"
+    ? calcularLucro(orcamento.itens ?? [])
+    : 0;
+}
+
 function FinanceiroPage() {
   const { isAdmin, escritorio: meuEscritorio, escritorios } = useProfile();
   const [periodo, setPeriodo] = useState<string>("12");
@@ -137,7 +143,7 @@ function FinanceiroPage() {
       const k = o.escritorio_id ?? "sem";
       const nome = o.escritorio_id ? (escritoriosMap.get(o.escritorio_id) ?? "—") : "Sem escritório";
       const itens = o.itens ?? [];
-      const liq = calcularLucro(itens);
+      const liq = calcularLucroAprovado(o);
       const desp = calcularRepasse(itens);
       const bruto = Number(o.valor_total ?? 0);
       const at = map.get(k);
@@ -158,7 +164,7 @@ function FinanceiroPage() {
       const mes = d.getMonth();
       const chave = `${ano}-${String(mes + 1).padStart(2, "0")}`;
       const itens = o.itens ?? [];
-      const liq = calcularLucro(itens);
+      const liq = calcularLucroAprovado(o);
       const desp = calcularRepasse(itens);
       const bruto = Number(o.valor_total ?? 0);
       const aprov = o.status === "aprovado" ? 1 : 0;
@@ -313,10 +319,10 @@ function FinanceiroPage() {
 
       {/* Cards de totais */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Lucro líquido" value={formatBRL(totais.liquido)} icon={TrendingUp} highlight />
+        <KpiCard label="Lucro líquido (aprovados)" value={formatBRL(totais.liquido)} icon={TrendingUp} highlight />
         <KpiCard label="Faturamento bruto" value={formatBRL(totais.bruto)} icon={DollarSign} />
         <KpiCard label="Repasses / cartório" value={formatBRL(totais.despesas)} icon={Receipt} muted />
-        <KpiCard label="Média mensal (líquido)" value={formatBRL(totais.mediaMensal)} icon={Calendar} />
+        <KpiCard label="Média mensal (aprovados)" value={formatBRL(totais.mediaMensal)} icon={Calendar} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -329,8 +335,8 @@ function FinanceiroPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Faturamento × Lucro líquido</CardTitle>
-            <CardDescription>Por mês, no período selecionado.</CardDescription>
+            <CardTitle className="text-base">Faturamento × Lucro aprovado</CardTitle>
+            <CardDescription>O lucro considera somente orçamentos aprovados.</CardDescription>
           </CardHeader>
           <CardContent>
             {chartData.length === 0 ? (
@@ -379,7 +385,7 @@ function FinanceiroPage() {
           <CardTitle>Detalhamento mês a mês</CardTitle>
           <CardDescription>
             Aplica os filtros acima. Lucro líquido considera apenas serviços
-            executados pelo escritório; despesas são repasses (RI, certidões).
+            executados pelo escritório em orçamentos aprovados; despesas são repasses (RI, certidões).
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -400,7 +406,7 @@ function FinanceiroPage() {
                     <TableHead className="text-center">Final.</TableHead>
                     <TableHead className="text-right">Faturamento</TableHead>
                     <TableHead className="text-right">Despesas</TableHead>
-                    <TableHead className="text-right">Lucro líquido</TableHead>
+                    <TableHead className="text-right">Lucro aprovado</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

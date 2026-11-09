@@ -9,75 +9,40 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppValoresRouteImport } from './routes/_app.valores'
-import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
-import { Route as AppTutorialRouteImport } from './routes/_app.tutorial'
-import { Route as AppLixeiraRouteImport } from './routes/_app.lixeira'
-import { Route as AppItbiRouteImport } from './routes/_app.itbi'
-import { Route as AppFollowUpRouteImport } from './routes/_app.follow-up'
-import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
-import { Route as AppEscritoriosRouteImport } from './routes/_app.escritorios'
-import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppAdminTabelasRouteImport } from './routes/_app.admin-tabelas'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppEscritoriosRouteImport } from './routes/_app.escritorios'
+import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
+import { Route as AppFollowUpRouteImport } from './routes/_app.follow-up'
+import { Route as AppItbiRouteImport } from './routes/_app.itbi'
+import { Route as AppLixeiraRouteImport } from './routes/_app.lixeira'
+import { Route as AppTutorialRouteImport } from './routes/_app.tutorial'
+import { Route as AppUsuariosRouteImport } from './routes/_app.usuarios'
+import { Route as AppValoresRouteImport } from './routes/_app.valores'
 import { Route as AppOrcamentosIndexRouteImport } from './routes/_app.orcamentos.index'
-import { Route as AppOrcamentosNovoRouteImport } from './routes/_app.orcamentos.novo'
 import { Route as AppOrcamentosIdRouteImport } from './routes/_app.orcamentos.$id'
+import { Route as AppOrcamentosNovoRouteImport } from './routes/_app.orcamentos.novo'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppValoresRoute = AppValoresRouteImport.update({
-  id: '/valores',
-  path: '/valores',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppUsuariosRoute = AppUsuariosRouteImport.update({
-  id: '/usuarios',
-  path: '/usuarios',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTutorialRoute = AppTutorialRouteImport.update({
-  id: '/tutorial',
-  path: '/tutorial',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppLixeiraRoute = AppLixeiraRouteImport.update({
-  id: '/lixeira',
-  path: '/lixeira',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppItbiRoute = AppItbiRouteImport.update({
-  id: '/itbi',
-  path: '/itbi',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppFollowUpRoute = AppFollowUpRouteImport.update({
-  id: '/follow-up',
-  path: '/follow-up',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
-  id: '/financeiro',
-  path: '/financeiro',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppEscritoriosRoute = AppEscritoriosRouteImport.update({
-  id: '/escritorios',
-  path: '/escritorios',
+const AppAdminTabelasRoute = AppAdminTabelasRouteImport.update({
+  id: '/admin-tabelas',
+  path: '/admin-tabelas',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -85,9 +50,44 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminTabelasRoute = AppAdminTabelasRouteImport.update({
-  id: '/admin-tabelas',
-  path: '/admin-tabelas',
+const AppEscritoriosRoute = AppEscritoriosRouteImport.update({
+  id: '/escritorios',
+  path: '/escritorios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFollowUpRoute = AppFollowUpRouteImport.update({
+  id: '/follow-up',
+  path: '/follow-up',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppItbiRoute = AppItbiRouteImport.update({
+  id: '/itbi',
+  path: '/itbi',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLixeiraRoute = AppLixeiraRouteImport.update({
+  id: '/lixeira',
+  path: '/lixeira',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTutorialRoute = AppTutorialRouteImport.update({
+  id: '/tutorial',
+  path: '/tutorial',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsuariosRoute = AppUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppValoresRoute = AppValoresRouteImport.update({
+  id: '/valores',
+  path: '/valores',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOrcamentosIndexRoute = AppOrcamentosIndexRouteImport.update({
@@ -95,14 +95,14 @@ const AppOrcamentosIndexRoute = AppOrcamentosIndexRouteImport.update({
   path: '/orcamentos/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppOrcamentosNovoRoute = AppOrcamentosNovoRouteImport.update({
-  id: '/orcamentos/novo',
-  path: '/orcamentos/novo',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppOrcamentosIdRoute = AppOrcamentosIdRouteImport.update({
   id: '/orcamentos/$id',
   path: '/orcamentos/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOrcamentosNovoRoute = AppOrcamentosNovoRouteImport.update({
+  id: '/orcamentos/novo',
+  path: '/orcamentos/novo',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -222,11 +222,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -236,67 +236,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/valores': {
-      id: '/_app/valores'
-      path: '/valores'
-      fullPath: '/valores'
-      preLoaderRoute: typeof AppValoresRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/usuarios': {
-      id: '/_app/usuarios'
-      path: '/usuarios'
-      fullPath: '/usuarios'
-      preLoaderRoute: typeof AppUsuariosRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/tutorial': {
-      id: '/_app/tutorial'
-      path: '/tutorial'
-      fullPath: '/tutorial'
-      preLoaderRoute: typeof AppTutorialRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/lixeira': {
-      id: '/_app/lixeira'
-      path: '/lixeira'
-      fullPath: '/lixeira'
-      preLoaderRoute: typeof AppLixeiraRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/itbi': {
-      id: '/_app/itbi'
-      path: '/itbi'
-      fullPath: '/itbi'
-      preLoaderRoute: typeof AppItbiRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/follow-up': {
-      id: '/_app/follow-up'
-      path: '/follow-up'
-      fullPath: '/follow-up'
-      preLoaderRoute: typeof AppFollowUpRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/financeiro': {
-      id: '/_app/financeiro'
-      path: '/financeiro'
-      fullPath: '/financeiro'
-      preLoaderRoute: typeof AppFinanceiroRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/escritorios': {
-      id: '/_app/escritorios'
-      path: '/escritorios'
-      fullPath: '/escritorios'
-      preLoaderRoute: typeof AppEscritoriosRouteImport
+    '/_app/admin-tabelas': {
+      id: '/_app/admin-tabelas'
+      path: '/admin-tabelas'
+      fullPath: '/admin-tabelas'
+      preLoaderRoute: typeof AppAdminTabelasRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -306,11 +257,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/admin-tabelas': {
-      id: '/_app/admin-tabelas'
-      path: '/admin-tabelas'
-      fullPath: '/admin-tabelas'
-      preLoaderRoute: typeof AppAdminTabelasRouteImport
+    '/_app/escritorios': {
+      id: '/_app/escritorios'
+      path: '/escritorios'
+      fullPath: '/escritorios'
+      preLoaderRoute: typeof AppEscritoriosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/financeiro': {
+      id: '/_app/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof AppFinanceiroRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/follow-up': {
+      id: '/_app/follow-up'
+      path: '/follow-up'
+      fullPath: '/follow-up'
+      preLoaderRoute: typeof AppFollowUpRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/itbi': {
+      id: '/_app/itbi'
+      path: '/itbi'
+      fullPath: '/itbi'
+      preLoaderRoute: typeof AppItbiRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/lixeira': {
+      id: '/_app/lixeira'
+      path: '/lixeira'
+      fullPath: '/lixeira'
+      preLoaderRoute: typeof AppLixeiraRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tutorial': {
+      id: '/_app/tutorial'
+      path: '/tutorial'
+      fullPath: '/tutorial'
+      preLoaderRoute: typeof AppTutorialRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/usuarios': {
+      id: '/_app/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AppUsuariosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/valores': {
+      id: '/_app/valores'
+      path: '/valores'
+      fullPath: '/valores'
+      preLoaderRoute: typeof AppValoresRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/orcamentos/': {
@@ -320,18 +320,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOrcamentosIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/orcamentos/novo': {
-      id: '/_app/orcamentos/novo'
-      path: '/orcamentos/novo'
-      fullPath: '/orcamentos/novo'
-      preLoaderRoute: typeof AppOrcamentosNovoRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/orcamentos/$id': {
       id: '/_app/orcamentos/$id'
       path: '/orcamentos/$id'
       fullPath: '/orcamentos/$id'
       preLoaderRoute: typeof AppOrcamentosIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/orcamentos/novo': {
+      id: '/_app/orcamentos/novo'
+      path: '/orcamentos/novo'
+      fullPath: '/orcamentos/novo'
+      preLoaderRoute: typeof AppOrcamentosNovoRouteImport
       parentRoute: typeof AppRoute
     }
   }

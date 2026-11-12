@@ -17,7 +17,9 @@ function baixarArquivo(nome: string, conteudo: string, mime: string, comBOM = fa
 
 function escapeCSV(v: unknown): string {
   if (v === null || v === undefined) return "";
-  const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+  let s = typeof v === "object" ? JSON.stringify(v) : String(v);
+  // Neutraliza fórmulas de planilha (CSV injection)
+  if (typeof v === "string" && /^[=+\-@\t\r]/.test(s)) s = "'" + s;
   // Sempre aspear para máxima compatibilidade entre planilhas
   return `"${s.replace(/"/g, '""')}"`;
 }

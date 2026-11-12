@@ -15,6 +15,13 @@
       "when": 1794511604494,
       "tag": "0001_restrict_reference_tables_to_linked_members",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794511918147,
+      "tag": "0002_harden_profile_insert_and_quote_scope",
+      "breakpoints": true
     }
   ]
 }

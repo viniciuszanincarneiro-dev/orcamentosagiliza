@@ -47,7 +47,6 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { formatBRL } from "@/lib/format";
-import { calcularLucro, calcularRepasse, type ItemLike } from "@/lib/lucro";
 import { TIPOS_SERVICO, STATUS_ORCAMENTO } from "@/lib/empresa";
 import { useProfile } from "@/hooks/use-profile";
 
@@ -71,16 +70,6 @@ const MESES_PT = [
 ];
 const MESES_CURTO = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
-type OrcamentoRow = {
-  id: string;
-  created_at: string;
-  status: string;
-  tipo_servico: string;
-  escritorio_id: string | null;
-  valor_total: number | null;
-  itens: ItemLike[] | null;
-};
-
 type LinhaMes = {
   chave: string; // YYYY-MM
   ano: number;
@@ -95,12 +84,6 @@ type LinhaMes = {
   despesas: number; // repasses/cartório
 };
 
-function calcularLucroAprovado(orcamento: OrcamentoRow): number {
-  return orcamento.status === "aprovado"
-    ? calcularLucro(orcamento.itens ?? [])
-    : 0;
-}
-
 function FinanceiroPage() {
   const { isAdmin, escritorio: meuEscritorio, escritorios } = useProfile();
   const [periodo, setPeriodo] = useState<string>("12");
@@ -110,17 +93,26 @@ function FinanceiroPage() {
   const [escritorioSel, setEscritorioSel] = useState<string>("all");
   const escritorioEfetivo = isAdmin ? escritorioSel : (meuEscritorio?.id ?? "all");
 
-  const { data: orcamentos, isLoading } = useQuery({
-    queryKey: ["financeiro-orcamentos"],
+  // Agregação feita no banco (RPC financeiro_agregado) — o navegador recebe
+  // só uma linha por mês/escritório, nunca a lista inteira de orçamentos.
+  const desde = useMemo(() => {
+    if (periodo === "all") return null;
+    const agora = new Date();
+    return new Date(agora.getFullYear(), agora.getMonth() - (Number(periodo) - 1), 1).toISOString();
+  }, [periodo]);
+
+  const { data: agregados, isLoading } = useQuery({
+    queryKey: ["financeiro-agregado", desde, tipo, status, escritorioEfetivo],
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orcamentos")
-        .select("id, created_at, status, tipo_servico, escritorio_id, valor_total, itens")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.rpc("financeiro_agregado", {
+        _desde: desde ?? undefined,
+        _tipo: tipo === "all" ? undefined : tipo,
+        _status: status === "all" ? undefined : status,
+        _escritorio: escritorioEfetivo === "all" ? undefined : escritorioEfetivo,
+      });
       if (error) throw error;
-      return (data ?? []) as OrcamentoRow[];
+      return data ?? [];
     },
   });
 
@@ -129,68 +121,42 @@ function FinanceiroPage() {
     [escritorios],
   );
 
-  const filtrados = useMemo(() => {
-    if (!orcamentos) return [];
-    const agora = new Date();
-    let limite: Date | null = null;
-    if (periodo !== "all") {
-      const n = Number(periodo);
-      limite = new Date(agora.getFullYear(), agora.getMonth() - (n - 1), 1);
-    }
-    return orcamentos.filter((o) => {
-      if (limite && new Date(o.created_at) < limite) return false;
-      if (tipo !== "all" && o.tipo_servico !== tipo) return false;
-      if (status !== "all" && o.status !== status) return false;
-      if (escritorioEfetivo !== "all" && o.escritorio_id !== escritorioEfetivo) return false;
-      return true;
-    });
-  }, [orcamentos, periodo, tipo, status, escritorioEfetivo]);
-
-  // Breakdown por escritório (apenas admin vê todos)
   const porEscritorio = useMemo(() => {
     const map = new Map<string, { nome: string; qtd: number; bruto: number; liquido: number; despesas: number }>();
-    for (const o of filtrados) {
-      const k = o.escritorio_id ?? "sem";
-      const nome = o.escritorio_id ? (escritoriosMap.get(o.escritorio_id) ?? "—") : "Sem escritório";
-      const itens = o.itens ?? [];
-      const liq = calcularLucroAprovado(o);
-      const desp = calcularRepasse(itens);
-      const bruto = Number(o.valor_total ?? 0);
+    for (const r of agregados ?? []) {
+      const k = r.escritorio_id ?? "sem";
+      const nome = r.escritorio_id ? (escritoriosMap.get(r.escritorio_id) ?? "—") : "Sem escritório";
+      const qtd = Number(r.qtd), bruto = Number(r.bruto), liq = Number(r.liquido), desp = Number(r.despesas);
       const at = map.get(k);
-      if (at) { at.qtd += 1; at.bruto += bruto; at.liquido += liq; at.despesas += desp; }
-      else map.set(k, { nome, qtd: 1, bruto, liquido: liq, despesas: desp });
+      if (at) { at.qtd += qtd; at.bruto += bruto; at.liquido += liq; at.despesas += desp; }
+      else map.set(k, { nome, qtd, bruto, liquido: liq, despesas: desp });
     }
     return Array.from(map.values()).sort((a, b) => b.bruto - a.bruto);
-  }, [filtrados, escritoriosMap]);
-
+  }, [agregados, escritoriosMap]);
 
   const { linhas, totais } = useMemo(() => {
     const map = new Map<string, LinhaMes>();
     let tBruto = 0, tLiquido = 0, tDespesas = 0;
     let tQtd = 0, tAprov = 0, tFinal = 0;
-    for (const o of filtrados) {
-      const d = new Date(o.created_at);
-      const ano = d.getFullYear();
-      const mes = d.getMonth();
+    for (const r of agregados ?? []) {
+      const [y, m] = String(r.mes).split("-");
+      const ano = Number(y);
+      const mes = Number(m) - 1;
       const chave = `${ano}-${String(mes + 1).padStart(2, "0")}`;
-      const itens = o.itens ?? [];
-      const liq = calcularLucroAprovado(o);
-      const desp = calcularRepasse(itens);
-      const bruto = Number(o.valor_total ?? 0);
-      const aprov = o.status === "aprovado" ? 1 : 0;
-      const fin = o.status === "finalizado" ? 1 : 0;
+      const qtd = Number(r.qtd), aprov = Number(r.aprovados), fin = Number(r.finalizados);
+      const bruto = Number(r.bruto), liq = Number(r.liquido), desp = Number(r.despesas);
       tBruto += bruto; tLiquido += liq; tDespesas += desp;
-      tQtd += 1; tAprov += aprov; tFinal += fin;
+      tQtd += qtd; tAprov += aprov; tFinal += fin;
       const at = map.get(chave);
       if (at) {
-        at.qtd += 1; at.aprovados += aprov; at.finalizados += fin;
+        at.qtd += qtd; at.aprovados += aprov; at.finalizados += fin;
         at.bruto += bruto; at.liquido += liq; at.despesas += desp;
       } else {
         map.set(chave, {
           chave, ano, mes,
           label: `${MESES_PT[mes]}/${ano}`,
           curto: `${MESES_CURTO[mes]}/${String(ano).slice(2)}`,
-          qtd: 1, aprovados: aprov, finalizados: fin,
+          qtd, aprovados: aprov, finalizados: fin,
           bruto, liquido: liq, despesas: desp,
         });
       }
@@ -208,7 +174,7 @@ function FinanceiroPage() {
         mediaMensal: linhas.length ? round(tLiquido / linhas.length) : 0,
       },
     };
-  }, [filtrados]);
+  }, [agregados]);
 
   const chartData = useMemo(() => [...linhas].reverse().map((l) => ({
     mes: l.curto,

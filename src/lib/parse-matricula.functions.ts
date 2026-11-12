@@ -20,9 +20,11 @@ Responda SOMENTE com JSON válido neste formato:
   "tipo_imovel": "urbano"|"rural"|null,
   "area_m2": number|null,
   "valor_avaliado": number|null,
+  "descricao_imovel": string|null,
   "proprietarios": [{"nome": string, "cpf_cnpj": string|null}]
 }
 Converta área para m² (1 ha = 10000 m²; 1 alqueire paulista = 24200 m²).
+descricao_imovel: extraia a descrição do imóvel (tipo, lote/quadra/gleba, localização) em até 300 caracteres, sem confrontações, e devolva na chave "descricao_imovel".
 valor_avaliado em reais, apenas número. Nunca invente — use null se não encontrar.`;
 
 type Input = {
@@ -79,7 +81,7 @@ export const parseMatricula = createServerFn({ method: "POST" })
             { role: "user", content: userContent },
           ],
           response_format: { type: "json_object" },
-          max_tokens: 400,
+          max_tokens: 600,
         }),
         signal: controller.signal,
       });
@@ -126,5 +128,6 @@ export const parseMatricula = createServerFn({ method: "POST" })
       area_m2: typeof parsed.area_m2 === "number" ? parsed.area_m2 : undefined,
       valor_avaliado: typeof parsed.valor_avaliado === "number" ? parsed.valor_avaliado : undefined,
       proprietarios,
+      descricao_imovel: parsed.descricao_imovel ? String(parsed.descricao_imovel).slice(0, 500) : undefined,
     };
   });

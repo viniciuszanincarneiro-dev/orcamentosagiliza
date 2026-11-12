@@ -23,7 +23,7 @@ function splitIncisos(text: string): string[] {
 }
 
 
-import { EMPRESA, TIPO_TITULOS } from "./empresa";
+import { EMPRESA, TIPO_TITULOS, servicoTemITBI, servicoTemITCMD } from "./empresa";
 import { getModeloServico } from "./modelos-servico";
 
 import type { OrcamentoData } from "./orcamento-types";
@@ -35,11 +35,14 @@ type EscritorioInfo = {
   razao: string; cnpj: string; email: string; telefone: string; cidade: string; endereco: string;
 };
 function toInfo(e?: Escritorio | null): EscritorioInfo {
-  if (!e) return {
-    razao: EMPRESA.razao, cnpj: EMPRESA.cnpj, email: EMPRESA.email,
-    telefone: "(49) 99990-9954", cidade: "São Miguel do Oeste/SC",
-    endereco: "Rua Marcilio Dias, nº 1539, Centro, São Miguel do Oeste/SC",
-  };
+  if (!e) {
+    const u = EMPRESA.unidades[0];
+    return {
+      razao: EMPRESA.razao, cnpj: EMPRESA.cnpj, email: u?.email ?? EMPRESA.email,
+      telefone: u?.telefones ?? "", cidade: u?.cidade ?? "",
+      endereco: u ? `${u.endereco}, ${u.cidade}` : "",
+    };
+  }
   return {
     razao: e.razao_social, cnpj: e.cnpj, email: e.email,
     telefone: e.telefone, cidade: e.cidade, endereco: e.endereco,
@@ -187,6 +190,22 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
     ]})],
   });
 
+  // ITBI/ITCMD: valores informados manualmente — exibe só o valor final,
+  // sem fórmula. Somados aqui para que a tabela feche com o total do orçamento.
+  const temITBI = blocos.some((b) => servicoTemITBI(b.tipo_servico));
+  const temITCMD = blocos.some((b) => servicoTemITCMD(b.tipo_servico));
+  const linhasImpostos: TableRow[] = [];
+  if (temITBI) linhasImpostos.push(new TableRow({ children: [
+    cell("ITBI", { bold: true, bg: CINZA_CLARO }),
+    cell(formatBRL(Number(orc.itbi_estimado ?? 0) || 0), { bold: true, bg: CINZA_CLARO, align: AlignmentType.RIGHT }),
+  ]}));
+  if (temITCMD) linhasImpostos.push(new TableRow({ children: [
+    cell("ITCMD", { bold: true, bg: CINZA_CLARO }),
+    cell(formatBRL(Number(orc.itcmd_estimado ?? 0) || 0), { bold: true, bg: CINZA_CLARO, align: AlignmentType.RIGHT }),
+  ]}));
+  const tabelaImpostos = linhasImpostos.length
+    ? new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: linhasImpostos })
+    : null;
   const tabelaAdicional = null;
 
   // Bloco legal de GEORREFERENCIAMENTO (quando houver serviço rural)
@@ -289,6 +308,7 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
         // DOS VALORES (uma tabela por serviço + total geral)
         P({ text: "DOS VALORES", bold: true, size: 22, spacing: 160 }),
         ...tabelasServicos,
+        ...(tabelaImpostos ? [tabelaImpostos, P({ text: "", spacing: 120 })] : []),
         tabelaTotal,
         P({ text: "", spacing: 100 }),
         ...(tabelaAdicional ? [tabelaAdicional, P({ text: "", spacing: 120 })] : []),
@@ -298,7 +318,7 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
         P({ text: "1. Os valores podem sofrer alterações em virtude da tabela de emolumentos do respectivo Cartório de Registro de Imóveis;" }),
         P({ text: "2. Em casos de notificação extrajudicial haverá acréscimo de valor de acordo com a notificação extrajudicial, de acordo com o artigo 213, §2º da Lei de Registros Públicos (6.015/76);" }),
         P({ text: "3. Forma de Pagamento: a combinar;" }),
-        P({ text: "4. Orçamento válido por 30 dias." }),
+        P({ text: `4. Orçamento válido por ${Number(orc.validade_dias) > 0 ? Number(orc.validade_dias) : 30} dias.` }),
         ...(orc.observacoes ? [P({ text: `5. ${orc.observacoes}` })] : []),
 
         P({ text: "", spacing: 200 }),
@@ -307,10 +327,8 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
 
         // Assinatura manual (linha em aberto + dados do responsável)
         P({ text: "_________________________________________", align: AlignmentType.CENTER, spacing: 120 }),
-        P({ text: "AGILIZA ASSESSORIA EM DOCUMENTOS", bold: true, align: AlignmentType.CENTER }),
-        P({ text: "E TOPOGRAFIA", bold: true, align: AlignmentType.CENTER }),
-        P({ text: "Everton de Oliveira Meyer Ltda", align: AlignmentType.CENTER }),
-        P({ text: "CNPJ 36.172.008/0001-82", align: AlignmentType.CENTER, spacing: 400 }),
+        P({ text: esc.razao, bold: true, align: AlignmentType.CENTER }),
+        P({ text: `CNPJ ${esc.cnpj}`, align: AlignmentType.CENTER, spacing: 400 }),
 
         // Rodapé com unidades
         P({ text: "—".repeat(40), color: "C8C8CC", align: AlignmentType.CENTER, size: 14 }),

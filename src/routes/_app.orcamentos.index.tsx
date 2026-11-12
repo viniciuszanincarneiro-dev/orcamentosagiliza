@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Copy, Download, FilePlus2, FileText, MessageCircle, Search, Trash, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -26,35 +26,44 @@ export const Route = createFileRoute("/_app/orcamentos/")({
   component: HistoricoPage,
 });
 
+const POR_PAGINA = 50;
+
 function HistoricoPage() {
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
   const [acaoPendente, setAcaoPendente] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { data, refetch, isLoading } = useQuery({
-    queryKey: ["orcamentos-lista"],
+  const [pagina, setPagina] = useState(0);
+  const [buscaAplicada, setBuscaAplicada] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => { setBuscaAplicada(busca.trim()); setPagina(0); }, 350);
+    return () => clearTimeout(t);
+  }, [busca]);
+  const { data: resultado, refetch, isLoading } = useQuery({
+    queryKey: ["orcamentos-lista", pagina, filtroStatus, buscaAplicada],
     staleTime: 30_000,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("orcamentos")
-        .select("id, numero, requerente_nome, cliente_whatsapp, cliente_telefone, imovel_municipio, valor_total, status, created_at, updated_at, data_envio, ultimo_contato, validade_dias, created_by_nome, created_by_escritorio_nome, updated_by_nome, updated_by_escritorio_nome")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false });
+        .select("id, numero, requerente_nome, cliente_whatsapp, cliente_telefone, imovel_municipio, valor_total, status, created_at, updated_at, data_envio, ultimo_contato, validade_dias, created_by_nome, created_by_escritorio_nome, updated_by_nome, updated_by_escritorio_nome", { count: "exact" })
+        .is("deleted_at", null);
+      if (filtroStatus !== "todos") q = q.eq("status", filtroStatus);
+      if (buscaAplicada) {
+        const termo = buscaAplicada.replace(/[%,()*\\]/g, " ");
+        q = q.or(`numero.ilike.%${termo}%,requerente_nome.ilike.%${termo}%,imovel_municipio.ilike.%${termo}%`);
+      }
+      const { data, error, count } = await q
+        .order("created_at", { ascending: false })
+        .range(pagina * POR_PAGINA, pagina * POR_PAGINA + POR_PAGINA - 1);
       if (error) throw error;
-      return data ?? [];
+      return { linhas: data ?? [], total: count ?? 0 };
     },
   });
-
-  const filtrados = (data ?? []).filter((o) => {
-    if (filtroStatus !== "todos" && o.status !== filtroStatus) return false;
-    const q = busca.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      o.numero?.toLowerCase().includes(q) ||
-      o.requerente_nome?.toLowerCase().includes(q) ||
-      o.imovel_municipio?.toLowerCase().includes(q)
-    );
-  });
+  const data = resultado?.linhas;
+  const total = resultado?.total ?? 0;
+  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const filtrados = data ?? [];
 
   async function excluir(id: string, numero: string) {
     if (acaoPendente) return;
@@ -164,7 +173,7 @@ function HistoricoPage() {
             <div className="flex gap-2 flex-wrap">
               <select
                 value={filtroStatus}
-                onChange={(e) => setFiltroStatus(e.target.value)}
+                onChange={(e) => { setFiltroStatus(e.target.value); setPagina(0); }}
                 className="border rounded-md text-sm px-3 h-9 bg-background"
               >
                 <option value="todos">Todos os status</option>
@@ -307,6 +316,13 @@ function HistoricoPage() {
                   })}
                 </TableBody>
               </Table>
+              <div className="flex items-center justify-between gap-2 pt-4 text-sm text-muted-foreground">
+                <span>{total} orçamento(s) · página {pagina + 1} de {totalPaginas}</span>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" disabled={pagina === 0} onClick={() => setPagina((p) => p - 1)}>Anterior</Button>
+                  <Button variant="outline" size="sm" disabled={pagina + 1 >= totalPaginas} onClick={() => setPagina((p) => p + 1)}>Próxima</Button>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>

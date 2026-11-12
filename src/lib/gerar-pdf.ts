@@ -511,16 +511,9 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
 
     writeSectionTitle("ITBI");
     if (orc.itbi_municipio) writeParagraph(`Município: ${orc.itbi_municipio}`, { gap: 2, align: "left" });
-    const aliq = Number(orc.itbi_aliquota ?? 0) || 0;
-    const baseITBI = baseProporcional || Number(orc.itbi_valor_declarado ?? 0) || Number(orc.imovel_valor_avaliado ?? 0) || 0;
-    if (baseITBI > 0) writeParagraph(`Base de cálculo: ${formatBRL(baseITBI)}`, { gap: 2, align: "left" });
-    if (aliq > 0) writeParagraph(`Alíquota: ${aliq.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}%`, { gap: 2, align: "left" });
-    if (baseITBI > 0 && aliq > 0) {
-      writeParagraph(`Cálculo: ${formatBRL(baseITBI)} × ${aliq.toLocaleString("pt-BR", { maximumFractionDigits: 3 })}% = ${formatBRL(itbiValor)}`, { gap: 2, align: "left" });
-    }
     writeParagraph(`Valor do ITBI: ${formatBRL(itbiValor)}`, { bold: true, gap: 2, align: "left" });
     writeParagraph(
-      "O ITBI (Imposto de Transmissão de Bens Imóveis) é calculado multiplicando o valor do imóvel (ou a fração transmitida) pela alíquota definida pelo município. O valor resultante é o montante a ser recolhido junto à prefeitura antes da lavratura da escritura pública.",
+      "O ITBI (Imposto de Transmissão de Bens Imóveis) não é calculado pelo sistema. O valor acima foi informado manualmente, conforme apuração junto à prefeitura, e está incluso no total do orçamento.",
       { gap: 8, align: "left" },
     );
   }
@@ -623,7 +616,7 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
     "1. Os valores podem sofrer alterações em virtude da tabela de emolumentos do respectivo Cartório de Registro de Imóveis;",
     "2. Em casos de notificação extrajudicial haverá acréscimo de valor de acordo com a notificação extrajudicial, de acordo com o artigo 213, §2º da Lei de Registros Públicos (6.015/76);",
     "3. Forma de Pagamento: a combinar;",
-    "4. Orçamento válido por 30 dias.",
+    `4. Orçamento válido por ${Number(orc.validade_dias) > 0 ? Number(orc.validade_dias) : 30} dias.`,
   ];
   if (orc.observacoes) obs.push(`5. ${orc.observacoes}`);
   obs.forEach((o) => writeParagraph(o, { gap: 2 }));
@@ -656,15 +649,11 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(...PRETO);
-  doc.text("AGILIZA ASSESSORIA EM DOCUMENTOS", W / 2, y, { align: "center" });
-  y += 12;
-  doc.text("E TOPOGRAFIA", W / 2, y, { align: "center" });
+  doc.text(esc.razao, W / 2, y, { align: "center" });
   y += 12;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Everton de Oliveira Meyer Ltda", W / 2, y, { align: "center" });
-  y += 11;
-  doc.text("CNPJ 36.172.008/0001-82", W / 2, y, { align: "center" });
+  doc.text(`CNPJ ${esc.cnpj}`, W / 2, y, { align: "center" });
   y += 10;
 
   // (A lista de unidades agora é renderizada no rodapé fixo de TODAS as páginas.)

@@ -431,6 +431,24 @@ export type Database = {
           valor_total: number
         }[]
       }
+      financeiro_agregado: {
+        Args: {
+          _desde?: string
+          _escritorio?: string
+          _status?: string
+          _tipo?: string
+        }
+        Returns: {
+          aprovados: number
+          bruto: number
+          despesas: number
+          escritorio_id: string
+          finalizados: number
+          liquido: number
+          mes: string
+          qtd: number
+        }[]
+      }
       gen_orcamento_numero: { Args: never; Returns: string }
       is_admin: { Args: { _uid: string }; Returns: boolean }
       is_member: { Args: { _uid: string }; Returns: boolean }

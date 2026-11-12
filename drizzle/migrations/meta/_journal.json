@@ -8,6 +8,13 @@
       "when": 1794511541824,
       "tag": "0000_scope_orcamentos_and_tabela_valores",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794511604494,
+      "tag": "0001_restrict_reference_tables_to_linked_members",
+      "breakpoints": true
     }
   ]
 }

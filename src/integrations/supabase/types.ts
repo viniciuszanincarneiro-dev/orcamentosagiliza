@@ -433,6 +433,7 @@ export type Database = {
       }
       gen_orcamento_numero: { Args: never; Returns: string }
       is_admin: { Args: { _uid: string }; Returns: boolean }
+      is_member: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "usuario"

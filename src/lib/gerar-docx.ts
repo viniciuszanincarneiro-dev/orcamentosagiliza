@@ -315,7 +315,7 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
         // Observações
         P({ text: "Observações:", bold: true, size: 22, spacing: 120 }),
         ...[
-          "Os valores podem sofrer alterações em virtude da tabela de emolumentos do respectivo Tabelionato de Notas, Registro de Imóveis e avaliação municipal;",
+          "Os valores podem sofrer alterações em virtude da tabela de emolumentos do respectivo Tabelionato de Notas, Registro de Imóveis e avaliação municipal.",
           ...(blocos.length > 0 && blocos.every((b) => b.tipo_servico === "compra_venda")
             ? []
             : ["Em casos de notificação extrajudicial haverá acréscimo de valor de acordo com a notificação extrajudicial, de acordo com o artigo 213, §2º da Lei de Registros Públicos (6.015/76);"]),

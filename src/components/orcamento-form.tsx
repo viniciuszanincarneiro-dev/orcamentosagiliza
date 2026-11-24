@@ -221,7 +221,7 @@ export function OrcamentoForm({ initial, onSaved }: Props) {
         return Math.round((tab + (averbacaoTotal || 0)) * 100) / 100;
       }
       case "certidoes": return v.certidoes_assinaturas ?? 200;
-      case "ccir": return v.atualizacao_ccir ?? 250;
+      case "ccir": return v.atualizacao_ccir ?? 300;
       // Tabelionato: valor OFICIAL da tabela cadastrada. Sem fórmulas.
       case "tabelionato": {
         const tab = lookupFaixa(valor ?? 0, tabelaTab);

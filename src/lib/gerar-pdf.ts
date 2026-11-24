@@ -42,20 +42,19 @@ function toInfo(e?: Escritorio | null): EscritorioInfo {
 
 function splitIncisos(text: string): string[] {
   if (!text) return [];
-  const regex = /(\([ivxIVX]{1,5}|[a-zA-Z]\)\s+)/g;
-  const tokens = text.split(regex);
+  const regex = /(?:^|(?<=[\s;]))((?:\([ivxIVXa-zA-Z]{1,5}\)|[a-zA-Z]\))\s+)/g;
   const result: string[] = [];
-  let current = "";
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    if (token.match(/^\([ivxIVX]{1,5}|[a-zA-Z]\)\s+$/)) {
-      if (current.trim()) result.push(current.trim());
-      current = token;
-    } else {
-      current += token;
+  let lastIdx = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      const before = text.slice(lastIdx, match.index).trim();
+      if (before) result.push(before);
     }
+    lastIdx = match.index;
   }
-  if (current.trim()) result.push(current.trim());
+  const tail = text.slice(lastIdx).trim();
+  if (tail) result.push(tail);
   return result;
 }
 
@@ -612,14 +611,19 @@ export async function gerarOrcamentoPDF(orc: OrcamentoData, escritorio?: Escrito
   // OBSERVAÇÕES
   ensureSpace(80);
   writeSectionTitle("Observações:");
-  const obs = [
-    "1. Os valores podem sofrer alterações em virtude da tabela de emolumentos do respectivo Cartório de Registro de Imóveis;",
-    "2. Em casos de notificação extrajudicial haverá acréscimo de valor de acordo com a notificação extrajudicial, de acordo com o artigo 213, §2º da Lei de Registros Públicos (6.015/76);",
-    "3. Forma de Pagamento: a combinar;",
-    `4. Orçamento válido por ${Number(orc.validade_dias) > 0 ? Number(orc.validade_dias) : 30} dias.`,
+  const apenasCompraVenda = blocos.length > 0 && blocos.every((b) => b.tipo_servico === "compra_venda");
+  const obsItens: string[] = [
+    "Os valores podem sofrer alterações em virtude da tabela de emolumentos do respectivo Tabelionato de Notas, Registro de Imóveis e avaliação municipal;",
   ];
-  if (orc.observacoes) obs.push(`5. ${orc.observacoes}`);
-  obs.forEach((o) => writeParagraph(o, { gap: 2 }));
+  if (!apenasCompraVenda) {
+    obsItens.push("Em casos de notificação extrajudicial haverá acréscimo de valor de acordo com a notificação extrajudicial, de acordo com o artigo 213, §2º da Lei de Registros Públicos (6.015/76);");
+  }
+  obsItens.push(
+    "Forma de Pagamento: a combinar;",
+    `Orçamento válido por ${Number(orc.validade_dias) > 0 ? Number(orc.validade_dias) : 30} dias.`,
+  );
+  if (orc.observacoes) obsItens.push(orc.observacoes);
+  obsItens.forEach((o, idx) => writeParagraph(`${idx + 1}. ${o}`, { gap: 2 }));
   y += 8;
 
   writeParagraph(

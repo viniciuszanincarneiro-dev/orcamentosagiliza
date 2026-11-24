@@ -222,7 +222,7 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
 
   compra_venda: [
     { descricao: "ASSESSORIA DOCUMENTAL", auto: "assessoria" },
-    { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", auto: "certidoes" },
+    { descricao: "CERTIDÕES NEGATIVAS E CONFERÊNCIA", valor_base: 200 },
     { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
     { descricao: "REGISTRO DE IMÓVEIS (TRANSMISSÃO)", auto: "registro" },
     { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
@@ -239,7 +239,7 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
     { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "CERTIDÕES, NEGATIVAS E ASSINATURAS", valor_base: 450 },
-    { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", valor_base: 250 },
+    { descricao: "ATUALIZAÇÃO CCIR, ITR, CAR", auto: "ccir" },
   ],
   estremacao: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO", valor_base: 3200 },
@@ -253,14 +253,14 @@ export const TEMPLATES_ITENS: Record<string, TemplateItem[]> = {
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
     { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "ASSESSORIA DOCUMENTAL", auto: "assessoria" },
-    { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", auto: "certidoes" },
+    { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", valor_base: 200 },
   ],
   doacao_usufruto: [
     { descricao: "TABELIONATO DE NOTAS", auto: "tabelionato" },
     { descricao: "REGISTRO DE IMÓVEIS", auto: "registro" },
     { descricao: "AVERBAÇÕES (2 sem valor econômico)", auto: "averbacoes" },
     { descricao: "ASSESSORIA DOCUMENTAL", auto: "assessoria" },
-    { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", auto: "certidoes" },
+    { descricao: "CERTIDÕES NEGATIVAS E ASSINATURAS", valor_base: 200 },
   ],
   divisao_amigavel: [
     { descricao: "LEVANTAMENTO TOPOGRÁFICO E DIVISÃO", auto: "topografia" },

@@ -5,20 +5,19 @@ import {
 
 function splitIncisos(text: string): string[] {
   if (!text) return [];
-  const regex = /(\([ivxIVX]{1,5}|[a-zA-Z]\)\s+)/g;
-  const tokens = text.split(regex);
+  const regex = /(?:^|(?<=[\s;]))((?:\([ivxIVXa-zA-Z]{1,5}\)|[a-zA-Z]\))\s+)/g;
   const result: string[] = [];
-  let current = "";
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    if (token.match(/^\([ivxIVX]{1,5}|[a-zA-Z]\)\s+$/)) {
-      if (current.trim()) result.push(current.trim());
-      current = token;
-    } else {
-      current += token;
+  let lastIdx = 0;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      const before = text.slice(lastIdx, match.index).trim();
+      if (before) result.push(before);
     }
+    lastIdx = match.index;
   }
-  if (current.trim()) result.push(current.trim());
+  const tail = text.slice(lastIdx).trim();
+  if (tail) result.push(tail);
   return result;
 }
 
@@ -315,11 +314,15 @@ export async function gerarOrcamentoDOCX(orc: OrcamentoData, escritorio?: Escrit
 
         // Observações
         P({ text: "Observações:", bold: true, size: 22, spacing: 120 }),
-        P({ text: "1. Os valores podem sofrer alterações em virtude da tabela de emolumentos do respectivo Cartório de Registro de Imóveis;" }),
-        P({ text: "2. Em casos de notificação extrajudicial haverá acréscimo de valor de acordo com a notificação extrajudicial, de acordo com o artigo 213, §2º da Lei de Registros Públicos (6.015/76);" }),
-        P({ text: "3. Forma de Pagamento: a combinar;" }),
-        P({ text: `4. Orçamento válido por ${Number(orc.validade_dias) > 0 ? Number(orc.validade_dias) : 30} dias.` }),
-        ...(orc.observacoes ? [P({ text: `5. ${orc.observacoes}` })] : []),
+        ...[
+          "Os valores podem sofrer alterações em virtude da tabela de emolumentos do respectivo Tabelionato de Notas, Registro de Imóveis e avaliação municipal;",
+          ...(blocos.length > 0 && blocos.every((b) => b.tipo_servico === "compra_venda")
+            ? []
+            : ["Em casos de notificação extrajudicial haverá acréscimo de valor de acordo com a notificação extrajudicial, de acordo com o artigo 213, §2º da Lei de Registros Públicos (6.015/76);"]),
+          "Forma de Pagamento: a combinar;",
+          `Orçamento válido por ${Number(orc.validade_dias) > 0 ? Number(orc.validade_dias) : 30} dias.`,
+          ...(orc.observacoes ? [orc.observacoes] : []),
+        ].map((o, idx) => P({ text: `${idx + 1}. ${o}` })),
 
         P({ text: "", spacing: 200 }),
         P({ text: "Agradecemos pela oportunidade de apresentar nossa proposta. Estamos confiantes de que podemos atender às suas necessidades com qualidade e eficiência!", spacing: 320 }),
